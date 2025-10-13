@@ -276,11 +276,11 @@ export function SessionView() {
         });
 
         if (!result.ok) {
-          alert(result.message || "Unable to process your input. Please try rephrasing.");
+          alert(result.message ?? "Unable to process your input. Please try rephrasing.");
           break;
         } else {
           setText("");
-          if (result.sessionClosed) {
+          if (result.sessionClosed === true) {
             alert("🎉 Coaching session complete! Your report is now ready.");
           }
           break;
