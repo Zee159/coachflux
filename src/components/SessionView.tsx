@@ -1,0 +1,708 @@
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useAction, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
+import { SessionReport } from "./SessionReport";
+
+type StepName = "goal" | "reality" | "options" | "will" | "review";
+
+function formatReflectionDisplay(_step: string, payload: Record<string, unknown>): JSX.Element {
+  const entries = Object.entries(payload);
+  
+  // Separate coach_reflection from other fields
+  const coachReflection = entries.find(([key]) => key === 'coach_reflection');
+  const otherEntries = entries.filter(([key]) => key !== 'coach_reflection');
+  
+  return (
+    <div className="space-y-4">
+      {/* Coach Reflection - displayed first with special styling */}
+      {coachReflection !== undefined && (
+        <div className="bg-white border-l-4 border-indigo-600 p-3 rounded-r-lg">
+          <p className="text-sm text-gray-800 italic leading-relaxed">
+            💬 {String(coachReflection[1])}
+          </p>
+        </div>
+      )}
+      
+      {/* Other fields */}
+      <div className="space-y-3">
+        {otherEntries.map(([key, value]) => {
+          const label = key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+          
+          if (Array.isArray(value)) {
+            return (
+              <div key={key}>
+                <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wide mb-1">
+                  {label}
+                </p>
+                <ul className="list-disc list-inside space-y-1">
+                  {value.map((item, idx) => {
+                    // Handle options array specially
+                    if (typeof item === 'object' && item !== null && 'label' in item) {
+                      const option = item as { label: string; pros?: string[]; cons?: string[] };
+                      return (
+                        <li key={idx} className="text-sm text-gray-700">
+                          <span className="font-medium">{option.label}</span>
+                          {option.pros && option.pros.length > 0 && (
+                            <div className="ml-4 mt-1 text-xs text-green-700">
+                              ✓ {option.pros.join(', ')}
+                            </div>
+                          )}
+                          {option.cons && option.cons.length > 0 && (
+                            <div className="ml-4 text-xs text-red-700">
+                              ✗ {option.cons.join(', ')}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    }
+                    // Handle actions array specially
+                    if (typeof item === 'object' && item !== null && 'title' in item) {
+                      const action = item as { title: string; owner?: string; due_days?: number };
+                      return (
+                        <li key={idx} className="text-sm text-gray-700">
+                          <span className="font-medium">{action.title}</span>
+                          {action.owner && <span className="text-xs text-gray-600"> (Owner: {action.owner})</span>}
+                          {action.due_days && <span className="text-xs text-gray-600"> • Due in {action.due_days} days</span>}
+                        </li>
+                      );
+                    }
+                    // Default: simple string
+                    return (
+                      <li key={idx} className="text-sm text-gray-700">
+                        {String(item)}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          }
+          
+          if (typeof value === 'object' && value !== null) {
+            return (
+              <div key={key}>
+                <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wide mb-1">
+                  {label}
+                </p>
+                <div className="text-sm text-gray-700 pl-4 space-y-1">
+                  {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
+                    <div key={k}>
+                      <span className="font-medium">{k}:</span> {String(v)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+          
+          return (
+            <div key={key}>
+              <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wide mb-1">
+                {label}
+              </p>
+              <p className="text-sm text-gray-700">{String(value)}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const STEP_DESCRIPTIONS: Record<StepName, string> = {
+  goal: "Clarify your desired outcome for the next 1-12 weeks.",
+  reality: "Assess your current situation, constraints, and resources.",
+  options: "Explore at least three viable paths forward.",
+  will: "Choose an option and define specific actions.",
+  review: "Review your plan and alignment with organizational values.",
+};
+
+const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }> = {
+  goal: {
+    title: "Clarify the Topic and Goal",
+    questions: [
+      "What is it you wish to discuss?",
+      "What outcomes would you like to achieve from this conversation?",
+      "What does success look like for you?",
+      "Why is this important to you right now?",
+      "What timeframe are you working with?"
+    ]
+  },
+  reality: {
+    title: "Explore the Reality",
+    questions: [
+      "What's actually happening right now?",
+      "Describe the issue as you see it",
+      "What's the impact of this situation?",
+      "What constraints or barriers are you facing?",
+      "What resources do you currently have available?",
+      "Who else is involved or affected?"
+    ]
+  },
+  options: {
+    title: "Generate Options",
+    questions: [
+      "What are the possible ways forward?",
+      "What else could you do?",
+      "What are the pros and cons of each option?",
+      "Which option feels most aligned with your goals?",
+      "What would you do if there were no constraints?"
+    ]
+  },
+  will: {
+    title: "Commit to Action",
+    questions: [
+      "Which option will you choose?",
+      "What specific actions will you take?",
+      "Who will be responsible for each action?",
+      "When will you complete these actions?",
+      "What support or resources do you need?",
+      "How will you know you've succeeded?"
+    ]
+  },
+  review: {
+    title: "Review & Summarize",
+    questions: [
+      "What are the key takeaways from this conversation?",
+      "How does this plan align with your organization's values?",
+      "On a scale of 0-100, how confident are you in this plan?",
+      "What commitment are you making to yourself?",
+      "What's your next immediate step?"
+    ]
+  }
+};
+
+export function SessionView() {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const navigate = useNavigate();
+  const [text, setText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const session = useQuery(
+    api.queries.getSession,
+    sessionId !== undefined && sessionId !== null && sessionId !== '' 
+      ? { sessionId: sessionId as Id<"sessions"> } 
+      : "skip"
+  );
+
+  const reflections = useQuery(
+    api.queries.getSessionReflections,
+    sessionId !== undefined && sessionId !== null && sessionId !== '' 
+      ? { sessionId: sessionId as Id<"sessions"> } 
+      : "skip"
+  );
+
+  const nextStepAction = useAction(api.coach.nextStep);
+  const closeSession = useMutation(api.mutations.closeSession);
+  const incrementSkip = useMutation(api.mutations.incrementSkipCount);
+
+  useEffect(() => {
+    // Auto-scroll to latest message when new reflection appears
+    if (chatEndRef.current === null || chatEndRef.current === undefined) {
+      return;
+    }
+    
+    // Small delay to ensure DOM has updated with new content
+    const timer = setTimeout(() => {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [reflections?.length]); // Trigger only when count changes
+
+  if (session === null || session === undefined) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Loading session...</div>
+      </div>
+    );
+  }
+
+  const currentStep = session.step as StepName;
+  
+  // Get skip count for current step
+  const sessionState = session.state as { skips?: Record<string, number> } | undefined;
+  const skipCount = sessionState?.skips?.[currentStep] ?? 0;
+  const canSkip = skipCount < 2 && currentStep !== "review"; // No skip on review step
+  
+  // Check if session is complete (review step done OR session closed)
+  const reviewReflection = reflections?.find((r) => r.step === "review");
+  const reviewPayload = reviewReflection?.payload as Record<string, unknown> | undefined;
+  const isReviewComplete = Boolean(
+    reviewPayload &&
+    reviewPayload['summary'] &&
+    reviewPayload['alignment_score'] !== undefined &&
+    reviewPayload['ai_insights'] &&
+    Array.isArray(reviewPayload['unexplored_options']) &&
+    Array.isArray(reviewPayload['identified_risks']) &&
+    Array.isArray(reviewPayload['potential_pitfalls'])
+  );
+  const isSessionComplete = (currentStep === "review" && isReviewComplete) || 
+    (session.closedAt !== null && session.closedAt !== undefined);
+
+  async function handleSubmit(skipText?: string): Promise<void> {
+    const inputText = skipText ?? text;
+    if (session === null || session === undefined || inputText.trim() === '' || submitting) {
+      return;
+    }
+
+    // Check if session is already closed
+    if (session.closedAt !== null && session.closedAt !== undefined) {
+      alert("This session has been completed. Please view your report or start a new session.");
+      return;
+    }
+
+    if (inputText.length > 800) {
+      alert("Please keep your response under 800 characters (currently " + inputText.length + " characters).");
+      return;
+    }
+
+    setSubmitting(true);
+    let retryCount = 0;
+    const maxRetries = 2;
+
+    while (retryCount <= maxRetries) {
+      try {
+        const result = await nextStepAction({
+          orgId: session.orgId,
+          userId: session.userId,
+          sessionId: session._id,
+          stepName: currentStep,
+          userTurn: inputText,
+        });
+
+        if (!result.ok) {
+          alert(result.message || "Unable to process your input. Please try rephrasing.");
+          break;
+        } else {
+          setText("");
+          if (result.sessionClosed) {
+            alert("🎉 Coaching session complete! Your report is now ready.");
+          }
+          break;
+        }
+      } catch (error: unknown) {
+        console.error("Submission error (attempt " + (retryCount + 1) + "):", error);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          continue;
+        }
+        
+        const errorMessage = error instanceof Error ? error.message : "Network error occurred";
+        const userMessage = errorMessage.includes("ANTHROPIC_API_KEY")
+          ? "AI service is not configured. Please contact support."
+          : errorMessage.includes("Organization not found")
+          ? "Session error. Please return to dashboard and try again."
+          : "Connection failed after multiple attempts. Please check your internet and try again.";
+        
+        alert(userMessage);
+        break;
+      }
+    }
+    
+    setSubmitting(false);
+  }
+
+  async function handleSkip(): Promise<void> {
+    if (session === null || session === undefined || !canSkip || submitting) {
+      return;
+    }
+
+    try {
+      await incrementSkip({ sessionId: session._id, step: currentStep });
+      // Note: Skip provides general guidance but shouldn't advance the step
+      // The AI will guide them toward providing more specific information
+      await handleSubmit("I'd like to skip this specific question for now. Can we explore this from a different angle?");
+    } catch (error: unknown) {
+      console.error("Skip error:", error);
+      alert("Failed to skip question. Please try again.");
+    }
+  }
+
+  async function handleCloseSession(): Promise<void> {
+    if (session === null || session === undefined) {
+      return;
+    }
+    if (confirm("Are you sure you want to close this session?")) {
+      await closeSession({ sessionId: session._id });
+      navigate("/dashboard");
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                CoachFlux Session
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-600">
+                {session.framework} Framework · Step:{" "}
+                <span className="uppercase font-medium">{currentStep}</span>
+                {skipCount > 0 && (
+                  <span className="ml-2 text-xs text-orange-600">
+                    ({skipCount}/2 skips used)
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              {isSessionComplete === true && (
+                <button
+                  onClick={() => setShowReport(true)}
+                  className="flex-1 sm:flex-none px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
+                >
+                  📊 Report
+                </button>
+              )}
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="flex-1 sm:flex-none px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => void handleCloseSession()}
+                className="flex-1 sm:flex-none px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 lg:px-8 pb-48 sm:pb-52">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <section className="lg:col-span-2 bg-white rounded-lg shadow">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <span className="text-indigo-600 font-bold">
+                    {currentStep.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                    {currentStep.charAt(0).toUpperCase() + currentStep.slice(1)}
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    {STEP_DESCRIPTIONS[currentStep]}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 sm:p-6 min-h-[400px]">
+              {reflections !== null && reflections !== undefined && reflections.length > 0 ? (
+                <div className="space-y-6">
+                  {reflections.map((reflection) => (
+                    <div key={reflection._id} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-gray-500 uppercase">
+                          {reflection.step}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(reflection.createdAt).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <div className="bg-indigo-50 rounded-lg p-4">
+                        {formatReflectionDisplay(reflection.step, reflection.payload as Record<string, unknown>)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center text-gray-500">
+                  Start by sharing your thoughts below...
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+          </section>
+
+          <aside className="lg:col-span-1 space-y-4">
+            {/* Dynamic Coaching Sidebar: Questions or Summary */}
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6 lg:sticky lg:top-8">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">
+                    {currentStep.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <h3 className="font-semibold text-gray-900">
+                  {COACHING_PROMPTS[currentStep].title}
+                </h3>
+              </div>
+              
+              {/* Show questions if no reflections, otherwise show summary */}
+              {(reflections === null || reflections === undefined || reflections.length === 0) ? (
+                <>
+                  <div className="space-y-3 mb-6">
+                    <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">
+                      Coaching Questions
+                    </p>
+                    <ul className="space-y-2">
+                      {COACHING_PROMPTS[currentStep].questions.map((question, _idx) => (
+                        <li key={_idx} className="flex gap-2 text-xs sm:text-sm text-gray-700">
+                          <span className="text-indigo-600 font-semibold">•</span>
+                          <span>{question}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-200">
+                    <p className="text-xs text-gray-600 italic">
+                      {currentStep === "goal" ? "Focus on what you want to achieve and why it matters now." : ""}
+                      {currentStep === "reality" ? "Describe the facts and current situation without judgment." : ""}
+                      {currentStep === "options" ? "Generate multiple possibilities before evaluating them." : ""}
+                      {currentStep === "will" ? "Commit to specific actions with clear ownership and timelines." : ""}
+                      {currentStep === "review" ? "Reflect on your commitments and their alignment with your values." : ""}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">
+                      Discussion Summary
+                    </p>
+                    
+                    {/* Show summary of current step reflections */}
+                    {reflections !== null && reflections !== undefined && reflections
+                      .filter((r) => r.step === currentStep)
+                      .slice(-1)
+                      .map((reflection) => {
+                        const payload = reflection.payload as Record<string, unknown>;
+                        const coachReflection = payload['coach_reflection'];
+                        
+                        return (
+                          <div key={reflection._id} className="space-y-3">
+                            {/* Show coach's latest reflection */}
+                            {typeof coachReflection === 'string' ? (
+                              <div className="bg-indigo-50 border-l-4 border-indigo-600 p-3 rounded-r-lg">
+                                <p className="text-sm text-gray-800 italic">
+                                  💬 {coachReflection}
+                                </p>
+                              </div>
+                            ) : null}
+                            
+                            {/* Show key points from payload */}
+                            <div className="space-y-2 text-sm">
+                              {Object.entries(payload)
+                                .filter(([key]) => key !== 'coach_reflection')
+                                .slice(0, 3)
+                                .map(([key, value]) => {
+                                  const label = key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+                                  
+                                  if (Array.isArray(value) && value.length > 0) {
+                                    return (
+                                      <div key={key}>
+                                        <p className="text-xs font-semibold text-indigo-900 mb-1">{label}:</p>
+                                        <ul className="list-disc list-inside space-y-1 text-gray-700">
+                                          {value.slice(0, 3).map((item, idx) => {
+                                            // Format options
+                                            if (typeof item === 'object' && item !== null && 'label' in item) {
+                                              const option = item as { label: string };
+                                              return (
+                                                <li key={idx} className="text-xs">
+                                                  {option.label.substring(0, 60)}{option.label.length > 60 ? '...' : ''}
+                                                </li>
+                                              );
+                                            }
+                                            // Format actions
+                                            if (typeof item === 'object' && item !== null && 'title' in item) {
+                                              const action = item as { title: string };
+                                              return (
+                                                <li key={idx} className="text-xs">
+                                                  {action.title.substring(0, 60)}{action.title.length > 60 ? '...' : ''}
+                                                </li>
+                                              );
+                                            }
+                                            // Simple strings
+                                            const itemStr = String(item).substring(0, 60) + (String(item).length > 60 ? '...' : '');
+                                            return (
+                                              <li key={idx} className="text-xs">
+                                                {itemStr}
+                                              </li>
+                                            );
+                                          })}
+                                        </ul>
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  if (typeof value === 'string' && value.length > 0) {
+                                    return (
+                                      <div key={key}>
+                                        <p className="text-xs font-semibold text-indigo-900 mb-1">{label}:</p>
+                                        <p className="text-xs text-gray-700">
+                                          {value.substring(0, 100) + (value.length > 100 ? '...' : '')}
+                                        </p>
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  return null;
+                                })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                  
+                  <div className="pt-4 border-t border-gray-200 mt-4">
+                    <details className="group">
+                      <summary className="text-xs font-medium text-indigo-600 cursor-pointer hover:text-indigo-700 list-none flex items-center gap-2">
+                        <span className="transform group-open:rotate-90 transition-transform">▶</span>
+                        View All Questions
+                      </summary>
+                      <ul className="mt-3 space-y-2">
+                        {COACHING_PROMPTS[currentStep].questions.map((question, _idx) => (
+                          <li key={_idx} className="flex gap-2 text-xs text-gray-600">
+                            <span className="text-indigo-600 font-semibold">•</span>
+                            <span>{question}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* GROW Progress */}
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">
+                GROW Progress
+              </h3>
+              <div className="space-y-2">
+                {(["goal", "reality", "options", "will", "review"] as StepName[]).map(
+                  (step) => (
+                    <div
+                      key={step}
+                      className={`p-3 rounded-md transition-all ${
+                        currentStep === step
+                          ? "bg-indigo-100 border-2 border-indigo-600"
+                          : "bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {currentStep === step ? (
+                          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse" />
+                        ) : (
+                          <div className="w-2 h-2 bg-gray-400 rounded-full" />
+                        )}
+                        <span
+                          className={`text-sm font-medium ${
+                            currentStep === step
+                              ? "text-indigo-900"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {step.charAt(0).toUpperCase() + step.slice(1)}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+
+              <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-yellow-50 rounded-md">
+                <p className="text-xs sm:text-xs text-gray-700">
+                  <strong>Note:</strong> This is a reflection tool, not therapy.
+                  For urgent matters, contact HR or a healthcare professional.
+                </p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      {/* Fixed Input Box at Bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+          <div className="py-3">
+            <div className="max-w-4xl">
+              <div className="flex gap-2 items-end">
+                {/* Input with inline send button */}
+                <div className="flex-1 relative">
+                  <textarea
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        void handleSubmit();
+                      }
+                    }}
+                    placeholder={`Share your thoughts for the ${currentStep ?? 'current'} step...`}
+                    className="w-full pl-3 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-sm"
+                    rows={2}
+                    disabled={submitting}
+                    maxLength={800}
+                  />
+                  {/* Send button inside input */}
+                  <button
+                    onClick={() => void handleSubmit()}
+                    disabled={text.trim() === '' || submitting}
+                    className="absolute right-2 bottom-2 p-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    title="Send (Enter)"
+                  >
+                    {submitting ? (
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                
+                {/* Skip button */}
+                {canSkip && (
+                  <button
+                    onClick={() => void handleSkip()}
+                    disabled={submitting}
+                    className="px-3 py-2 text-xs bg-orange-50 text-orange-700 rounded-md hover:bg-orange-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors border border-orange-200"
+                    title={`Skip this question (${2 - skipCount} skips remaining)`}
+                  >
+                    Skip
+                  </button>
+                )}
+              </div>
+              
+              {/* Footer info */}
+              <div className="mt-1.5 flex justify-between text-xs text-gray-500 px-1">
+                <span>
+                  {canSkip ? `${2 - skipCount} skip${2 - skipCount === 1 ? '' : 's'} available` : 'No skips remaining'}
+                </span>
+                <span>{text.length}/800</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Show Report Modal */}
+      {showReport && (
+        <SessionReport 
+          sessionId={session._id} 
+          onClose={() => setShowReport(false)} 
+        />
+      )}
+    </div>
+  );
+}

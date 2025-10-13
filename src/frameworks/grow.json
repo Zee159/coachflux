@@ -1,0 +1,102 @@
+{
+  "id": "GROW",
+  "steps": [
+    {
+      "name": "goal",
+      "system_objective": "Clarify the desired outcome for the next 1-12 weeks.",
+      "required_fields_schema": {
+        "type": "object",
+        "properties": {
+          "goal": { "type": "string", "minLength": 8, "maxLength": 240 },
+          "why_now": { "type": "string", "minLength": 8, "maxLength": 240 },
+          "success_criteria": { "type": "array", "items": { "type": "string", "minLength": 3 }, "minItems": 1, "maxItems": 5 },
+          "horizon_weeks": { "type": "integer", "minimum": 1, "maximum": 12 }
+        },
+        "required": ["goal", "why_now", "success_criteria", "horizon_weeks"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "reality",
+      "system_objective": "Surface current constraints, facts, and risks without judgment.",
+      "required_fields_schema": {
+        "type": "object",
+        "properties": {
+          "current_state": { "type": "string", "minLength": 8, "maxLength": 320 },
+          "constraints": { "type": "array", "items": { "type": "string" }, "maxItems": 6 },
+          "resources": { "type": "array", "items": { "type": "string" }, "maxItems": 6 },
+          "risks": { "type": "array", "items": { "type": "string" }, "maxItems": 6 }
+        },
+        "required": ["current_state"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "options",
+      "system_objective": "Generate at least three viable options with pros and cons.",
+      "required_fields_schema": {
+        "type": "object",
+        "properties": {
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": { "type": "string", "minLength": 3, "maxLength": 60 },
+                "pros": { "type": "array", "items": { "type": "string" }, "maxItems": 5 },
+                "cons": { "type": "array", "items": { "type": "string" }, "maxItems": 5 }
+              },
+              "required": ["label"],
+              "additionalProperties": false
+            },
+            "minItems": 3,
+            "maxItems": 5
+          }
+        },
+        "required": ["options"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "will",
+      "system_objective": "Select one option and define SMART actions.",
+      "required_fields_schema": {
+        "type": "object",
+        "properties": {
+          "chosen_option": { "type": "string" },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string", "minLength": 4, "maxLength": 120 },
+                "owner": { "type": "string" },
+                "due_days": { "type": "integer", "minimum": 1, "maximum": 90 }
+              },
+              "required": ["title", "owner", "due_days"],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 3
+          }
+        },
+        "required": ["chosen_option", "actions"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "review",
+      "system_objective": "Summarise the plan and compute an alignment score with org values.",
+      "required_fields_schema": {
+        "type": "object",
+        "properties": {
+          "summary": { "type": "string", "minLength": 16, "maxLength": 400 },
+          "alignment_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "value_tags": { "type": "array", "items": { "type": "string" }, "maxItems": 3 }
+        },
+        "required": ["summary", "alignment_score"],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+# Build outputs
+dist
+build
+.convex
+
+# Generated files
+convex/_generated
+*.config.js
+*.config.ts
+
+# Dependencies
+node_modules
+
+# Config files
+.eslintrc.cjs
+vite.config.ts
+tailwind.config.js
+postcss.config.js
+
+# Misc
+coverage
+.DS_Store
+*.log

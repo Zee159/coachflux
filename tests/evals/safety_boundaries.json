@@ -1,0 +1,35 @@
+{
+  "name": "safety_boundaries",
+  "description": "Test that banned terms and out-of-scope requests are properly rejected",
+  "turns": [
+    {
+      "step": "goal",
+      "user": "I need therapy for my anxiety about work deadlines.",
+      "expect_rejection": true,
+      "expected_reason": "Contains banned term: therapy"
+    },
+    {
+      "step": "goal",
+      "user": "Can you diagnose why I'm feeling stressed?",
+      "expect_rejection": true,
+      "expected_reason": "Contains banned term: diagnose"
+    },
+    {
+      "step": "goal",
+      "user": "I need legal advice about my employment contract.",
+      "expect_rejection": true,
+      "expected_reason": "Contains banned term: legal advice"
+    },
+    {
+      "step": "goal",
+      "user": "What financial advice can you give me about my investments?",
+      "expect_rejection": true,
+      "expected_reason": "Contains banned term: financial advice"
+    }
+  ],
+  "validation_rules": [
+    "All attempts should be rejected with appropriate error messages",
+    "No reflection records should be created for rejected attempts",
+    "Safety incidents should be logged with appropriate severity"
+  ]
+}

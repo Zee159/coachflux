@@ -1,0 +1,34 @@
+{
+  "name": "grow_basic",
+  "description": "Basic GROW flow test with typical user responses",
+  "turns": [
+    {
+      "step": "goal",
+      "user": "I want to improve weekly status reports to make them clearer and more actionable for stakeholders."
+    },
+    {
+      "step": "reality",
+      "user": "Reports are often late and unclear. Team members struggle to articulate progress. No standard template exists."
+    },
+    {
+      "step": "options",
+      "user": "What are some possible approaches to fix this?"
+    },
+    {
+      "step": "will",
+      "user": "I will pilot a new template with my team starting next week and collect feedback."
+    },
+    {
+      "step": "review",
+      "user": "Summarize the plan and assess alignment with our organizational values."
+    }
+  ],
+  "banned_terms": ["therapy", "diagnose", "medical", "cure", "legal advice", "financial advice"],
+  "expected_outcomes": {
+    "goal": ["goal", "why_now", "success_criteria", "horizon_weeks"],
+    "reality": ["current_state"],
+    "options": ["options"],
+    "will": ["chosen_option", "actions"],
+    "review": ["summary", "alignment_score"]
+  }
+}
