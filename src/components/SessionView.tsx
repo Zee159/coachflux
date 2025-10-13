@@ -44,12 +44,12 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
                       return (
                         <li key={idx} className="text-sm text-gray-700">
                           <span className="font-medium">{option.label}</span>
-                          {option.pros && option.pros.length > 0 && (
+                          {(option.pros !== null && option.pros !== undefined && option.pros.length > 0) && (
                             <div className="ml-4 mt-1 text-xs text-green-700">
                               ✓ {option.pros.join(', ')}
                             </div>
                           )}
-                          {option.cons && option.cons.length > 0 && (
+                          {(option.cons !== null && option.cons !== undefined && option.cons.length > 0) && (
                             <div className="ml-4 text-xs text-red-700">
                               ✗ {option.cons.join(', ')}
                             </div>
@@ -63,8 +63,8 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
                       return (
                         <li key={idx} className="text-sm text-gray-700">
                           <span className="font-medium">{action.title}</span>
-                          {action.owner && <span className="text-xs text-gray-600"> (Owner: {action.owner})</span>}
-                          {action.due_days && <span className="text-xs text-gray-600"> • Due in {action.due_days} days</span>}
+                          {(action.owner !== null && action.owner !== undefined && action.owner.length > 0) && <span className="text-xs text-gray-600"> (Owner: {action.owner})</span>}
+                          {(action.due_days !== null && action.due_days !== undefined && action.due_days > 0) && <span className="text-xs text-gray-600"> • Due in {action.due_days} days</span>}
                         </li>
                       );
                     }
@@ -233,10 +233,10 @@ export function SessionView() {
   const reviewReflection = reflections?.find((r) => r.step === "review");
   const reviewPayload = reviewReflection?.payload as Record<string, unknown> | undefined;
   const isReviewComplete = Boolean(
-    reviewPayload &&
-    reviewPayload['summary'] &&
-    reviewPayload['alignment_score'] !== undefined &&
-    reviewPayload['ai_insights'] &&
+    reviewPayload !== null && reviewPayload !== undefined &&
+    typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 &&
+    typeof reviewPayload['alignment_score'] === 'number' &&
+    typeof reviewPayload['ai_insights'] === 'string' && reviewPayload['ai_insights'].length > 0 &&
     Array.isArray(reviewPayload['unexplored_options']) &&
     Array.isArray(reviewPayload['identified_risks']) &&
     Array.isArray(reviewPayload['potential_pitfalls'])

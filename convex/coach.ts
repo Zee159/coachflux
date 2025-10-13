@@ -222,7 +222,7 @@ export const nextStep = action({
     if (verdict.verdict !== "pass" || bannedHit) {
       const reason = bannedHit 
         ? `Banned term detected: ${BANNED.filter(b => lower.includes(b)).join(", ")}`
-        : `Validator failed: ${verdict.reasons?.join(", ") || "Unknown reason"}`;
+        : `Validator failed: ${verdict.reasons?.join(", ") ?? "Unknown reason"}`;
       
       console.error("Safety validation failed:", { 
         reason, 
@@ -300,10 +300,10 @@ export const nextStep = action({
     if (step.name === "goal") {
       // Goal step requires: goal, why_now, success_criteria, horizon_weeks
       shouldAdvance = Boolean(
-        payload["goal"] && 
-        payload["why_now"] && 
-        payload["success_criteria"] && 
-        payload["horizon_weeks"]
+        typeof payload["goal"] === "string" && payload["goal"].length > 0 && 
+        typeof payload["why_now"] === "string" && payload["why_now"].length > 0 && 
+        Array.isArray(payload["success_criteria"]) && payload["success_criteria"].length > 0 && 
+        typeof payload["horizon_weeks"] === "number"
       );
     } else if (step.name === "reality") {
       // Reality step requires: current_state AND at least 2 of (constraints, resources, risks)
@@ -312,7 +312,7 @@ export const nextStep = action({
       const hasRisks = Array.isArray(payload["risks"]) && payload["risks"].length > 0;
       const explorationCount = [hasConstraints, hasResources, hasRisks].filter(Boolean).length;
       
-      shouldAdvance = Boolean(payload["current_state"] && explorationCount >= 2);
+      shouldAdvance = Boolean(typeof payload["current_state"] === "string" && payload["current_state"].length > 0 && explorationCount >= 2);
     } else if (step.name === "options") {
       // Options step requires: at least 3 options AND at least 2 must have pros/cons explored
       const options = payload["options"];
@@ -329,13 +329,13 @@ export const nextStep = action({
     } else if (step.name === "will") {
       // Will step requires: chosen_option, at least 2 concrete actions with ALL details, and commitment confirmation
       const actions = payload["actions"];
-      if (!payload["chosen_option"] || !Array.isArray(actions) || actions.length < 2) {
+      if (typeof payload["chosen_option"] !== "string" || payload["chosen_option"].length === 0 || !Array.isArray(actions) || actions.length < 2) {
         shouldAdvance = false;
       } else {
         // Check that all actions have complete details (title, owner, due_days)
         const completeActions = actions.filter((a: unknown) => {
           const action = a as { title?: string; owner?: string; due_days?: number };
-          return action.title && action.owner && action.due_days !== undefined && action.due_days > 0;
+          return typeof action.title === "string" && action.title.length > 0 && typeof action.owner === "string" && action.owner.length > 0 && typeof action.due_days === "number" && action.due_days > 0;
         });
         
         // Need at least 2 complete actions to advance
@@ -344,9 +344,9 @@ export const nextStep = action({
     } else if (step.name === "review") {
       // Review step requires: summary, alignment_score, ai_insights, unexplored_options, identified_risks, potential_pitfalls
       shouldAdvance = Boolean(
-        payload["summary"] && 
-        payload["alignment_score"] !== undefined &&
-        payload["ai_insights"] &&
+        typeof payload["summary"] === "string" && payload["summary"].length > 0 && 
+        typeof payload["alignment_score"] === "number" &&
+        typeof payload["ai_insights"] === "string" && payload["ai_insights"].length > 0 &&
         Array.isArray(payload["unexplored_options"]) && payload["unexplored_options"].length > 0 &&
         Array.isArray(payload["identified_risks"]) && payload["identified_risks"].length > 0 &&
         Array.isArray(payload["potential_pitfalls"]) && payload["potential_pitfalls"].length > 0

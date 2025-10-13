@@ -226,11 +226,14 @@ function getRequiredFieldsDescription(stepName: string): string {
 }
 
 export const USER_STEP_PROMPT = (stepName: string, userTurn: string, conversationHistory?: string) => {
-  const guidance = STEP_COACHING_GUIDANCE[stepName] ?? "";
+  const guidance = STEP_COACHING_GUIDANCE[stepName];
+  if (guidance === undefined || guidance === null || guidance.length === 0) {
+    throw new Error(`Unknown step: ${stepName}`);
+  }
   const questions = COACHING_QUESTIONS[stepName] ?? [];
   const questionsText = questions.map((q, i) => `${i + 1}. ${q}`).join('\n');
   
-  const historySection = conversationHistory && conversationHistory.length > 0
+  const historySection = typeof conversationHistory === "string" && conversationHistory.length > 0
     ? `\nCONVERSATION HISTORY (for context):\n${conversationHistory}\n`
     : '';
   
