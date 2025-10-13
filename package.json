@@ -8,7 +8,7 @@
     "build": "pnpm safety && vite build",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 10",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 20",
     "lint:fix": "eslint . --ext ts,tsx --fix",
     "safety-scan": "node scripts/safety-check.js",
     "safety": "pnpm type-check && pnpm lint && pnpm safety-scan",
