@@ -14,6 +14,30 @@ export const createOrg = mutation({
   },
 });
 
+export const createFeedback = mutation({
+  args: {
+    orgId: v.optional(v.id("orgs")),
+    userId: v.optional(v.id("users")),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    page: v.optional(v.string()),
+    message: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("feedback", {
+      orgId: args.orgId,
+      userId: args.userId,
+      name: args.name,
+      email: args.email,
+      rating: args.rating,
+      page: args.page,
+      message: args.message,
+      createdAt: Date.now(),
+    });
+  },
+});
+
 export const createUser = mutation({
   args: {
     authId: v.string(),

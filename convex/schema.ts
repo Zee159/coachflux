@@ -53,4 +53,15 @@ export default defineSchema({
     createdAt: v.number(),
     severity: v.union(v.literal("low"), v.literal("med"), v.literal("high")),
   }).index("byOrg", ["orgId"]),
+
+  feedback: defineTable({
+    orgId: v.optional(v.id("orgs")),
+    userId: v.optional(v.id("users")),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    page: v.optional(v.string()),
+    message: v.string(),
+    createdAt: v.number(),
+  }).index("byOrg", ["orgId"]).index("byUser", ["userId"]),
 });
