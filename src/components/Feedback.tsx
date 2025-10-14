@@ -67,55 +67,59 @@ export default function Feedback() {
   }
 
   return (
-    <section id="feedback" className="px-6 py-20 bg-white border-t border-gray-200">
+    <section id="feedback" className="px-6 py-20 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Feedback</h2>
-          <p className="text-gray-600 mt-2">Help us improve by sharing your experience.</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Feedback</h2>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Help us improve by sharing your experience.</p>
         </div>
 
-        <form onSubmit={(e) => { void onSubmit(e); }} className="bg-gradient-to-br from-violet-50 to-fuchsia-50 rounded-2xl p-6 md:p-8 border border-violet-100">
+        <form onSubmit={(e) => { void onSubmit(e); }} className="bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-gray-700 dark:to-gray-600 rounded-2xl p-6 md:p-8 border border-violet-100 dark:border-gray-600">
           {status === "success" && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm">
+            <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-green-800 dark:text-green-200 text-sm">
               Thank you! Your feedback has been received.
             </div>
           )}
           {error !== null && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-200 text-sm">
               {error}
             </div>
           )}
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Name (optional)</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Name (optional)</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 transition-all duration-200 bg-white"
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 dark:focus:ring-violet-400/20 transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 placeholder="Your name"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Email (optional)</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Email (optional)</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 transition-all duration-200 bg-white"
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 dark:focus:ring-violet-400/20 transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 placeholder="you@example.com"
               />
             </div>
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Rating (optional)</label>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Rating (optional)</label>
             <div className="flex gap-2">
               {[1,2,3,4,5].map((r) => (
                 <label
                   key={r}
-                  className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center cursor-pointer ${rating === r ? "border-fuchsia-600 bg-fuchsia-50" : "border-gray-200 bg-white"}`}
+                  className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all ${
+                    rating === r
+                      ? "border-fuchsia-600 bg-fuchsia-50 dark:bg-fuchsia-900/20"
+                      : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  }`}
                 >
                   <input
                     type="radio"
@@ -125,14 +129,16 @@ export default function Feedback() {
                     onChange={() => setRating(r)}
                     className="sr-only"
                   />
-                  {r}
+                  <span className={rating === r ? "text-fuchsia-700 dark:text-fuchsia-300" : "text-gray-700 dark:text-gray-300"}>
+                    {r}
+                  </span>
                 </label>
               ))}
               {rating !== undefined && (
                 <button
                   type="button"
                   onClick={() => setRating(undefined)}
-                  className="ml-2 text-sm text-gray-600 hover:text-gray-800 underline"
+                  className="ml-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 underline"
                 >
                   Clear
                 </button>
@@ -141,11 +147,11 @@ export default function Feedback() {
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Message</label>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Message</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 transition-all duration-200 bg-white min-h-[120px]"
+              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 dark:focus:ring-violet-400/20 transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
               placeholder="Share what's working well or what needs improvement"
             />
           </div>
@@ -154,7 +160,7 @@ export default function Feedback() {
             <button
               type="submit"
               disabled={status === "submitting"}
-              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white py-3 px-6 rounded-xl hover:shadow-xl hover:shadow-violet-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-300 font-semibold flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white py-3 px-6 rounded-xl hover:shadow-xl hover:shadow-violet-500/30 dark:hover:shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-300 font-semibold flex items-center justify-center gap-2"
             >
               {status === "submitting" ? "Sending..." : "Send Feedback"}
             </button>

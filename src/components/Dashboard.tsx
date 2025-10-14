@@ -3,11 +3,14 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useNavigate } from "react-router-dom";
 import { Id } from "../../convex/_generated/dataModel";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Dashboard() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<Id<"users"> | null>(null);
   const [orgId, setOrgId] = useState<Id<"orgs"> | null>(null);
+  const [showContinueModal, setShowContinueModal] = useState(false);
+  const [notification, setNotification] = useState<{ type: "info" | "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("coachflux_demo_user");
@@ -47,10 +50,10 @@ export function Dashboard() {
     // Check for active session before attempting to create
     if (activeSessions.length > 0) {
       const activeSession = activeSessions[0];
-      if (activeSession !== undefined && confirm("You have an active session. Continue where you left off?")) {
-        navigate(`/session/${activeSession._id}`);
+      if (activeSession !== undefined) {
+        setShowContinueModal(true);
+        return;
       }
-      return;
     }
 
     try {
@@ -65,14 +68,14 @@ export function Dashboard() {
       const userMessage = message.includes("already has an active session")
         ? "You have an active session. Please close it first from the Dashboard."
         : "Failed to start session. Please try again or contact support.";
-      alert(userMessage);
+      setNotification({ type: "error", message: userMessage });
     }
   }
 
   if (user === null || user === undefined || org === null || org === undefined) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
       </div>
     );
   }
@@ -82,46 +85,128 @@ export function Dashboard() {
   const openActions = actions?.filter((a) => a.status === "open") ?? [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Notification Toast */}
+      {notification !== null && (
+        <div className="fixed top-4 right-4 z-50 max-w-md animate-slide-in">
+          <div className={`p-4 rounded-xl shadow-lg border-2 ${
+            notification.type === "success" ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" :
+            notification.type === "error" ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800" :
+            "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+          }`}>
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                {notification.type === "success" && (
+                  <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+                {notification.type === "error" && (
+                  <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+                {notification.type === "info" && (
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className={`text-sm ${
+                  notification.type === "success" ? "text-green-800 dark:text-green-200" :
+                  notification.type === "error" ? "text-red-800 dark:text-red-200" :
+                  "text-blue-800 dark:text-blue-200"
+                }`}>{notification.message}</p>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="flex-shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                aria-label="Close notification"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Continue Session Modal */}
+      {showContinueModal && activeSessions.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Continue Active Session?</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              You have an active session in progress. Would you like to continue where you left off?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowContinueModal(false)}
+                className="flex-1 px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-gray-700 dark:text-gray-300"
+              >
+                Start New
+              </button>
+              <button
+                onClick={() => {
+                  const activeSession = activeSessions[0];
+                  if (activeSession !== undefined) {
+                    navigate(`/session/${activeSession._id}`);
+                  }
+                  setShowContinueModal(false);
+                }}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium"
+              >
+                Continue Session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <header className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">CoachFlux</h1>
-              <p className="text-xs sm:text-sm text-gray-600">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">CoachFlux</h1>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                 {user.displayName} · {org.name}
               </p>
             </div>
-            <button
-              onClick={() => void handleStartSession()}
-              className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 text-sm rounded-md hover:bg-indigo-700 transition-colors"
-            >
-              {activeSessions.length > 0 ? "Continue Session" : "New Session"}
-            </button>
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <button
+                onClick={() => void handleStartSession()}
+                className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 text-sm rounded-md hover:bg-indigo-700 transition-colors"
+              >
+                {activeSessions.length > 0 ? "Continue Session" : "New Session"}
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-4 sm:py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-            <div className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+            <div className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
               Total Sessions
             </div>
-            <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
               {sessions?.length ?? 0}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-            <div className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+            <div className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
               Completed
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-green-600">
               {completedSessions.length}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-            <div className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+            <div className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
               Open Actions
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-orange-600">
@@ -131,17 +216,17 @@ export function Dashboard() {
         </div>
 
         {activeSessions.length > 0 && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
-            <h2 className="text-base sm:text-lg font-semibold text-indigo-900 mb-3 sm:mb-2">
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+            <h2 className="text-base sm:text-lg font-semibold text-indigo-900 dark:text-indigo-100 mb-3 sm:mb-2">
               Active Session
             </h2>
             {activeSessions.map((session) => (
               <div key={session._id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
-                  <p className="text-sm sm:text-base text-indigo-700">
+                  <p className="text-sm sm:text-base text-indigo-700 dark:text-indigo-300">
                     Step: <span className="font-medium uppercase">{session.step}</span>
                   </p>
-                  <p className="text-xs sm:text-sm text-indigo-600">
+                  <p className="text-xs sm:text-sm text-indigo-600 dark:text-indigo-400">
                     Started {new Date(session.startedAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -157,9 +242,9 @@ export function Dashboard() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-4 sm:p-6 border-b border-gray-200">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                 Recent Sessions
               </h2>
             </div>
@@ -169,21 +254,21 @@ export function Dashboard() {
                   {sessions.slice(0, 5).map((session) => (
                     <div
                       key={session._id}
-                      className="flex justify-between items-center p-3 bg-gray-50 rounded-md gap-2"
+                      className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md gap-2"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                        <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">
                           {session.framework} - {session.step}
                         </p>
-                        <p className="text-xs sm:text-sm text-gray-600">
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                           {new Date(session.startedAt).toLocaleDateString()}
                         </p>
                       </div>
                       <span
                         className={`px-2 py-1 text-xs font-medium rounded ${
                           session.closedAt !== null && session.closedAt !== undefined
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
                         }`}
                       >
                         {session.closedAt !== null && session.closedAt !== undefined ? "Completed" : "Active"}
@@ -192,14 +277,14 @@ export function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">No sessions yet</p>
+                <p className="text-gray-500 dark:text-gray-400">No sessions yet</p>
               )}
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-4 sm:p-6 border-b border-gray-200">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                 Action Items
               </h2>
             </div>
@@ -209,12 +294,12 @@ export function Dashboard() {
                   {actions.slice(0, 5).map((action) => (
                     <div
                       key={action._id}
-                      className="flex justify-between items-start p-3 bg-gray-50 rounded-md gap-2"
+                      className="flex justify-between items-start p-3 bg-gray-50 dark:bg-gray-700 rounded-md gap-2"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm sm:text-base font-medium text-gray-900 break-words">{action.title}</p>
+                        <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white break-words">{action.title}</p>
                         {action.dueAt !== null && action.dueAt !== undefined && (
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             Due: {new Date(action.dueAt).toLocaleDateString()}
                           </p>
                         )}
@@ -222,8 +307,8 @@ export function Dashboard() {
                       <span
                         className={`px-2 py-1 text-xs font-medium rounded ${
                           action.status === "done"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-orange-100 text-orange-800"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                            : "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
                         }`}
                       >
                         {action.status}
@@ -232,7 +317,7 @@ export function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">No actions yet</p>
+                <p className="text-gray-500 dark:text-gray-400">No actions yet</p>
               )}
             </div>
           </div>

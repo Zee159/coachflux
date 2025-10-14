@@ -218,8 +218,8 @@ export function SessionView() {
 
   if (session === null || session === undefined) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading session...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">Loading session...</div>
       </div>
     );
   }
@@ -344,43 +344,43 @@ export function SessionView() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Notification Toast */}
       {notification !== null && (
         <div className="fixed top-4 right-4 z-50 max-w-md animate-slide-in">
           <div className={`p-4 rounded-xl shadow-lg border-2 ${
-            notification.type === "success" ? "bg-green-50 border-green-200" :
-            notification.type === "error" ? "bg-red-50 border-red-200" :
-            "bg-blue-50 border-blue-200"
+            notification.type === "success" ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" :
+            notification.type === "error" ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800" :
+            "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
           }`}>
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">
                 {notification.type === "success" && (
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 )}
                 {notification.type === "error" && (
-                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 )}
                 {notification.type === "info" && (
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 )}
               </div>
               <div className="flex-1">
                 <p className={`text-sm ${
-                  notification.type === "success" ? "text-green-800" :
-                  notification.type === "error" ? "text-red-800" :
-                  "text-blue-800"
+                  notification.type === "success" ? "text-green-800 dark:text-green-200" :
+                  notification.type === "error" ? "text-red-800 dark:text-red-200" :
+                  "text-blue-800 dark:text-blue-200"
                 }`}>{notification.message}</p>
               </div>
               <button
                 onClick={() => setNotification(null)}
-                className="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                className="flex-shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                 aria-label="Close notification"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -395,13 +395,13 @@ export function SessionView() {
       {/* Close Confirmation Modal */}
       {showCloseConfirm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Close Session?</h3>
-            <p className="text-gray-600 mb-6">Are you sure you want to close this session? This action cannot be undone.</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Close Session?</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">Are you sure you want to close this session? This action cannot be undone.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowCloseConfirm(false)}
-                className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                className="flex-1 px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-gray-700 dark:text-gray-300"
               >
                 Cancel
               </button>
@@ -416,14 +416,14 @@ export function SessionView() {
         </div>
       )}
 
-      <header className="bg-white shadow-sm">
+      <header className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                 CoachFlux Session
               </h1>
-              <p className="text-xs sm:text-sm text-gray-600">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                 {session.framework} Framework · Step:{" "}
                 <span className="uppercase font-medium">{currentStep}</span>
                 {skipCount > 0 && (
@@ -444,7 +444,7 @@ export function SessionView() {
               )}
               <button
                 onClick={() => navigate("/dashboard")}
-                className="flex-1 sm:flex-none px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                className="flex-1 sm:flex-none px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
               >
                 Dashboard
               </button>
@@ -461,19 +461,19 @@ export function SessionView() {
 
       <main className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 lg:px-8 pb-48 sm:pb-52">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <section className="lg:col-span-2 bg-white rounded-lg shadow">
-            <div className="p-6 border-b border-gray-200">
+          <section className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                  <span className="text-indigo-600 font-bold">
+                <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
+                  <span className="text-indigo-600 dark:text-indigo-300 font-bold">
                     {currentStep.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                     {currentStep.charAt(0).toUpperCase() + currentStep.slice(1)}
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {STEP_DESCRIPTIONS[currentStep]}
                   </p>
                 </div>
@@ -486,21 +486,21 @@ export function SessionView() {
                   {reflections.map((reflection) => (
                     <div key={reflection._id} className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-500 uppercase">
+                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                           {reflection.step}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-gray-400 dark:text-gray-500">
                           {new Date(reflection.createdAt).toLocaleTimeString()}
                         </span>
                       </div>
-                      <div className="bg-indigo-50 rounded-lg p-4">
+                      <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
                         {formatReflectionDisplay(reflection.step, reflection.payload as Record<string, unknown>)}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="h-full flex items-center justify-center text-gray-500">
+                <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                   Start by sharing your thoughts below...
                 </div>
               )}
@@ -510,14 +510,14 @@ export function SessionView() {
 
           <aside className="lg:col-span-1 space-y-4">
             {/* Dynamic Coaching Sidebar: Questions or Summary */}
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6 lg:sticky lg:top-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 lg:sticky lg:top-8">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
                   <span className="text-white font-bold text-sm">
                     {currentStep.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <h3 className="font-semibold text-gray-900">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
                   {COACHING_PROMPTS[currentStep].title}
                 </h3>
               </div>
@@ -526,21 +526,21 @@ export function SessionView() {
               {(reflections === null || reflections === undefined || reflections.length === 0) ? (
                 <>
                   <div className="space-y-3 mb-6">
-                    <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                       Coaching Questions
                     </p>
                     <ul className="space-y-2">
                       {COACHING_PROMPTS[currentStep].questions.map((question, _idx) => (
-                        <li key={_idx} className="flex gap-2 text-xs sm:text-sm text-gray-700">
-                          <span className="text-indigo-600 font-semibold">•</span>
+                        <li key={_idx} className="flex gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                          <span className="text-indigo-600 dark:text-indigo-400 font-semibold">•</span>
                           <span>{question}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  <div className="pt-4 border-t border-gray-200">
-                    <p className="text-xs text-gray-600 italic">
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 italic">
                       {currentStep === "goal" ? "Focus on what you want to achieve and why it matters now." : ""}
                       {currentStep === "reality" ? "Describe the facts and current situation without judgment." : ""}
                       {currentStep === "options" ? "Generate multiple possibilities before evaluating them." : ""}
@@ -552,7 +552,7 @@ export function SessionView() {
               ) : (
                 <>
                   <div className="space-y-4">
-                    <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                       Discussion Summary
                     </p>
                     
@@ -568,8 +568,8 @@ export function SessionView() {
                           <div key={reflection._id} className="space-y-3">
                             {/* Show coach's latest reflection */}
                             {typeof coachReflection === 'string' ? (
-                              <div className="bg-indigo-50 border-l-4 border-indigo-600 p-3 rounded-r-lg">
-                                <p className="text-sm text-gray-800 italic">
+                              <div className="bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-600 dark:border-indigo-400 p-3 rounded-r-lg">
+                                <p className="text-sm text-gray-800 dark:text-gray-200 italic">
                                   💬 {coachReflection}
                                 </p>
                               </div>
@@ -586,8 +586,8 @@ export function SessionView() {
                                   if (Array.isArray(value) && value.length > 0) {
                                     return (
                                       <div key={key}>
-                                        <p className="text-xs font-semibold text-indigo-900 mb-1">{label}:</p>
-                                        <ul className="list-disc list-inside space-y-1 text-gray-700">
+                                        <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 mb-1">{label}:</p>
+                                        <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
                                           {value.slice(0, 3).map((item, idx) => {
                                             // Format options
                                             if (typeof item === 'object' && item !== null && 'label' in item) {
@@ -623,8 +623,8 @@ export function SessionView() {
                                   if (typeof value === 'string' && value.length > 0) {
                                     return (
                                       <div key={key}>
-                                        <p className="text-xs font-semibold text-indigo-900 mb-1">{label}:</p>
-                                        <p className="text-xs text-gray-700">
+                                        <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 mb-1">{label}:</p>
+                                        <p className="text-xs text-gray-700 dark:text-gray-300">
                                           {value.substring(0, 100) + (value.length > 100 ? '...' : '')}
                                         </p>
                                       </div>
@@ -639,16 +639,16 @@ export function SessionView() {
                       })}
                   </div>
                   
-                  <div className="pt-4 border-t border-gray-200 mt-4">
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-600 mt-4">
                     <details className="group">
-                      <summary className="text-xs font-medium text-indigo-600 cursor-pointer hover:text-indigo-700 list-none flex items-center gap-2">
+                      <summary className="text-xs font-medium text-indigo-600 dark:text-indigo-400 cursor-pointer hover:text-indigo-700 dark:hover:text-indigo-300 list-none flex items-center gap-2">
                         <span className="transform group-open:rotate-90 transition-transform">▶</span>
                         View All Questions
                       </summary>
                       <ul className="mt-3 space-y-2">
                         {COACHING_PROMPTS[currentStep].questions.map((question, _idx) => (
-                          <li key={_idx} className="flex gap-2 text-xs text-gray-600">
-                            <span className="text-indigo-600 font-semibold">•</span>
+                          <li key={_idx} className="flex gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <span className="text-indigo-600 dark:text-indigo-400 font-semibold">•</span>
                             <span>{question}</span>
                           </li>
                         ))}
@@ -660,8 +660,8 @@ export function SessionView() {
             </div>
 
             {/* GROW Progress */}
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
                 GROW Progress
               </h3>
               <div className="space-y-2">
@@ -671,21 +671,21 @@ export function SessionView() {
                       key={step}
                       className={`p-3 rounded-md transition-all ${
                         currentStep === step
-                          ? "bg-indigo-100 border-2 border-indigo-600"
-                          : "bg-gray-50"
+                          ? "bg-indigo-100 dark:bg-indigo-900/50 border-2 border-indigo-600"
+                          : "bg-gray-50 dark:bg-gray-700"
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         {currentStep === step ? (
                           <div className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse" />
                         ) : (
-                          <div className="w-2 h-2 bg-gray-400 rounded-full" />
+                          <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full" />
                         )}
                         <span
                           className={`text-sm font-medium ${
                             currentStep === step
-                              ? "text-indigo-900"
-                              : "text-gray-700"
+                              ? "text-indigo-900 dark:text-indigo-100"
+                              : "text-gray-700 dark:text-gray-300"
                           }`}
                         >
                           {step.charAt(0).toUpperCase() + step.slice(1)}
@@ -696,8 +696,8 @@ export function SessionView() {
                 )}
               </div>
 
-              <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-yellow-50 rounded-md">
-                <p className="text-xs sm:text-xs text-gray-700">
+              <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-md">
+                <p className="text-xs sm:text-xs text-gray-700 dark:text-gray-300">
                   <strong>Note:</strong> This is a reflection tool, not therapy.
                   For urgent matters, contact HR or a healthcare professional.
                 </p>
@@ -708,7 +708,7 @@ export function SessionView() {
       </main>
 
       {/* Fixed Input Box at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-40">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="py-3">
             <div className="max-w-4xl">
@@ -725,7 +725,7 @@ export function SessionView() {
                       }
                     }}
                     placeholder={`Share your thoughts for the ${currentStep ?? 'current'} step...`}
-                    className="w-full pl-3 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-sm"
+                    className="w-full pl-3 pr-12 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 resize-none text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     rows={2}
                     disabled={submitting}
                     maxLength={800}
@@ -734,7 +734,7 @@ export function SessionView() {
                   <button
                     onClick={() => void handleSubmit()}
                     disabled={text.trim() === '' || submitting}
-                    className="absolute right-2 bottom-2 p-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    className="absolute right-2 bottom-2 p-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
                     title="Send (Enter)"
                   >
                     {submitting ? (
@@ -755,7 +755,7 @@ export function SessionView() {
                   <button
                     onClick={() => void handleSkip()}
                     disabled={submitting}
-                    className="px-3 py-2 text-xs bg-orange-50 text-orange-700 rounded-md hover:bg-orange-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors border border-orange-200"
+                    className="px-3 py-2 text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-md hover:bg-orange-100 dark:hover:bg-orange-800/30 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed transition-colors border border-orange-200 dark:border-orange-800"
                     title={`Skip this question (${2 - skipCount} skips remaining)`}
                   >
                     Skip
@@ -764,7 +764,7 @@ export function SessionView() {
               </div>
               
               {/* Footer info */}
-              <div className="mt-1.5 flex justify-between text-xs text-gray-500 px-1">
+              <div className="mt-1.5 flex justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
                 <span>
                   {canSkip ? `${2 - skipCount} skip${2 - skipCount === 1 ? '' : 's'} available` : 'No skips remaining'}
                 </span>
