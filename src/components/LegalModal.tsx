@@ -74,6 +74,16 @@ export function LegalModal({ isOpen, onAccept, onDecline }: LegalModalProps) {
           </div>
         </div>
 
+        {/* Document Info Banner */}
+        <div className="mx-6 mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
+          <p className="text-blue-900 dark:text-blue-200">
+            <strong>Full Policy:</strong> For complete Privacy Policy, see <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">PRIVACY_POLICY.md</code> in the project repository.
+          </p>
+          <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+            Last Updated: October 14, 2025 • Version 1.0 (Development Prototype)
+          </p>
+        </div>
+
         {/* Tabs */}
         <div className="flex gap-2 px-6 mt-4 border-b border-gray-200 dark:border-gray-700">
           <button

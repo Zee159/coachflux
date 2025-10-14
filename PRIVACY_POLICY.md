@@ -1,7 +1,8 @@
 # Privacy Policy
 
 **Last Updated:** October 14, 2025  
-**Version:** 1.0 (Development Prototype)
+**Version:** 1.0 (Development Prototype)  
+**Applicable Jurisdictions:** International, UK, EU, Australia
 
 ---
 
@@ -21,16 +22,31 @@ This Privacy Policy explains how CoachFlux ("we", "us", "our") collects, uses, s
 For the purposes of data protection law, the data controller is:
 - **Organisation**: CoachFlux Development Team
 - **Contact**: [Your contact email]
-- **Jurisdiction**: England and Wales (or your jurisdiction)
+- **Primary Jurisdiction**: International (multi-jurisdiction compliance)
 
-### 1.4 Your Rights
-You have rights regarding your personal data under UK GDPR and Data Protection Act 2018, including:
+### 1.4 Applicable Privacy Laws
+This Privacy Policy is designed to comply with:
+- **UK**: UK GDPR and Data Protection Act 2018
+- **EU**: General Data Protection Regulation (GDPR)
+- **Australia**: Privacy Act 1988 (Cth) and Australian Privacy Principles (APPs)
+- **International**: Best practices for global data protection
+
+### 1.5 Your Rights
+
+**Under UK/EU GDPR:**
 - Right to access your data
 - Right to rectification
 - Right to erasure ("right to be forgotten")
 - Right to restrict processing
 - Right to data portability
 - Right to object
+- Right to lodge a complaint with supervisory authority
+
+**Under Australian Privacy Act:**
+- Right to access your personal information (APP 12)
+- Right to correct your personal information (APP 13)
+- Right to complain to the Office of the Australian Information Commissioner (OAIC)
+- Right to request deletion of personal information (in certain circumstances)
 
 ---
 
@@ -319,8 +335,46 @@ For processing based on consent (e.g., feedback), you can withdraw consent at an
 
 ### 7.8 Right to Lodge a Complaint
 If you believe we have mishandled your data, you can complain to:
-- **UK**: Information Commissioner's Office (ICO) - https://ico.org.uk/
+- **UK**: Information Commissioner's Office (ICO) - https://ico.org.uk/ | Phone: 0303 123 1113
 - **EU**: Your local data protection authority
+- **Australia**: Office of the Australian Information Commissioner (OAIC) - https://www.oaic.gov.au/ | Phone: 1300 363 992
+
+### 7.9 Australian Privacy Principles (APPs) Compliance
+
+**APP 1 (Open and Transparent Management):**
+- This Privacy Policy is openly available
+- We clearly explain our data practices
+- Contact information provided for inquiries
+
+**APP 3 (Collection of Solicited Personal Information):**
+- We only collect information necessary for coaching functionality
+- Collection is reasonably necessary for our functions
+- We do not collect sensitive information (as defined by Australian Privacy Act)
+
+**APP 5 (Notification of Collection):**
+- We notify you of data collection through this Privacy Policy
+- We explain why we collect data and how it will be used
+- We identify third-party recipients (Convex, Anthropic)
+
+**APP 6 (Use or Disclosure):**
+- We only use personal information for the primary purpose (coaching services)
+- We do not sell or trade personal information
+- Third-party disclosure is limited to service providers
+
+**APP 8 (Cross-Border Disclosure):**
+- Your data may be disclosed to Anthropic (United States)
+- We take reasonable steps to ensure overseas recipients comply with APPs
+- See Section 9 (International Data Transfers) for details
+
+**APP 11 (Security):**
+- We implement reasonable security measures (encryption, access controls)
+- See Section 6 (Data Security) for details
+- We acknowledge prototype limitations
+
+**APP 12 (Access) & APP 13 (Correction):**
+- You can request access to your personal information
+- You can request correction of inaccurate information
+- See Sections 7.1 and 7.2 for how to exercise these rights
 
 ---
 

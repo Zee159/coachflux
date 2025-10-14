@@ -1,7 +1,8 @@
 # Terms of Service
 
 **Last Updated:** October 14, 2025  
-**Version:** 1.0 (Development Prototype)
+**Version:** 1.0 (Development Prototype)  
+**Applicable Jurisdictions:** International, UK, EU, Australia
 
 ---
 
@@ -67,6 +68,7 @@ Users must NOT use CoachFlux for:
 If you are experiencing a mental health crisis or emergency:
 - **UK**: Call Samaritans at 116 123 or text SHOUT to 85258
 - **US**: Call 988 Suicide & Crisis Lifeline
+- **Australia**: Call Lifeline at 13 11 14 or Beyond Blue at 1300 22 4636
 - **International**: Contact your local emergency services
 
 For workplace conflicts involving harassment, discrimination, or legal issues, consult your HR department or legal counsel.
@@ -272,26 +274,45 @@ You may terminate your use at any time by:
 ## 10. COMPLIANCE & LEGAL
 
 ### 10.1 Applicable Law
-These Terms are governed by the laws of England and Wales (or your jurisdiction).
+These Terms are governed by:
+- **International Users**: Laws of your local jurisdiction
+- **UK Users**: Laws of England and Wales
+- **EU Users**: EU law and local member state law
+- **Australian Users**: Australian Consumer Law and applicable state/territory laws
 
 ### 10.2 Data Protection
 We aim to comply with:
-- UK GDPR and Data Protection Act 2018
-- EU GDPR (where applicable)
-- Other applicable data protection regulations
+- **UK**: UK GDPR and Data Protection Act 2018
+- **EU**: General Data Protection Regulation (GDPR)
+- **Australia**: Privacy Act 1988 (Cth) and Australian Privacy Principles (APPs)
+- **International**: Best practices for global data protection
 
 **Note**: As a prototype, full compliance measures are still being implemented.
 
-### 10.3 AI Regulations
-We are monitoring and preparing for:
-- EU AI Act requirements (transparency, human oversight, audit logs)
-- UK AI regulation developments
-- Industry best practices for responsible AI
+### 10.3 Australian Consumer Law (ACL)
+For Australian users, nothing in these Terms excludes, restricts, or modifies any consumer guarantee, right, or remedy under the Australian Consumer Law that cannot be excluded, restricted, or modified by agreement.
 
-### 10.4 Dispute Resolution
-For any disputes:
+### 10.4 AI Regulations
+We are monitoring and preparing for:
+- **EU**: AI Act requirements (transparency, human oversight, audit logs)
+- **UK**: AI regulation developments
+- **Australia**: Voluntary AI Ethics Framework
+- **International**: Industry best practices for responsible AI
+
+### 10.5 Dispute Resolution
+
+**Informal Resolution (All Jurisdictions):**
 1. Contact the development team to resolve informally
-2. If unresolved, disputes will be subject to the jurisdiction of England and Wales
+2. We will respond within 14 business days
+
+**Formal Dispute Resolution:**
+- **UK/EU Users**: Disputes subject to jurisdiction of England and Wales
+- **Australian Users**: Disputes subject to jurisdiction of Australian courts
+- **Other International Users**: Disputes subject to your local jurisdiction
+
+**Australian Users - Alternative Dispute Resolution:**
+- You may lodge a complaint with the Office of the Australian Information Commissioner (OAIC) for privacy-related disputes
+- You may access industry ombudsman schemes if applicable
 
 ---
 
