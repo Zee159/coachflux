@@ -222,7 +222,7 @@ export function DemoSetup() {
                       value={orgName}
                       onChange={(e) => setOrgName(e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 dark:focus:ring-violet-400/20 transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                      placeholder="Use a dummy organisation"
+                      placeholder="e.g., Acme Corp, Tech Startup, etc."
                     />
                   </div>
 
@@ -235,7 +235,7 @@ export function DemoSetup() {
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 dark:focus:ring-violet-400/20 transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                      placeholder="Use a dummy name"
+                      placeholder="Your first name or nickname"
                     />
                   </div>
 
@@ -287,7 +287,7 @@ export function DemoSetup() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                      <strong className="text-gray-900 dark:text-white">Use dummy data only</strong> - do not enter real personal information
+                      <strong className="text-gray-900 dark:text-white">Use real scenarios</strong> - reflect on actual leadership experiences, but avoid sensitive personal details
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
