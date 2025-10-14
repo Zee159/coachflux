@@ -184,6 +184,7 @@ export function SessionView() {
   const [showReport, setShowReport] = useState(false);
   const [notification, setNotification] = useState<{ type: "info" | "success" | "error"; message: string } | null>(null);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showMobileCoaching, setShowMobileCoaching] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const session = useQuery(
@@ -462,7 +463,7 @@ export function SessionView() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 lg:px-8 pb-48 sm:pb-52">
+      <main className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 lg:px-8 pb-32 sm:pb-40 lg:pb-48">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <section className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -511,7 +512,23 @@ export function SessionView() {
             </div>
           </section>
 
-          <aside className="lg:col-span-1 space-y-4">
+          {/* Mobile Coaching Toggle Button */}
+          <button
+            onClick={() => setShowMobileCoaching(!showMobileCoaching)}
+            className="lg:hidden w-full mb-4 px-4 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition-colors flex items-center justify-between"
+          >
+            <span className="font-medium">💡 Coaching Questions</span>
+            <svg
+              className={`w-5 h-5 transform transition-transform ${showMobileCoaching ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <aside className={`lg:col-span-1 space-y-4 ${showMobileCoaching ? 'block' : 'hidden lg:block'}`}>
             {/* Dynamic Coaching Sidebar: Questions or Summary */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 lg:sticky lg:top-8">
               <div className="flex items-center gap-2 mb-4">
@@ -712,8 +729,8 @@ export function SessionView() {
 
       {/* Fixed Input Box at Bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-40">
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-          <div className="py-3">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="py-2 sm:py-3">
             <div className="max-w-4xl">
               <div className="flex gap-2 items-end">
                 {/* Input with inline send button */}
@@ -726,6 +743,12 @@ export function SessionView() {
                         e.preventDefault();
                         void handleSubmit();
                       }
+                    }}
+                    onFocus={(e) => {
+                      // Scroll input into view on mobile when keyboard appears
+                      setTimeout(() => {
+                        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 300);
                     }}
                     placeholder={`Share your thoughts for the ${currentStep ?? 'current'} step...`}
                     className="w-full pl-3 pr-12 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 resize-none text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
@@ -758,7 +781,7 @@ export function SessionView() {
                   <button
                     onClick={() => void handleSkip()}
                     disabled={submitting}
-                    className="px-3 py-2 text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-md hover:bg-orange-100 dark:hover:bg-orange-800/30 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed transition-colors border border-orange-200 dark:border-orange-800"
+                    className="px-2 sm:px-3 py-2 text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-md hover:bg-orange-100 dark:hover:bg-orange-800/30 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed transition-colors border border-orange-200 dark:border-orange-800 whitespace-nowrap"
                     title={`Skip this question (${2 - skipCount} skips remaining)`}
                   >
                     Skip
@@ -767,9 +790,12 @@ export function SessionView() {
               </div>
               
               {/* Footer info */}
-              <div className="mt-1.5 flex justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
-                <span>
+              <div className="mt-1 sm:mt-1.5 flex justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
+                <span className="hidden sm:inline">
                   {canSkip ? `${2 - skipCount} skip${2 - skipCount === 1 ? '' : 's'} available` : 'No skips remaining'}
+                </span>
+                <span className="sm:hidden">
+                  {canSkip ? `${2 - skipCount} skip${2 - skipCount === 1 ? '' : 's'}` : 'No skips'}
                 </span>
                 <span>{text.length}/800</span>
               </div>
