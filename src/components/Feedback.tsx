@@ -113,15 +113,20 @@ export default function Feedback() {
             <label className="block text-sm font-semibold text-gray-700 mb-2">Rating (optional)</label>
             <div className="flex gap-2">
               {[1,2,3,4,5].map((r) => (
-                <button
+                <label
                   key={r}
-                  type="button"
-                  onClick={() => setRating(r)}
-                  className={`w-10 h-10 rounded-lg border-2 ${rating === r ? "border-fuchsia-600 bg-fuchsia-50" : "border-gray-200 bg-white"}`}
-                  aria-pressed={rating === r}
+                  className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center cursor-pointer ${rating === r ? "border-fuchsia-600 bg-fuchsia-50" : "border-gray-200 bg-white"}`}
                 >
+                  <input
+                    type="radio"
+                    name="rating"
+                    value={r}
+                    checked={rating === r}
+                    onChange={() => setRating(r)}
+                    className="sr-only"
+                  />
                   {r}
-                </button>
+                </label>
               ))}
               {rating !== undefined && (
                 <button

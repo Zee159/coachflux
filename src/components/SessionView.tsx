@@ -180,6 +180,8 @@ export function SessionView() {
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [notification, setNotification] = useState<{ type: "info" | "success" | "error"; message: string } | null>(null);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const session = useQuery(
@@ -252,12 +254,12 @@ export function SessionView() {
 
     // Check if session is already closed
     if (session.closedAt !== null && session.closedAt !== undefined) {
-      alert("This session has been completed. Please view your report or start a new session.");
+      setNotification({ type: "info", message: "This session has been completed. Please view your report or start a new session." });
       return;
     }
 
     if (inputText.length > 800) {
-      alert("Please keep your response under 800 characters (currently " + inputText.length + " characters).");
+      setNotification({ type: "error", message: `Please keep your response under 800 characters (currently ${inputText.length} characters).` });
       return;
     }
 
@@ -276,12 +278,12 @@ export function SessionView() {
         });
 
         if (!result.ok) {
-          alert(result.message ?? "Unable to process your input. Please try rephrasing.");
+          setNotification({ type: "error", message: result.message ?? "Unable to process your input. Please try rephrasing." });
           break;
         } else {
           setText("");
           if (result.sessionClosed === true) {
-            alert("🎉 Coaching session complete! Your report is now ready.");
+            setNotification({ type: "success", message: "🎉 Coaching session complete! Your report is now ready." });
           }
           break;
         }
@@ -301,7 +303,7 @@ export function SessionView() {
           ? "Session error. Please return to dashboard and try again."
           : "Connection failed after multiple attempts. Please check your internet and try again.";
         
-        alert(userMessage);
+        setNotification({ type: "error", message: userMessage });
         break;
       }
     }
@@ -321,22 +323,99 @@ export function SessionView() {
       await handleSubmit("I'd like to skip this specific question for now. Can we explore this from a different angle?");
     } catch (error: unknown) {
       console.error("Skip error:", error);
-      alert("Failed to skip question. Please try again.");
+      setNotification({ type: "error", message: "Failed to skip question. Please try again." });
     }
   }
 
-  async function handleCloseSession(): Promise<void> {
+  function handleCloseSession(): void {
     if (session === null || session === undefined) {
       return;
     }
-    if (confirm("Are you sure you want to close this session?")) {
-      await closeSession({ sessionId: session._id });
-      navigate("/dashboard");
+    setShowCloseConfirm(true);
+  }
+
+  async function confirmCloseSession(): Promise<void> {
+    if (session === null || session === undefined) {
+      return;
     }
+    setShowCloseConfirm(false);
+    await closeSession({ sessionId: session._id });
+    navigate("/dashboard");
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Notification Toast */}
+      {notification !== null && (
+        <div className="fixed top-4 right-4 z-50 max-w-md animate-slide-in">
+          <div className={`p-4 rounded-xl shadow-lg border-2 ${
+            notification.type === "success" ? "bg-green-50 border-green-200" :
+            notification.type === "error" ? "bg-red-50 border-red-200" :
+            "bg-blue-50 border-blue-200"
+          }`}>
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                {notification.type === "success" && (
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+                {notification.type === "error" && (
+                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+                {notification.type === "info" && (
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className={`text-sm ${
+                  notification.type === "success" ? "text-green-800" :
+                  notification.type === "error" ? "text-red-800" :
+                  "text-blue-800"
+                }`}>{notification.message}</p>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                aria-label="Close notification"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Close Confirmation Modal */}
+      {showCloseConfirm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Close Session?</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to close this session? This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCloseConfirm(false)}
+                className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void confirmCloseSession()}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium"
+              >
+                Close Session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -370,7 +449,7 @@ export function SessionView() {
                 Dashboard
               </button>
               <button
-                onClick={() => void handleCloseSession()}
+                onClick={handleCloseSession}
                 className="flex-1 sm:flex-none px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
               >
                 Close
@@ -478,8 +557,8 @@ export function SessionView() {
                     </p>
                     
                     {/* Show summary of current step reflections */}
-                    {reflections !== null && reflections !== undefined && reflections
-                      .filter((r) => r.step === currentStep)
+                    {reflections
+                      ?.filter((r) => r.step === currentStep)
                       .slice(-1)
                       .map((reflection) => {
                         const payload = reflection.payload as Record<string, unknown>;
