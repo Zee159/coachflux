@@ -4,6 +4,7 @@ import { useQuery, useAction, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { SessionReport } from "./SessionReport";
+import { ThemeToggle } from "./ThemeToggle";
 
 type StepName = "goal" | "reality" | "options" | "will" | "review";
 
@@ -18,8 +19,8 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
     <div className="space-y-4">
       {/* Coach Reflection - displayed first with special styling */}
       {coachReflection !== undefined && (
-        <div className="bg-white border-l-4 border-indigo-600 p-3 rounded-r-lg">
-          <p className="text-sm text-gray-800 italic leading-relaxed">
+        <div className="bg-white dark:bg-gray-700 border-l-4 border-indigo-600 dark:border-indigo-400 p-3 rounded-r-lg">
+          <p className="text-sm text-gray-800 dark:text-gray-200 italic leading-relaxed">
             💬 {String(coachReflection[1])}
           </p>
         </div>
@@ -33,7 +34,7 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
           if (Array.isArray(value)) {
             return (
               <div key={key}>
-                <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wide mb-1">
+                <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 uppercase tracking-wide mb-1">
                   {label}
                 </p>
                 <ul className="list-disc list-inside space-y-1">
@@ -42,15 +43,15 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
                     if (typeof item === 'object' && item !== null && 'label' in item) {
                       const option = item as { label: string; pros?: string[]; cons?: string[] };
                       return (
-                        <li key={idx} className="text-sm text-gray-700">
+                        <li key={idx} className="text-sm text-gray-700 dark:text-gray-300">
                           <span className="font-medium">{option.label}</span>
                           {(option.pros !== null && option.pros !== undefined && option.pros.length > 0) && (
-                            <div className="ml-4 mt-1 text-xs text-green-700">
+                            <div className="ml-4 mt-1 text-xs text-green-700 dark:text-green-400">
                               ✓ {option.pros.join(', ')}
                             </div>
                           )}
                           {(option.cons !== null && option.cons !== undefined && option.cons.length > 0) && (
-                            <div className="ml-4 text-xs text-red-700">
+                            <div className="ml-4 text-xs text-red-700 dark:text-red-400">
                               ✗ {option.cons.join(', ')}
                             </div>
                           )}
@@ -61,16 +62,16 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
                     if (typeof item === 'object' && item !== null && 'title' in item) {
                       const action = item as { title: string; owner?: string; due_days?: number };
                       return (
-                        <li key={idx} className="text-sm text-gray-700">
+                        <li key={idx} className="text-sm text-gray-700 dark:text-gray-300">
                           <span className="font-medium">{action.title}</span>
-                          {(action.owner !== null && action.owner !== undefined && action.owner.length > 0) && <span className="text-xs text-gray-600"> (Owner: {action.owner})</span>}
-                          {(action.due_days !== null && action.due_days !== undefined && action.due_days > 0) && <span className="text-xs text-gray-600"> • Due in {action.due_days} days</span>}
+                          {(action.owner !== null && action.owner !== undefined && action.owner.length > 0) && <span className="text-xs text-gray-600 dark:text-gray-400"> (Owner: {action.owner})</span>}
+                          {(action.due_days !== null && action.due_days !== undefined && action.due_days > 0) && <span className="text-xs text-gray-600 dark:text-gray-400"> • Due in {action.due_days} days</span>}
                         </li>
                       );
                     }
                     // Default: simple string
                     return (
-                      <li key={idx} className="text-sm text-gray-700">
+                      <li key={idx} className="text-sm text-gray-700 dark:text-gray-300">
                         {String(item)}
                       </li>
                     );
@@ -83,10 +84,10 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
           if (typeof value === 'object' && value !== null) {
             return (
               <div key={key}>
-                <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wide mb-1">
+                <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 uppercase tracking-wide mb-1">
                   {label}
                 </p>
-                <div className="text-sm text-gray-700 pl-4 space-y-1">
+                <div className="text-sm text-gray-700 dark:text-gray-300 pl-4 space-y-1">
                   {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
                     <div key={k}>
                       <span className="font-medium">{k}:</span> {String(v)}
@@ -99,10 +100,10 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
           
           return (
             <div key={key}>
-              <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wide mb-1">
+              <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 uppercase tracking-wide mb-1">
                 {label}
               </p>
-              <p className="text-sm text-gray-700">{String(value)}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{String(value)}</p>
             </div>
           );
         })}
@@ -427,13 +428,14 @@ export function SessionView() {
                 {session.framework} Framework · Step:{" "}
                 <span className="uppercase font-medium">{currentStep}</span>
                 {skipCount > 0 && (
-                  <span className="ml-2 text-xs text-orange-600">
+                  <span className="ml-2 text-xs text-orange-600 dark:text-orange-400">
                     ({skipCount}/2 skips used)
                   </span>
                 )}
               </p>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex gap-2 w-full sm:w-auto items-center">
+              <ThemeToggle />
               {isSessionComplete === true && (
                 <button
                   onClick={() => setShowReport(true)}
