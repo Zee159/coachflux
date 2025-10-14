@@ -12,6 +12,7 @@ export function FeedbackWidget({ sessionId }: FeedbackWidgetProps) {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Form state
   const [overallRating, setOverallRating] = useState<number | undefined>(undefined);
@@ -49,6 +50,7 @@ export function FeedbackWidget({ sessionId }: FeedbackWidgetProps) {
     setWillingToPay("");
     setImprovements("");
     setSubmitted(false);
+    setError(null);
   }
 
   function handleClose() {
@@ -58,6 +60,7 @@ export function FeedbackWidget({ sessionId }: FeedbackWidgetProps) {
 
   async function handleSubmit() {
     setSubmitting(true);
+    setError(null);
     try {
       await createFeedback({
         orgId: (orgIdStr !== null && orgIdStr.length > 0) ? (orgIdStr as Id<"orgs">) : undefined,
@@ -72,12 +75,13 @@ export function FeedbackWidget({ sessionId }: FeedbackWidgetProps) {
         improvements: improvements.length > 0 ? improvements : undefined,
       });
       setSubmitted(true);
+      setSubmitting(false);
       setTimeout(() => {
         handleClose();
-      }, 2000);
-    } catch (error) {
-      console.error("Failed to submit feedback:", error);
-    } finally {
+      }, 2500);
+    } catch (err) {
+      console.error("Failed to submit feedback:", err);
+      setError("Failed to submit feedback. Please try again.");
       setSubmitting(false);
     }
   }
@@ -155,15 +159,21 @@ export function FeedbackWidget({ sessionId }: FeedbackWidgetProps) {
 
             {/* Content */}
             <div className="p-6">
+              {error !== null && (
+                <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200 text-sm">
+                  {error}
+                </div>
+              )}
               {submitted ? (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <div className="text-center py-12 animate-fade-in">
+                  <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-bounce">
+                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Thank you!</h4>
-                  <p className="text-gray-600 dark:text-gray-300">Your feedback helps us improve.</p>
+                  <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Thank You! 🎉</h4>
+                  <p className="text-lg text-gray-600 dark:text-gray-300 mb-1">Your feedback is valuable to us.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">This window will close automatically...</p>
                 </div>
               ) : (
                 <>
