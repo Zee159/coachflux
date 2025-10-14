@@ -60,47 +60,6 @@ export function LegalModal({ isOpen, onAccept, onDecline }: LegalModalProps) {
             </div>
           </div>
 
-          {/* Document Links */}
-          <div className="space-y-4 mb-6">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
-                📄 Terms of Service
-              </h3>
-              <p className="text-sm text-blue-800 dark:text-blue-300 mb-3">
-                Please review our Terms of Service before continuing. This document outlines your rights, 
-                responsibilities, and the scope of CoachFlux.
-              </p>
-              <a
-                href="https://github.com/Zee159/coachflux/blob/main/TERMS_OF_SERVICE.md"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
-              >
-                Read Terms of Service
-                <span>→</span>
-              </a>
-            </div>
-
-            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
-              <h3 className="font-semibold text-purple-900 dark:text-purple-200 mb-2">
-                🔒 Privacy Policy
-              </h3>
-              <p className="text-sm text-purple-800 dark:text-purple-300 mb-3">
-                Please review our Privacy Policy to understand how we collect, use, and protect your data. 
-                Compliant with UK GDPR, EU GDPR, and Australian Privacy Act.
-              </p>
-              <a
-                href="https://github.com/Zee159/coachflux/blob/main/PRIVACY_POLICY.md"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline"
-              >
-                Read Privacy Policy
-                <span>→</span>
-              </a>
-            </div>
-          </div>
-
           {/* Checkboxes */}
           <div className="space-y-4 mb-6">
             <label className="flex items-start gap-3 cursor-pointer group">
@@ -111,7 +70,16 @@ export function LegalModal({ isOpen, onAccept, onDecline }: LegalModalProps) {
                 className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                I have read and agree to the <strong>Terms of Service</strong>
+                I have read and agree to the{" "}
+                <a
+                  href="https://github.com/Zee159/coachflux/blob/main/TERMS_OF_SERVICE.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Terms of Service
+                </a>
               </span>
             </label>
             
@@ -123,7 +91,16 @@ export function LegalModal({ isOpen, onAccept, onDecline }: LegalModalProps) {
                 className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                I have read and agree to the <strong>Privacy Policy</strong>
+                I have read and agree to the{" "}
+                <a
+                  href="https://github.com/Zee159/coachflux/blob/main/PRIVACY_POLICY.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Privacy Policy
+                </a>
               </span>
             </label>
 
