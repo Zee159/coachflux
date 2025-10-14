@@ -184,7 +184,6 @@ export function SessionView() {
   const [showReport, setShowReport] = useState(false);
   const [notification, setNotification] = useState<{ type: "info" | "success" | "error"; message: string } | null>(null);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-  const [showMobileCoaching, setShowMobileCoaching] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const session = useQuery(
@@ -512,23 +511,7 @@ export function SessionView() {
             </div>
           </section>
 
-          {/* Mobile Coaching Toggle Button */}
-          <button
-            onClick={() => setShowMobileCoaching(!showMobileCoaching)}
-            className="lg:hidden w-full mb-4 px-4 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition-colors flex items-center justify-between"
-          >
-            <span className="font-medium">💡 Coaching Questions</span>
-            <svg
-              className={`w-5 h-5 transform transition-transform ${showMobileCoaching ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          <aside className={`lg:col-span-1 space-y-4 ${showMobileCoaching ? 'block' : 'hidden lg:block'}`}>
+          <aside className="hidden lg:block lg:col-span-1 space-y-4">
             {/* Dynamic Coaching Sidebar: Questions or Summary */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 lg:sticky lg:top-8">
               <div className="flex items-center gap-2 mb-4">
