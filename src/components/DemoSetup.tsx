@@ -18,9 +18,9 @@ export function DemoSetup() {
   const createUser = useMutation(api.mutations.createUser);
   const acceptLegal = useMutation(api.mutations.acceptLegalTerms);
 
-  async function handleSetup() {
+  async function handleSetup(skipLegalCheck = false) {
     // Check if legal terms accepted
-    if (!legalAccepted) {
+    if (!skipLegalCheck && !legalAccepted) {
       setShowLegalModal(true);
       return;
     }
@@ -69,11 +69,10 @@ export function DemoSetup() {
     setLegalAccepted(true);
     setShowLegalModal(false);
     // Automatically proceed with setup after accepting
-    setTimeout(() => {
-      if (orgName !== "" && displayName !== "") {
-        void handleSetup();
-      }
-    }, 100);
+    // Skip legal check since we just accepted
+    if (orgName !== "" && displayName !== "") {
+      void handleSetup(true); // Pass true to skip legal check
+    }
   }
 
   function handleLegalDecline() {
