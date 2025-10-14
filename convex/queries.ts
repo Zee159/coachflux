@@ -75,3 +75,14 @@ export const getOrgSafetyIncidents = query({
       .collect();
   },
 });
+
+export const checkLegalConsent = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (user === null || user === undefined) {
+      return null;
+    }
+    return user.legalConsent ?? null;
+  },
+});

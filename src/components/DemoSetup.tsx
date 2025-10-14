@@ -3,18 +3,28 @@ import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
+import { LegalModal } from "./LegalModal";
 
 export function DemoSetup() {
   const [orgName, setOrgName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState(false);
   const navigate = useNavigate();
 
   const createOrg = useMutation(api.mutations.createOrg);
   const createUser = useMutation(api.mutations.createUser);
+  const acceptLegal = useMutation(api.mutations.acceptLegalTerms);
 
   async function handleSetup() {
+    // Check if legal terms accepted
+    if (!legalAccepted) {
+      setShowLegalModal(true);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -36,6 +46,13 @@ export function DemoSetup() {
         displayName,
       });
 
+      // Record legal consent
+      await acceptLegal({
+        userId,
+        termsVersion: "1.0",
+        privacyVersion: "1.0",
+      });
+
       localStorage.setItem("coachflux_demo_org", orgId);
       localStorage.setItem("coachflux_demo_user", userId);
 
@@ -46,6 +63,22 @@ export function DemoSetup() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleLegalAccept() {
+    setLegalAccepted(true);
+    setShowLegalModal(false);
+    // Automatically proceed with setup after accepting
+    setTimeout(() => {
+      if (orgName !== "" && displayName !== "") {
+        void handleSetup();
+      }
+    }, 100);
+  }
+
+  function handleLegalDecline() {
+    setShowLegalModal(false);
+    setError("You must accept the Terms of Service and Privacy Policy to use CoachFlux.");
   }
 
   function scrollToSection(id: string) {
@@ -432,6 +465,13 @@ export function DemoSetup() {
           </div>
         </div>
       </section>
+
+      {/* Legal Modal */}
+      <LegalModal
+        isOpen={showLegalModal}
+        onAccept={handleLegalAccept}
+        onDecline={handleLegalDecline}
+      />
     </div>
   );
 }

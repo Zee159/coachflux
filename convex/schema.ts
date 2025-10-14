@@ -12,6 +12,13 @@ export default defineSchema({
     orgId: v.id("orgs"),
     role: v.union(v.literal("admin"), v.literal("manager"), v.literal("member")),
     displayName: v.string(),
+    legalConsent: v.optional(v.object({
+      termsAccepted: v.boolean(),
+      privacyAccepted: v.boolean(),
+      acceptedAt: v.number(),
+      termsVersion: v.string(),
+      privacyVersion: v.string(),
+    })),
   }).index("byAuth", ["authId"]),
 
   sessions: defineTable({

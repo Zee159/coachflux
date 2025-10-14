@@ -279,11 +279,11 @@ GROW conversations can facilitate shifts at **all levels**, from basic knowledge
 
 ## 📚 Methodology Source
 
-Based on **Oisín Performance Coaching** methodology:
-- Evidence-based coaching framework
-- "Life Without Barriers" philosophy
-- 4 Pillars of Sustained Performance: **Align, Engage, Enable, Build Accountability**
-- Professional coaching certification standards
+CoachFlux uses **established coaching frameworks**:
+- **GROW Model**: Goal, Reality, Options, Will (developed by Sir John Whitmore and colleagues)
+- **CLEAR Model**: Contracting, Listening, Exploring, Action, Review (developed by Peter Hawkins)
+- **Coaching Principles**: Focus on self-responsibility, awareness, and action-oriented reflection
+- **AI Facilitation**: Claude Sonnet 4 for structured conversational coaching
 
 ---
 

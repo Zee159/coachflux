@@ -225,3 +225,22 @@ export const incrementSkipCount = mutation({
     });
   },
 });
+
+export const acceptLegalTerms = mutation({
+  args: {
+    userId: v.id("users"),
+    termsVersion: v.string(),
+    privacyVersion: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      legalConsent: {
+        termsAccepted: true,
+        privacyAccepted: true,
+        acceptedAt: Date.now(),
+        termsVersion: args.termsVersion,
+        privacyVersion: args.privacyVersion,
+      },
+    });
+  },
+});
