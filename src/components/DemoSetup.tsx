@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useNavigate } from "react-router-dom";
-import Feedback from "./Feedback";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function DemoSetup() {
@@ -321,8 +320,6 @@ export function DemoSetup() {
           </div>
         </div>
       </section>
-      {/* Feedback Section */}
-      <Feedback />
     </div>
   );
 }

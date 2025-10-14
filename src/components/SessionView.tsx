@@ -5,6 +5,7 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { SessionReport } from "./SessionReport";
 import { ThemeToggle } from "./ThemeToggle";
+import { FeedbackWidget } from "./FeedbackWidget";
 
 type StepName = "goal" | "reality" | "options" | "will" | "review";
 
@@ -784,6 +785,9 @@ export function SessionView() {
           onClose={() => setShowReport(false)} 
         />
       )}
+
+      {/* Feedback Widget */}
+      <FeedbackWidget sessionId={session._id} />
     </div>
   );
 }
