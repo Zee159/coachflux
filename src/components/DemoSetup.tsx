@@ -78,6 +78,8 @@ export function DemoSetup() {
 
   function handleLegalDecline() {
     setShowLegalModal(false);
+    // Redirect to homepage/setup
+    navigate("/setup");
     setError("You must accept the Terms of Service and Privacy Policy to use CoachFlux.");
   }
 
