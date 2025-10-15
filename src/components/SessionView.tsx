@@ -268,11 +268,11 @@ export function SessionView() {
     }
   }, [reflections, autoPlayVoice, voiceControl]);
 
-  // Load saved voice preference
+  // Load saved voice preference or set default
   useEffect(() => {
     const savedVoiceName = localStorage.getItem('coachflux_voice');
     const savedAutoPlay = localStorage.getItem('coachflux_autoplay');
-    
+
     if (savedAutoPlay !== null) {
       setAutoPlayVoice(savedAutoPlay === 'true');
     }
@@ -281,7 +281,7 @@ export function SessionView() {
       const loadVoice = () => {
         const voices = window.speechSynthesis.getVoices();
         const voice = voices.find(v => v.name === savedVoiceName);
-        if (voice !== undefined) {
+        if (voice !== null && voice !== undefined) {
           setSelectedVoice(voice);
         }
       };
@@ -289,6 +289,60 @@ export function SessionView() {
       loadVoice();
       if (window.speechSynthesis.onvoiceschanged !== undefined) {
         window.speechSynthesis.onvoiceschanged = loadVoice;
+      }
+    } else {
+      // Set default voice if none saved
+      const setDefaultVoice = () => {
+        const voices = window.speechSynthesis.getVoices();
+        // Filter for English voices and prefer female voices, then local voices
+        const englishVoices = voices.filter(voice =>
+          voice.lang.startsWith('en')
+        );
+
+        // Sort by preference: female > male > local > online
+        englishVoices.sort((a, b) => {
+          // Prefer female voices
+          const aIsFemale = a.name.toLowerCase().includes('female') ||
+                           a.name.toLowerCase().includes('woman') ||
+                           a.name.toLowerCase().includes('zira') ||
+                           a.name.toLowerCase().includes('samantha') ||
+                           a.name.toLowerCase().includes('victoria');
+          const bIsFemale = b.name.toLowerCase().includes('female') ||
+                           b.name.toLowerCase().includes('woman') ||
+                           b.name.toLowerCase().includes('zira') ||
+                           b.name.toLowerCase().includes('samantha') ||
+                           b.name.toLowerCase().includes('victoria');
+
+          if (aIsFemale && !bIsFemale) {
+            return -1;
+          }
+          if (!aIsFemale && bIsFemale) {
+            return 1;
+          }
+
+          // Then prefer local over online
+          if (a.localService && !b.localService) {
+            return -1;
+          }
+          if (!a.localService && b.localService) {
+            return 1;
+          }
+
+          return 0;
+        });
+
+        if (englishVoices.length > 0) {
+          const defaultVoice = englishVoices[0];
+          if (defaultVoice !== null && defaultVoice !== undefined) {
+            setSelectedVoice(defaultVoice);
+            localStorage.setItem('coachflux_voice', defaultVoice.name);
+          }
+        }
+      };
+
+      setDefaultVoice();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = setDefaultVoice;
       }
     }
   }, []);
