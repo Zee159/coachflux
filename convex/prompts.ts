@@ -216,7 +216,7 @@ export { COACHING_QUESTIONS };
 
 function getRequiredFieldsDescription(stepName: string): string {
   const requirements: Record<string, string> = {
-    goal: "goal, why_now, success_criteria (list), horizon_weeks (1-12)",
+    goal: "goal, why_now, success_criteria (list), timeframe (any duration the user specifies)",
     reality: "current_state AND at least 2 of: constraints, resources, or risks (thorough exploration needed)",
     options: "at least 3 options, with at least 2 options having BOTH pros AND cons explored",
     will: "chosen_option and at least 2 specific actions (each with title, owner, and due date)",

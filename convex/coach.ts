@@ -14,14 +14,14 @@ const getFramework = (): Framework => {
     steps: [
       {
         name: "goal",
-        system_objective: "Clarify the desired outcome for the next 1-12 weeks.",
+        system_objective: "Clarify the desired outcome and timeframe.",
         required_fields_schema: {
           type: "object",
           properties: {
             goal: { type: "string", minLength: 8, maxLength: 240 },
             why_now: { type: "string", minLength: 8, maxLength: 240 },
             success_criteria: { type: "array", items: { type: "string", minLength: 3 }, minItems: 1, maxItems: 5 },
-            horizon_weeks: { type: "integer", minimum: 1, maximum: 12 },
+            timeframe: { type: "string", minLength: 3, maxLength: 100 },
             coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
           },
           required: ["coach_reflection"],
@@ -298,12 +298,12 @@ export const nextStep = action({
     
     // Define completion criteria for each step
     if (step.name === "goal") {
-      // Goal step requires: goal, why_now, success_criteria, horizon_weeks
+      // Goal step requires: goal, why_now, success_criteria, timeframe
       shouldAdvance = Boolean(
         typeof payload["goal"] === "string" && payload["goal"].length > 0 && 
         typeof payload["why_now"] === "string" && payload["why_now"].length > 0 && 
         Array.isArray(payload["success_criteria"]) && payload["success_criteria"].length > 0 && 
-        typeof payload["horizon_weeks"] === "number"
+        typeof payload["timeframe"] === "string" && payload["timeframe"].length > 0
       );
     } else if (step.name === "reality") {
       // Reality step requires: current_state AND at least 2 of (constraints, resources, risks)

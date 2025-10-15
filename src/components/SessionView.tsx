@@ -115,7 +115,7 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
 }
 
 const STEP_DESCRIPTIONS: Record<StepName, string> = {
-  goal: "Clarify your desired outcome for the next 1-12 weeks.",
+  goal: "Clarify your desired outcome and timeframe.",
   reality: "Assess your current situation, constraints, and resources.",
   options: "Explore at least three viable paths forward.",
   will: "Choose an option and define specific actions.",
