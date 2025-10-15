@@ -6,6 +6,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { SessionReport } from "./SessionReport";
 import { ThemeToggle } from "./ThemeToggle";
 import { FeedbackWidget } from "./FeedbackWidget";
+import { VoiceControl, VoiceButtons, VoiceSettingsModal, LiveTranscript } from "./VoiceControl";
 
 type StepName = "goal" | "reality" | "options" | "will" | "review";
 
@@ -184,7 +185,11 @@ export function SessionView() {
   const [showReport, setShowReport] = useState(false);
   const [notification, setNotification] = useState<{ type: "info" | "success" | "error"; message: string } | null>(null);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [autoPlayVoice, setAutoPlayVoice] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const lastReflectionRef = useRef<string | null>(null);
 
   const session = useQuery(
     api.queries.getSession,
@@ -204,6 +209,19 @@ export function SessionView() {
   const closeSession = useMutation(api.mutations.closeSession);
   const incrementSkip = useMutation(api.mutations.incrementSkipCount);
 
+  // Voice control hook
+  const voiceControl = VoiceControl({
+    onTranscript: (transcript) => {
+      setText(transcript);
+      // Auto-submit when voice input completes
+      setTimeout(() => {
+        void handleSubmit(transcript);
+      }, 100);
+    },
+    disabled: submitting,
+    selectedVoice,
+  });
+
   useEffect(() => {
     // Auto-scroll to latest message when new reflection appears
     if (chatEndRef.current === null || chatEndRef.current === undefined) {
@@ -217,6 +235,74 @@ export function SessionView() {
     
     return () => clearTimeout(timer);
   }, [reflections?.length]); // Trigger only when count changes
+
+  // Auto-play coach responses with voice
+  useEffect(() => {
+    if (!autoPlayVoice || reflections === null || reflections === undefined || reflections.length === 0) {
+      return;
+    }
+
+    const latestReflection = reflections[reflections.length - 1];
+    if (latestReflection === undefined) {
+      return;
+    }
+
+    const reflectionId = latestReflection._id;
+
+    // Only play if this is a new reflection
+    if (lastReflectionRef.current === reflectionId) {
+      return;
+    }
+
+    lastReflectionRef.current = reflectionId;
+
+    // Extract coach_reflection text to speak
+    const payload = latestReflection.payload as Record<string, unknown>;
+    const coachReflection = payload['coach_reflection'];
+
+    if (typeof coachReflection === 'string' && coachReflection.length > 0) {
+      // Small delay to let the UI update first
+      setTimeout(() => {
+        voiceControl.speak(coachReflection);
+      }, 500);
+    }
+  }, [reflections, autoPlayVoice, voiceControl]);
+
+  // Load saved voice preference
+  useEffect(() => {
+    const savedVoiceName = localStorage.getItem('coachflux_voice');
+    const savedAutoPlay = localStorage.getItem('coachflux_autoplay');
+    
+    if (savedAutoPlay !== null) {
+      setAutoPlayVoice(savedAutoPlay === 'true');
+    }
+
+    if (savedVoiceName !== null && savedVoiceName.length > 0) {
+      const loadVoice = () => {
+        const voices = window.speechSynthesis.getVoices();
+        const voice = voices.find(v => v.name === savedVoiceName);
+        if (voice !== undefined) {
+          setSelectedVoice(voice);
+        }
+      };
+
+      loadVoice();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoice;
+      }
+    }
+  }, []);
+
+  const handleVoiceSelect = (voice: SpeechSynthesisVoice) => {
+    setSelectedVoice(voice);
+    localStorage.setItem('coachflux_voice', voice.name);
+  };
+
+  const toggleAutoPlay = () => {
+    const newValue = !autoPlayVoice;
+    setAutoPlayVoice(newValue);
+    localStorage.setItem('coachflux_autoplay', String(newValue));
+  };
 
   if (session === null || session === undefined) {
     return (
@@ -437,6 +523,26 @@ export function SessionView() {
             </div>
             <div className="flex gap-2 w-full sm:w-auto items-center">
               <ThemeToggle />
+              {/* Voice Settings Button */}
+              <button
+                onClick={() => setShowVoiceSettings(true)}
+                className="px-3 py-2 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors font-medium"
+                title="Voice Settings"
+              >
+                🎙️
+              </button>
+              {/* Auto-play Toggle */}
+              <button
+                onClick={toggleAutoPlay}
+                className={`px-3 py-2 text-sm rounded-md transition-colors font-medium ${
+                  autoPlayVoice
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-400 dark:hover:bg-gray-500'
+                }`}
+                title={autoPlayVoice ? 'Auto-play ON' : 'Auto-play OFF'}
+              >
+                {autoPlayVoice ? '🔊' : '🔇'}
+              </button>
               {isSessionComplete === true && (
                 <button
                   onClick={() => setShowReport(true)}
@@ -745,8 +851,25 @@ export function SessionView() {
           <div className="py-2 sm:py-3">
             <div className="max-w-4xl">
               <div className="flex gap-2 items-end">
-                {/* Input with inline send button */}
+                {/* Voice Control Buttons */}
+                <VoiceButtons
+                  onStartListening={voiceControl.startListening}
+                  onStopListening={voiceControl.stopListening}
+                  onStopSpeaking={voiceControl.stopSpeaking}
+                  isListening={voiceControl.isListening}
+                  isSpeaking={voiceControl.isSpeaking}
+                  disabled={submitting}
+                  error={voiceControl.error}
+                />
+                
+                {/* Input with inline send button and live transcript overlay */}
                 <div className="flex-1 relative">
+                  {/* Live transcript overlay */}
+                  <LiveTranscript
+                    transcript={voiceControl.transcript}
+                    interimTranscript={voiceControl.interimTranscript}
+                    isListening={voiceControl.isListening}
+                  />
                   <textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
@@ -823,6 +946,14 @@ export function SessionView() {
           onClose={() => setShowReport(false)} 
         />
       )}
+
+      {/* Voice Settings Modal */}
+      <VoiceSettingsModal
+        isOpen={showVoiceSettings}
+        onClose={() => setShowVoiceSettings(false)}
+        selectedVoice={selectedVoice}
+        onVoiceSelect={handleVoiceSelect}
+      />
 
       {/* Feedback Widget - Only show when session is complete */}
       {isSessionComplete && <FeedbackWidget sessionId={session._id} />}
