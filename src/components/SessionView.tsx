@@ -485,19 +485,48 @@ export function SessionView() {
 
             <div className="p-3 sm:p-6 min-h-[400px]">
               {reflections !== null && reflections !== undefined && reflections.length > 0 ? (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {reflections.map((reflection) => (
-                    <div key={reflection._id} className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                          {reflection.step}
-                        </span>
-                        <span className="text-xs text-gray-400 dark:text-gray-500">
-                          {new Date(reflection.createdAt).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
-                        {formatReflectionDisplay(reflection.step, reflection.payload as Record<string, unknown>)}
+                    <div key={reflection._id} className="space-y-3">
+                      {/* User Input Message */}
+                      {(reflection.userInput !== null && reflection.userInput !== undefined && reflection.userInput.length > 0) && (
+                        <div className="flex justify-end">
+                          <div className="max-w-[85%] sm:max-w-[75%]">
+                            <div className="flex items-center gap-2 justify-end mb-1">
+                              <span className="text-xs text-gray-400 dark:text-gray-500">
+                                {new Date(reflection.createdAt).toLocaleTimeString()}
+                              </span>
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                You
+                              </span>
+                            </div>
+                            <div className="bg-indigo-600 text-white rounded-lg rounded-tr-sm p-3 sm:p-4">
+                              <p className="text-sm whitespace-pre-wrap">{reflection.userInput}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* AI Response */}
+                      <div className="flex justify-start">
+                        <div className="max-w-[85%] sm:max-w-[75%]">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                              Coach
+                            </span>
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                              {reflection.step}
+                            </span>
+                            {(reflection.userInput === null || reflection.userInput === undefined || reflection.userInput.length === 0) && (
+                              <span className="text-xs text-gray-400 dark:text-gray-500">
+                                {new Date(reflection.createdAt).toLocaleTimeString()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg rounded-tl-sm p-3 sm:p-4">
+                            {formatReflectionDisplay(reflection.step, reflection.payload as Record<string, unknown>)}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -795,8 +824,8 @@ export function SessionView() {
         />
       )}
 
-      {/* Feedback Widget */}
-      <FeedbackWidget sessionId={session._id} />
+      {/* Feedback Widget - Only show when session is complete */}
+      {isSessionComplete && <FeedbackWidget sessionId={session._id} />}
     </div>
   );
 }
