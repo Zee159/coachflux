@@ -94,9 +94,10 @@
           "ai_insights": { "type": "string", "minLength": 20, "maxLength": 400 },
           "unexplored_options": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 },
           "identified_risks": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 },
-          "potential_pitfalls": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 }
+          "potential_pitfalls": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 },
+          "coach_reflection": { "type": "string", "minLength": 20, "maxLength": 300 }
         },
-        "required": ["summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls"],
+        "required": ["summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls", "coach_reflection"],
         "additionalProperties": false
       }
     }
