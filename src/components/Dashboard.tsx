@@ -4,6 +4,72 @@ import { api } from "../../convex/_generated/api";
 import { useNavigate } from "react-router-dom";
 import { Id } from "../../convex/_generated/dataModel";
 import { ThemeToggle } from "./ThemeToggle";
+import { SessionReport } from "./SessionReport";
+
+// SessionCard component with executive summary
+interface SessionCardProps {
+  sessionId: Id<"sessions">;
+  framework: string;
+  step: string;
+  startedAt: number;
+  isCompleted: boolean;
+  onClick: () => void;
+}
+
+function SessionCard({ sessionId, framework, step, startedAt, isCompleted, onClick }: SessionCardProps) {
+  const reflections = useQuery(api.queries.getSessionReflections, { sessionId });
+  
+  // Get review summary if session is completed
+  const reviewReflection = reflections?.find((r) => r.step === "review");
+  const reviewPayload = reviewReflection?.payload as Record<string, unknown> | undefined;
+  const summary = reviewPayload !== undefined && typeof reviewPayload['summary'] === 'string' 
+    ? reviewPayload['summary'] 
+    : undefined;
+  
+  return (
+    <div
+      onClick={onClick}
+      className={`p-3 bg-gray-50 dark:bg-gray-700 rounded-md gap-2 transition-all ${ 
+        isCompleted ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 hover:shadow-md' : ''
+      }`}
+    >
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">
+            {framework} - {step}
+          </p>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+            {new Date(startedAt).toLocaleDateString()}
+          </p>
+        </div>
+        <span
+          className={`px-2 py-1 text-xs font-medium rounded ${
+            isCompleted
+              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+              : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
+          }`}
+        >
+          {isCompleted ? "Completed" : "Active"}
+        </span>
+      </div>
+      
+      {/* Executive Summary - only for completed sessions */}
+      {isCompleted && summary !== undefined && summary.length > 0 && (
+        <div className="mt-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">
+            Executive Summary
+          </p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+            {summary}
+          </p>
+          <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 font-medium">
+            Click to view full report →
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -11,6 +77,7 @@ export function Dashboard() {
   const [orgId, setOrgId] = useState<Id<"orgs"> | null>(null);
   const [showContinueModal, setShowContinueModal] = useState(false);
   const [notification, setNotification] = useState<{ type: "info" | "success" | "error"; message: string } | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<Id<"sessions"> | null>(null);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("coachflux_demo_user");
@@ -251,30 +318,26 @@ export function Dashboard() {
             <div className="p-4 sm:p-6">
               {sessions !== null && sessions !== undefined && sessions.length > 0 ? (
                 <div className="space-y-4">
-                  {sessions.slice(0, 5).map((session) => (
-                    <div
-                      key={session._id}
-                      className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md gap-2"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">
-                          {session.framework} - {session.step}
-                        </p>
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                          {new Date(session.startedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded ${
-                          session.closedAt !== null && session.closedAt !== undefined
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
-                        }`}
-                      >
-                        {session.closedAt !== null && session.closedAt !== undefined ? "Completed" : "Active"}
-                      </span>
-                    </div>
-                  ))}
+                  {sessions.slice(0, 5).map((session) => {
+                    const isCompleted = session.closedAt !== null && session.closedAt !== undefined;
+                    return (
+                      <SessionCard
+                        key={session._id}
+                        sessionId={session._id}
+                        framework={session.framework}
+                        step={session.step}
+                        startedAt={session.startedAt}
+                        isCompleted={isCompleted}
+                        onClick={() => {
+                          if (isCompleted) {
+                            setSelectedSessionId(session._id);
+                          } else {
+                            navigate(`/session/${session._id}`);
+                          }
+                        }}
+                      />
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-gray-500 dark:text-gray-400">No sessions yet</p>
@@ -323,6 +386,14 @@ export function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* Session Report Modal */}
+      {selectedSessionId !== null && (
+        <SessionReport
+          sessionId={selectedSessionId}
+          onClose={() => setSelectedSessionId(null)}
+        />
+      )}
     </div>
   );
 }
