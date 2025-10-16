@@ -31,7 +31,7 @@ export function hasCoachReflection(payload: unknown): payload is { coach_reflect
     payload !== null &&
     typeof payload === "object" &&
     "coach_reflection" in payload &&
-    typeof (payload as Record<string, unknown>).coach_reflection === "string"
+    typeof (payload as Record<string, unknown>)["coach_reflection"] === "string"
   );
 }
 
