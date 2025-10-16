@@ -381,9 +381,9 @@ export const USER_STEP_PROMPT = (
       : '✅ All required fields captured!';
     
     let nextTarget = '';
-    if (stepName === 'options' && capturedState.options !== undefined && capturedState.options !== null) {
+    if (stepName === 'options' && capturedState['options'] !== undefined && capturedState['options'] !== null) {
       // Special instructions for OPTIONS step
-      const options = capturedState.options as Array<{label?: string; pros?: unknown[]; cons?: unknown[]}>;
+      const options = capturedState['options'] as Array<{label?: string; pros?: unknown[]; cons?: unknown[]}>;
       const unexplored = options.filter(opt => 
         !Array.isArray(opt.pros) || opt.pros.length === 0 || 
         !Array.isArray(opt.cons) || opt.cons.length === 0
@@ -391,16 +391,18 @@ export const USER_STEP_PROMPT = (
       
       if (unexplored.length > 0) {
         const nextOption = unexplored[0];
-        const optionLabel = (nextOption.label !== undefined && nextOption.label !== null && nextOption.label.length > 0) ? nextOption.label : 'next option';
-        nextTarget = `ASK about pros/cons for "${optionLabel}": "What advantages and challenges do you see with ${optionLabel}?"`;
+        if (nextOption !== undefined) {
+          const optionLabel = (nextOption.label !== undefined && nextOption.label !== null && nextOption.label.length > 0) ? nextOption.label : 'next option';
+          nextTarget = `ASK about pros/cons for "${optionLabel}": "What advantages and challenges do you see with ${optionLabel}?"`;
+        }
       } else if (options.length < 3) {
         nextTarget = `ASK for more options: "What else could you do? What other approaches might work?"`;
       } else {
         nextTarget = 'All options explored - prepare to advance to WILL step';
       }
-    } else if (stepName === 'will' && capturedState.actions !== undefined && capturedState.actions !== null) {
+    } else if (stepName === 'will' && capturedState['actions'] !== undefined && capturedState['actions'] !== null) {
       // Special instructions for WILL step - check action completeness
-      const actions = capturedState.actions as Array<{title?: string; owner?: string; due_days?: number}>;
+      const actions = capturedState['actions'] as Array<{title?: string; owner?: string; due_days?: number}>;
       const incompleteActions = actions.filter(a => 
         typeof a.owner !== 'string' || a.owner.length === 0 || 
         typeof a.due_days !== 'number' || a.due_days <= 0
@@ -408,11 +410,13 @@ export const USER_STEP_PROMPT = (
       
       if (incompleteActions.length > 0) {
         const action = incompleteActions[0];
-        const actionTitle = action.title ?? 'this action';
-        if (typeof action.owner !== 'string' || action.owner.length === 0) {
-          nextTarget = `ASK who is responsible for "${actionTitle}": "Who will be responsible for ${actionTitle}?"`;
-        } else if (typeof action.due_days !== 'number' || action.due_days <= 0) {
-          nextTarget = `ASK for timeline for "${actionTitle}": "When will you complete ${actionTitle}? What's your deadline?"`;
+        if (action !== undefined) {
+          const actionTitle = action.title ?? 'this action';
+          if (typeof action.owner !== 'string' || action.owner.length === 0) {
+            nextTarget = `ASK who is responsible for "${actionTitle}": "Who will be responsible for ${actionTitle}?"`;
+          } else if (typeof action.due_days !== 'number' || action.due_days <= 0) {
+            nextTarget = `ASK for timeline for "${actionTitle}": "When will you complete ${actionTitle}? What's your deadline?"`;
+          }
         }
       } else if (actions.length < 2) {
         nextTarget = `ASK for more actions: "What other specific steps will you take?"`;

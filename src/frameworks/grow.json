@@ -86,15 +86,17 @@
     },
     {
       "name": "review",
-      "system_objective": "Summarise the plan and compute an alignment score with org values.",
+      "system_objective": "Summarise the plan and provide AI insights.",
       "required_fields_schema": {
         "type": "object",
         "properties": {
           "summary": { "type": "string", "minLength": 16, "maxLength": 400 },
-          "alignment_score": { "type": "integer", "minimum": 0, "maximum": 100 },
-          "value_tags": { "type": "array", "items": { "type": "string" }, "maxItems": 3 }
+          "ai_insights": { "type": "string", "minLength": 20, "maxLength": 400 },
+          "unexplored_options": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 },
+          "identified_risks": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 },
+          "potential_pitfalls": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 }
         },
-        "required": ["summary", "alignment_score"],
+        "required": ["summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls"],
         "additionalProperties": false
       }
     }
