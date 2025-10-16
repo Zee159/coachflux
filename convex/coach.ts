@@ -622,11 +622,12 @@ export const nextStep = action({
           step: nextStepName
         });
 
-        // Create step opener reflection (except for review)
+        // Create step opener reflections
         const stepOpeners: Record<string, string> = {
           reality: "Now let's explore what's actually happening. What's the current situation you're facing?",
           options: "Great clarity on your goal! Let's brainstorm possibilities. What are some ways you could move forward?",
-          will: "Excellent options! Now let's turn this into action. Which option feels right for you?"
+          will: "Excellent options! Now let's turn this into action. Which option feels right for you?",
+          review: "You've done excellent work! Let's review everything together. What are the key takeaways from this conversation for you?"
         };
 
         const opener = stepOpeners[nextStepName];
