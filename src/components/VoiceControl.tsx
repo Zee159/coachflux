@@ -116,26 +116,7 @@ export function VoiceControl({
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       // Prevent duplicate processing (critical for mobile)
       if (isProcessingRef.current) {
-        // eslint-disable-next-line no-console
-        console.log('[VoiceControl] Skipping duplicate onresult event');
         return;
-      }
-      
-      // Debug logging (can be enabled for troubleshooting)
-      const debugMode = false; // Set to true to debug mobile issues
-      if (debugMode) {
-        // eslint-disable-next-line no-console
-        console.log('[VoiceControl] Event results length:', event.results.length);
-        for (let i = 0; i < event.results.length; i++) {
-          const result = event.results[i];
-          if (result !== undefined) {
-            // eslint-disable-next-line no-console
-            console.log(`[VoiceControl] Result ${i}:`, {
-              isFinal: result.isFinal,
-              transcript: result[0]?.transcript
-            });
-          }
-        }
       }
       
       let interim = '';
