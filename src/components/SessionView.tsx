@@ -622,7 +622,7 @@ export function SessionView() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 lg:px-8 pb-32 sm:pb-40 lg:pb-48">
+      <main className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 lg:px-8 pb-40 sm:pb-44 lg:pb-48">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <section className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -900,7 +900,7 @@ export function SessionView() {
       </main>
 
       {/* Fixed Input Box at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="py-2 sm:py-3">
             <div className="max-w-4xl">
@@ -947,9 +947,15 @@ export function SessionView() {
                       }}
                       onFocus={(e) => {
                         // Scroll input into view on mobile when keyboard appears
+                        // Use a longer delay to ensure keyboard is fully rendered
                         setTimeout(() => {
-                          e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }, 300);
+                          e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                          // Additional scroll to ensure visibility
+                          window.scrollTo({
+                            top: document.documentElement.scrollHeight,
+                            behavior: 'smooth'
+                          });
+                        }, 400);
                       }}
                       placeholder={`Share your thoughts for the ${currentStep ?? 'current'} step...`}
                       className="w-full h-full pl-3 pr-12 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 resize-none text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"

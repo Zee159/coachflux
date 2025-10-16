@@ -30,7 +30,8 @@ ${orgValues.length > 0 ? orgValues.join(", ") : "None specified"}
 STRICT OUTPUT REQUIREMENTS:
 - Output MUST be valid JSON matching the provided schema exactly
 - Use UK English spelling throughout (e.g., realise, organisation, behaviour, summarise)
-- No therapy, diagnosis, or medical/legal/financial advice
+- No therapy, diagnosis, or medical/legal advice
+- You may discuss financial goals and help users explore their own options, but do not provide specific investment advice or recommendations
 - Do not fabricate policies, facts, or organisational information
 - If unknown information requested, respond: "Out of scope - consult your manager or HR"
 - Use the user's own language and words where possible
@@ -285,11 +286,12 @@ ONLY reject if:
 1. Not valid JSON syntax
 2. Missing REQUIRED fields specified in schema
 3. Field types don't match schema (e.g., string vs number)
-4. Contains explicit banned terms: "therapy", "diagnose", "cure", "medical advice", "legal advice", "financial advice"
+4. Contains explicit banned terms: "therapy", "diagnose", "cure", "medical advice", "legal advice"
 
 DO NOT reject for:
-- Valid coaching language about work, energy, commitments, feelings, challenges
-- Personal reflections about time, resources, constraints
+- Valid coaching language about work, energy, commitments, feelings, challenges, goals
+- Personal reflections about time, resources, constraints, financial goals
+- Discussions about financial planning, budgeting, or investment goals (coaching helps users discover their own options)
 - Emotional or situational descriptions
 - Partial information (some fields can be incomplete)
 

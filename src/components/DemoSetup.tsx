@@ -120,21 +120,58 @@ export function DemoSetup() {
       </nav>
 
       {/* Hero Section */}
-      <section id="home" className="min-h-screen flex items-center justify-center px-6 py-20 pt-32 relative overflow-hidden">
+      <section id="home" className="flex items-center justify-center px-6 py-16 pt-24 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-violet-400/20 to-purple-600/20 rounded-full blur-3xl"></div>
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-fuchsia-400/20 to-pink-600/20 rounded-full blur-3xl"></div>
         </div>
 
-        <div className="max-w-6xl w-full grid md:grid-cols-2 gap-12 items-center relative z-10">
+        <div className="max-w-6xl w-full grid md:grid-cols-2 gap-8 items-center relative z-10">
           {/* Left: Content */}
           <div>
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-              AI-Powered Leadership Reflection
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+              AI Coach
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-              CoachFlux helps leaders reflect on their experiences through guided conversations aligned with your organisation's values.
+            <p className="text-lg text-gray-600 dark:text-gray-300 mb-5 leading-relaxed">
+              Navigate leadership challenges, career decisions, and personal goals through guided AI coaching conversations aligned with your values.
             </p>
+            
+            {/* Privacy & Free Features */}
+            <div className="mb-6 space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">100% Free — No credit card required</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">No email or registration needed</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">Zero personal data collected</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">Sessions auto-clear when you leave</span>
+              </div>
+            </div>
+            
             <button 
               onClick={() => scrollToSection('get-started')}
               className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-xl hover:shadow-violet-500/30 dark:hover:shadow-violet-500/20 transition-all duration-300 inline-flex items-center gap-2"
@@ -147,8 +184,8 @@ export function DemoSetup() {
           </div>
 
           {/* Right: Visual Element */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/20 dark:border-gray-700/20">
-            <div className="space-y-4">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-2xl p-6 border border-white/20 dark:border-gray-700/20">
+            <div className="space-y-3">
               <div className="flex items-start gap-3 p-4 bg-violet-50 dark:bg-violet-900/20 rounded-xl">
                 <div className="w-10 h-10 bg-violet-600 rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,29 +194,29 @@ export function DemoSetup() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">Conversational AI</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Natural dialogue about leadership challenges</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Natural dialogue about your goals and challenges</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                 <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">Values-Aligned</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Links reflections to your core values</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">GROW Framework</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Proven coaching methodology from goal to action plan</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-4 bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-xl">
                 <div className="w-10 h-10 bg-fuchsia-600 rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">Track Progress</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Monitor growth over time with metrics</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">Actionable Reports</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Get structured insights and clear next steps after each session</p>
                 </div>
               </div>
             </div>
@@ -188,16 +225,16 @@ export function DemoSetup() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="min-h-screen flex items-center justify-center px-6 py-20 bg-white dark:bg-gray-800 relative">
+      <section id="how-it-works" className="flex items-center justify-center px-6 py-10 bg-white dark:bg-gray-800 relative">
         <div className="max-w-6xl w-full">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">How It Works</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">How It Works</h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               A simple three-step process to develop your leadership through structured reflection
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-20">
+          <div className="grid md:grid-cols-3 gap-6 mb-10">
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-br from-violet-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <span className="text-2xl font-bold text-white">1</span>
@@ -234,7 +271,7 @@ export function DemoSetup() {
             <div className="grid md:grid-cols-2 gap-6">
               {/* Left Card: Demo Form */}
               <div className="bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-gray-700 dark:to-gray-600 rounded-2xl p-8 border border-violet-100 dark:border-gray-600">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Try the Prototype</h3>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Experience AI Coaching Now</h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">Create a sample organisation and start exploring</p>
                 
                 <div className="space-y-4">
@@ -287,7 +324,7 @@ export function DemoSetup() {
                         Setting up...
                       </>
                     ) : (
-                      "Try AI Coach"
+                      "Try AI Coach Now"
                     )}
                   </button>
                 </div>
@@ -356,13 +393,13 @@ export function DemoSetup() {
       </section>
 
       {/* Use Cases Section */}
-      <section className="py-20 px-6 bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <section className="py-12 px-6 bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
               When to Use CoachFlux
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Whether you're navigating a career challenge or building better habits, the GROW framework helps you think clearly and act decisively.
             </p>
           </div>

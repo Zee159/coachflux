@@ -5,7 +5,7 @@ import { SYSTEM_BASE, USER_STEP_PROMPT, VALIDATOR_PROMPT } from "./prompts";
 import { api } from "./_generated/api";
 import type { Framework, OrgValue, ValidationResult, ReflectionPayload } from "./types";
 
-const BANNED = ["psychiatric", "prescribe", "diagnosis", "sue", "lawsuit", "investment advice"];
+const BANNED = ["psychiatric", "prescribe", "diagnosis", "sue", "lawsuit"];
 
 // Framework configuration loaded at runtime
 const getFramework = (): Framework => {
