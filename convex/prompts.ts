@@ -215,15 +215,25 @@ Guidance:
 PROGRESSIVE QUESTION FLOW (CRITICAL):
 1. FIRST: If no chosen_option yet, ask: "Which option feels right for you?" or "Which approach do you want to move forward with?"
 2. SECOND: Once they choose an option, ACKNOWLEDGE it and ask: "What specific actions will you take?" or "What are the concrete steps you'll take?"
-3. THIRD: As they describe actions, extract them and ask for details: "Who will be responsible for this?" or "When will you complete this?"
-4. FOURTH: Once you have 2+ complete actions, confirm commitment: "How confident are you in taking these actions?"
+3. THIRD: As they describe actions, extract them but DO NOT auto-fill owner/due_days
+   - If they say "I will track expenses" → Extract title, but ask: "When will you start this?"
+   - DO NOT assume owner is "me" - ask: "Who will be responsible for this?"
+   - DO NOT guess due_days - ask: "When will you complete this?" or "What's your timeline?"
+4. FOURTH: Once they provide timeline/owner, ask for next action or confirm commitment
 
 Action Requirements (CRITICAL):
 - Each action MUST have all three fields: title, owner, due_days
-- If they provide vague actions, ask for specifics: "Who will be responsible for this?"
-- If they don't mention timelines, ask: "When will you complete this action?"
-- Only complete step when you have 2+ fully-defined actions with commitment confirmation
+- NEVER auto-fill owner as "me" - user must explicitly state it
+- NEVER guess due_days (like 7 or 14) - user must provide timeline
+- If they say "I will X", ask: "When will you start? What's your deadline?"
+- If they say "next week", convert to due_days (7), "two weeks" → 14, "month" → 30
+- Only complete step when you have 2+ actions with ALL fields explicitly provided by user
 - ACCEPT their chosen option immediately - don't keep asking which option they want
+
+EXAMPLES OF GOOD vs BAD:
+❌ BAD: User says "I'll track expenses" → AI fills {"owner": "me", "due_days": 7} (WRONG - guessing!)
+✅ GOOD: User says "I'll track expenses" → AI asks: "When will you start tracking? What's your deadline?"
+✅ GOOD: User says "I'll do it next week" → AI extracts due_days: 7 (explicitly stated)
 
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language ONLY
@@ -331,6 +341,33 @@ export const USER_STEP_PROMPT = (
                 const unexploredLabels = unexplored.map(opt => (opt.label !== undefined && opt.label !== null && opt.label.length > 0) ? opt.label : 'unnamed').join(', ');
                 displayValue += `\n   ⚠️ NEED PROS/CONS: ${unexploredLabels}`;
               }
+            } else if (stepName === 'will' && f === 'actions') {
+              // Special handling for WILL step - show which actions are complete
+              const actions = value as Array<{title?: string; owner?: string; due_days?: number}>;
+              const complete = actions.filter(a => 
+                typeof a.owner === 'string' && a.owner.length > 0 && 
+                typeof a.due_days === 'number' && a.due_days > 0
+              );
+              const incomplete = actions.filter(a => 
+                typeof a.owner !== 'string' || a.owner.length === 0 || 
+                typeof a.due_days !== 'number' || a.due_days <= 0
+              );
+              
+              displayValue = `[${actions.length} actions total, ${complete.length} complete with owner+timeline, ${incomplete.length} incomplete]`;
+              if (incomplete.length > 0) {
+                const incompleteInfo = incomplete.map(a => {
+                  const title = a.title ?? 'unnamed action';
+                  const missing = [];
+                  if (typeof a.owner !== 'string' || a.owner.length === 0) {
+                    missing.push('owner');
+                  }
+                  if (typeof a.due_days !== 'number' || a.due_days <= 0) {
+                    missing.push('timeline');
+                  }
+                  return `"${title}" (missing: ${missing.join(', ')})`;
+                }).join(', ');
+                displayValue += `\n   ⚠️ INCOMPLETE: ${incompleteInfo}`;
+              }
             } else {
               displayValue = `[${value.length} items]`;
             }
@@ -362,6 +399,27 @@ export const USER_STEP_PROMPT = (
         nextTarget = `ASK for more options: "What else could you do? What other approaches might work?"`;
       } else {
         nextTarget = 'All options explored - prepare to advance to WILL step';
+      }
+    } else if (stepName === 'will' && capturedState.actions !== undefined && capturedState.actions !== null) {
+      // Special instructions for WILL step - check action completeness
+      const actions = capturedState.actions as Array<{title?: string; owner?: string; due_days?: number}>;
+      const incompleteActions = actions.filter(a => 
+        typeof a.owner !== 'string' || a.owner.length === 0 || 
+        typeof a.due_days !== 'number' || a.due_days <= 0
+      );
+      
+      if (incompleteActions.length > 0) {
+        const action = incompleteActions[0];
+        const actionTitle = action.title ?? 'this action';
+        if (typeof action.owner !== 'string' || action.owner.length === 0) {
+          nextTarget = `ASK who is responsible for "${actionTitle}": "Who will be responsible for ${actionTitle}?"`;
+        } else if (typeof action.due_days !== 'number' || action.due_days <= 0) {
+          nextTarget = `ASK for timeline for "${actionTitle}": "When will you complete ${actionTitle}? What's your deadline?"`;
+        }
+      } else if (actions.length < 2) {
+        nextTarget = `ASK for more actions: "What other specific steps will you take?"`;
+      } else {
+        nextTarget = 'All actions complete - confirm commitment and prepare to advance';
       }
     } else {
       nextTarget = missingFields.length > 0 
@@ -480,14 +538,23 @@ User says: "Get up every morning and go for a walk"
   "coach_reflection": "Excellent! That's a clear action. What other specific steps will you take to support this goal?"
 }
 
-User then says: "I'll also eat less sugar and eat more healthy food"
+User then says: "I'll start next week and I'll be doing it myself"
 {
   "chosen_option": "Get up every morning and go for a walk",
   "actions": [
-    {"title": "Get up every morning and go for a walk", "owner": "me", "due_days": 7},
-    {"title": "Eat less sugar and more healthy food", "owner": "me", "due_days": 7}
+    {"title": "Get up every morning and go for a walk", "owner": "myself", "due_days": 7}
   ],
-  "coach_reflection": "Great commitment! When will you start these actions, and how confident are you?"
+  "coach_reflection": "Excellent! You'll start walking next week yourself. What other specific steps will you take?"
+}
+
+User then says: "I'll also eat less sugar starting tomorrow"
+{
+  "chosen_option": "Get up every morning and go for a walk",
+  "actions": [
+    {"title": "Get up every morning and go for a walk", "owner": "myself", "due_days": 7},
+    {"title": "Eat less sugar and more healthy food", "owner": "myself", "due_days": 1}
+  ],
+  "coach_reflection": "Perfect! Two solid actions - walking next week and cutting sugar tomorrow. How confident do you feel about these commitments?"
 }
 
 Produce ONLY valid JSON matching the schema - no additional text.
