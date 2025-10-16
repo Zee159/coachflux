@@ -104,7 +104,6 @@ const getFramework = (): Framework => {
                 required: ["title", "owner", "due_days"],
                 additionalProperties: false
               },
-              minItems: 2,
               maxItems: 3
             },
             coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
