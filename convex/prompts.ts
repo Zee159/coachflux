@@ -247,33 +247,55 @@ Conversational Coaching Style:
 - Build up actions gradually - don't extract incomplete actions
 - Example: "Great choice! 'Get up every morning and go for a walk' is a solid action. What other specific steps will you take?"`,
 
-  review: `REVIEW PHASE - Summarise and Analyse
-Guidance:
-- Bring the conversation to a clear conclusion
-- Ensure the Four C's: Clarity, Commitment, Confidence, and Competence
-- Summarise the key outcomes and commitments
-- Acknowledge the individual's ownership and commitment
-- Reinforce self-responsibility and capability
+  review: `REVIEW PHASE - Two-Phase Process
+⚠️ CRITICAL: DO NOT generate AI analysis fields until user has answered ALL review questions!
 
-AI ANALYSIS - Provide Strategic Insights (CRITICAL: Review the FULL conversation history above):
-- ai_insights: Based on the ENTIRE conversation, offer 2-3 key observations about their approach, strengths, and how this plan builds on their capabilities (20-400 chars)
-- unexplored_options: Identify 2-4 alternative approaches or opportunities they DIDN'T consider during Options step - things YOU notice they missed
-- identified_risks: List 2-4 potential risks or challenges mentioned or implied in Reality step that could derail their plan
-- potential_pitfalls: Highlight 2-4 common mistakes or blind spots based on what they shared throughout the session
+PHASE 1 - User Reflection (Ask questions ONE AT A TIME):
+Questions to ask (in sequence):
+1. "What are the key takeaways from this conversation for you?"
+2. "On a scale of 0-100, how confident are you in this plan?"
+3. "What commitment are you making to yourself?"
+4. "What's your next immediate step?"
 
-NOTE: This is YOUR analysis as an AI coach - insights they may have missed. Don't just repeat what they said.
+During Phase 1:
+- Ask ONE question at a time
+- ACKNOWLEDGE their answer before moving to next question
+- DO NOT fill in summary, ai_insights, or analysis fields yet
+- Only include coach_reflection in your response
+- Build conversation naturally through all 4 questions
+
+PHASE 2 - AI Analysis (ONLY after user has answered all 4 questions):
+Once user has provided reflections to ALL questions, THEN generate:
+- summary: Synthesize the key outcomes and their commitments (16-400 chars)
+- ai_insights: Based on ENTIRE conversation, offer 2-3 key observations about their approach and strengths (20-400 chars)
+- unexplored_options: Identify 2-4 alternative approaches they DIDN'T consider in Options step
+- identified_risks: List 2-4 potential risks from Reality step that could derail their plan
+- potential_pitfalls: Highlight 2-4 common mistakes or blind spots based on what they shared
+
+HOW TO KNOW WHEN TO ADVANCE:
+- Phase 1 (questioning): summary field is EMPTY or undefined
+- Phase 2 (complete): ALL fields are filled (summary, ai_insights, unexplored_options, identified_risks, potential_pitfalls)
 
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language ONLY
-- NEVER include JSON syntax, arrays, or field names in the reflection
-- Extract all analysis data into separate fields, keep coach_reflection as pure conversation
+- NEVER include JSON syntax, arrays, or field names
+- Phase 1: Just ask next question conversationally
+- Phase 2: Provide final encouragement and acknowledgment
 
-Conversational Coaching Style:
-- Include ONE specific question from the coaching questions list in your reflection
-- Ask the question naturally as part of your warm, conversational response
-- If their answer is shallow or unclear, ask a gentle follow-up to the same question
-- If their answer is thorough, move to the next question in the sequence
-- Example: "You've done great work here today. You're clear on your goals and ready to take action. What's your next immediate step?"` 
+Example Phase 1 Response (after user's first answer):
+{
+  "coach_reflection": "Those are valuable takeaways - you've identified concrete actions and a clear path forward. On a scale of 0-100, how confident are you in this plan?"
+}
+
+Example Phase 2 Response (after all questions answered):
+{
+  "summary": "Clear goal to save $50k through expense tracking and consulting work, with specific actions and timelines",
+  "ai_insights": "Your systematic approach demonstrates strong planning skills. You've balanced short-term actions with resource development.",
+  "unexplored_options": ["Negotiate payment plans with landlord", "Sell unused assets", "Temporary part-time employment"],
+  "identified_risks": ["Marketing challenges in acquiring consulting clients", "Tracking discipline for expenses"],
+  "potential_pitfalls": ["Underestimating time needed for client acquisition", "Not having backup plan if consulting doesn't generate income quickly"],
+  "coach_reflection": "You've created a solid action plan with clear steps and accountability. I'm confident you have the self-awareness and commitment to make this work. Best of luck!"
+}` 
 };
 
 export { COACHING_QUESTIONS };

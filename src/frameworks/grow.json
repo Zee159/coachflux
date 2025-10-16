@@ -86,7 +86,7 @@
     },
     {
       "name": "review",
-      "system_objective": "Summarise the plan and provide AI insights.",
+      "system_objective": "Two-phase: First ask user review questions, then provide AI insights.",
       "required_fields_schema": {
         "type": "object",
         "properties": {
@@ -97,7 +97,7 @@
           "potential_pitfalls": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 },
           "coach_reflection": { "type": "string", "minLength": 20, "maxLength": 300 }
         },
-        "required": ["summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls", "coach_reflection"],
+        "required": ["coach_reflection"],
         "additionalProperties": false
       }
     }

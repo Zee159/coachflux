@@ -177,7 +177,7 @@ const getFramework = (): Framework => {
       },
       {
         name: "review",
-        system_objective: "Summarise the plan and provide AI insights.",
+        system_objective: "Two-phase: First ask user review questions, then provide AI insights.",
         required_fields_schema: {
           type: "object",
           properties: {
@@ -188,7 +188,7 @@ const getFramework = (): Framework => {
             potential_pitfalls: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 4 },
             coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
           },
-          required: ["summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls", "coach_reflection"],
+          required: ["coach_reflection"],
           additionalProperties: false
         }
       }
@@ -568,14 +568,20 @@ export const nextStep = action({
         }
       }
     } else if (step.name === "review") {
-      // Review step requires: summary, ai_insights, unexplored_options, identified_risks, potential_pitfalls
-      shouldAdvance = Boolean(
-        typeof payload["summary"] === "string" && payload["summary"].length > 0 && 
+      // Review step is two-phase:
+      // Phase 1 (questioning): Only coach_reflection present - DON'T advance
+      // Phase 2 (complete): All analysis fields present - ADVANCE
+      const hasSummary = typeof payload["summary"] === "string" && payload["summary"].length > 0;
+      const hasAllAnalysis = Boolean(
+        hasSummary &&
         typeof payload["ai_insights"] === "string" && payload["ai_insights"].length > 0 &&
         Array.isArray(payload["unexplored_options"]) && payload["unexplored_options"].length > 0 &&
         Array.isArray(payload["identified_risks"]) && payload["identified_risks"].length > 0 &&
         Array.isArray(payload["potential_pitfalls"]) && payload["potential_pitfalls"].length > 0
       );
+      
+      // Only advance when Phase 2 is complete (all fields present)
+      shouldAdvance = hasAllAnalysis;
     }
 
     // Only advance if step is complete
