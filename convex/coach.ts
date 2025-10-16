@@ -8,6 +8,19 @@ import { hasCoachReflection } from "./types";
 
 const BANNED = ["psychiatric", "prescribe", "diagnosis", "sue", "lawsuit"];
 
+// Serious workplace issues requiring escalation (not coaching)
+const ESCALATION_REQUIRED = [
+  "sexual harassment", "sexually harassed", "sexual assault", "sexually assaulted",
+  "harassment", "harassed", "harassing",
+  "bullying", "bullied", "bully",
+  "discrimination", "discriminated", "discriminating",
+  "abuse", "abused", "abusive",
+  "threatened", "threatening", "threat",
+  "assault", "assaulted", "assaulting",
+  "pornography", "pornographic", "porn",
+  "explicit material", "explicit content", "explicit image"
+];
+
 // Framework configuration loaded at runtime
 const getFramework = (): Framework => {
   return {
@@ -137,6 +150,29 @@ export const nextStep = action({
       return { ok: false, message: "Input too long. Please keep responses under 800 characters." };
     }
 
+    // Check for serious workplace issues requiring escalation
+    const userInputLower = args.userTurn.toLowerCase();
+    const escalationHit = ESCALATION_REQUIRED.some(term => userInputLower.includes(term));
+    
+    if (escalationHit) {
+      const detectedTerms = ESCALATION_REQUIRED.filter(term => userInputLower.includes(term));
+      
+      // Log as high severity incident
+      await ctx.runMutation(api.mutations.createSafetyIncident, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        reason: `Escalation required: ${detectedTerms.join(", ")}`,
+        llmOutput: args.userTurn.substring(0, 500),
+        severity: "high"
+      });
+      
+      return { 
+        ok: false, 
+        message: "This is a serious matter that requires specialist help or HR support. Please contact your HR department, manager, or appropriate specialist services through your organisation's official channels. If you're in immediate danger, contact emergency services."
+      };
+    }
+
     const org = await ctx.runQuery(api.queries.getOrg, { orgId: args.orgId });
     if (org === null || org === undefined) {
       throw new Error("Organization not found");
@@ -257,8 +293,8 @@ export const nextStep = action({
       return { 
         ok: false, 
         message: bannedHit 
-          ? "This topic is outside coaching scope. Please rephrase or focus on work-related challenges."
-          : "I'm having trouble processing your response. Could you try rephrasing it more specifically?"
+          ? "This topic requires specialist support beyond coaching. Please consult appropriate professional services."
+          : "I'm having trouble processing that. Could you rephrase your response?"
       };
     }
 

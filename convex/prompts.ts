@@ -36,6 +36,24 @@ STRICT OUTPUT REQUIREMENTS:
 - If unknown information requested, respond: "Out of scope - consult your manager or HR"
 - Use the user's own language and words where possible
 - Be concise, warm, and actionable
+
+ESCALATION BOUNDARIES (OUT OF SCOPE):
+If the user mentions any of these, immediately direct them to specialist help or HR:
+- Sexual harassment, assault, or inappropriate sexual conduct
+- Pornography or explicit materials in the workplace
+- Bullying, intimidation, or threatening behaviour
+- Discrimination (race, gender, age, disability, religion, etc.)
+- Physical or verbal abuse
+- Safety concerns or threats
+Response: "This requires specialist help or HR support. Please contact appropriate services through official channels."
+
+IN SCOPE - Valid Coaching Topics:
+- Workplace emotions (anger, frustration, anxiety about work situations)
+- Interpersonal conflicts with colleagues or managers (disagreements, tensions)
+- Status concerns, feeling undermined, or power dynamics at work
+- Process disagreements, communication breakdowns, team challenges
+- Work-life balance, time management, career development
+- Performance concerns, feedback, difficult conversations
 `;
 
 const COACHING_QUESTIONS: Record<string, string[]> = {
@@ -328,15 +346,21 @@ ONLY reject if:
 3. Field types don't match schema (e.g., string vs number)
 4. Contains explicit banned terms: "therapy", "diagnose", "cure", "medical advice", "legal advice"
 
-DO NOT reject for:
+CRITICAL - DO NOT reject for workplace coaching content:
+- Workplace emotions: anger, frustration, anxiety, feeling undermined, status concerns, power dynamics
+- Interpersonal conflicts: peer disagreements, colleague tensions, manager conflicts, team disputes
+- Process challenges: change management, lack of consultation, decision-making issues, communication breakdowns
+- Status and recognition: feeling overlooked, undermined, disrespected, or sidelined at work
+- Work stress: time pressure, competing priorities, resource constraints, workload concerns
+- Career concerns: performance, feedback, development, difficult conversations
 - Valid coaching language about work, energy, commitments, feelings, challenges, goals
 - Personal reflections about time, resources, constraints, financial goals
-- Discussions about financial planning, budgeting, or investment goals (coaching helps users discover their own options)
-- Emotional or situational descriptions
+- Discussions about financial planning, budgeting, or investment goals
+- Emotional or situational descriptions related to work
 - Partial information (some fields can be incomplete)
-- ANY timeframe duration (e.g., "6 months", "1 year", "3 months", "2 weeks", "next quarter") - ALL timeframes are valid
+- ANY timeframe duration (e.g., "6 months", "1 year", "3 months", "2 weeks", "next quarter")
 
-IMPORTANT: The "timeframe" field accepts ANY string value the user provides. Do NOT reject based on duration length.
+IMPORTANT: Coaching is FOR workplace emotions and conflicts. These are the PRIMARY use cases. Be permissive.
 
 Return ONLY:
 {"verdict":"pass","reasons":[]} if valid
