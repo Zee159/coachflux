@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_BASE, USER_STEP_PROMPT, VALIDATOR_PROMPT } from "./prompts";
 import { api } from "./_generated/api";
 import type { Framework, OrgValue, ValidationResult, ReflectionPayload } from "./types";
+import { hasCoachReflection } from "./types";
 
 const BANNED = ["psychiatric", "prescribe", "diagnosis", "sue", "lawsuit"];
 
@@ -153,10 +154,24 @@ export const nextStep = action({
       sessionId: args.sessionId
     });
     
-    // Build conversation history string
+    // Build conversation history string - include both user inputs and coach reflections for current step
     const conversationHistory = sessionReflections
-      .filter((r) => r.userInput !== undefined && r.userInput !== null)
-      .map((r) => `[${r.step.toUpperCase()}] User: ${r.userInput}`)
+      .map((r) => {
+        const parts: string[] = [];
+        // Include coach reflection if it exists - use type guard
+        if (hasCoachReflection(r.payload)) {
+          const coachReflection = r.payload.coach_reflection;
+          if (coachReflection.length > 0) {
+            parts.push(`[${r.step.toUpperCase()}] Coach: ${coachReflection}`);
+          }
+        }
+        // Include user input if it exists
+        if (r.userInput !== undefined && r.userInput !== null && r.userInput.length > 0) {
+          parts.push(`[${r.step.toUpperCase()}] User: ${r.userInput}`);
+        }
+        return parts.join('\n');
+      })
+      .filter((s) => s.length > 0)
       .join('\n\n');
 
     // Initialize Anthropic client

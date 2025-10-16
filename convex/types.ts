@@ -25,6 +25,16 @@ export interface ReflectionPayload {
   [key: string]: unknown;
 }
 
+// Type guard for reflection payload with coach_reflection
+export function hasCoachReflection(payload: unknown): payload is { coach_reflection: string } & Record<string, unknown> {
+  return (
+    payload !== null &&
+    typeof payload === "object" &&
+    "coach_reflection" in payload &&
+    typeof (payload as Record<string, unknown>).coach_reflection === "string"
+  );
+}
+
 // Error type guard
 export function isError(error: unknown): error is Error {
   return error instanceof Error;
