@@ -79,6 +79,8 @@ export function VoiceControl({
   const waitingForSilenceRef = useRef(false);
   const onTranscriptRef = useRef(onTranscript);
   const hasSubmittedRef = useRef(false);
+  const lastProcessedIndexRef = useRef(0);
+  const isProcessingRef = useRef(false);
   
   // Update callback ref when it changes
   useEffect(() => {
@@ -97,8 +99,13 @@ export function VoiceControl({
     const recognition = new SpeechRecognitionConstructor();
     
     recognition.continuous = true;
-    recognition.interimResults = true;
+    recognition.interimResults = false; // KEY FIX: Disable interim results to prevent mobile duplication
     recognition.lang = 'en-GB'; // UK English
+    
+    // Mobile optimization: limit alternatives to reduce processing
+    if ('maxAlternatives' in recognition) {
+      (recognition as SpeechRecognition & { maxAlternatives: number }).maxAlternatives = 1;
+    }
 
     recognition.onstart = () => {
       setIsListening(true);
@@ -107,10 +114,35 @@ export function VoiceControl({
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
+      // Prevent duplicate processing (critical for mobile)
+      if (isProcessingRef.current) {
+        // eslint-disable-next-line no-console
+        console.log('[VoiceControl] Skipping duplicate onresult event');
+        return;
+      }
+      
+      // Debug logging (can be enabled for troubleshooting)
+      const debugMode = false; // Set to true to debug mobile issues
+      if (debugMode) {
+        // eslint-disable-next-line no-console
+        console.log('[VoiceControl] Event results length:', event.results.length);
+        for (let i = 0; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result !== undefined) {
+            // eslint-disable-next-line no-console
+            console.log(`[VoiceControl] Result ${i}:`, {
+              isFinal: result.isFinal,
+              transcript: result[0]?.transcript
+            });
+          }
+        }
+      }
+      
       let interim = '';
       let final = '';
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      // Only process results we haven't seen before (prevents Samsung duplication)
+      for (let i = lastProcessedIndexRef.current; i < event.results.length; i++) {
         const result = event.results[i];
         if (result !== undefined) {
           const alternative = result[0];
@@ -118,6 +150,7 @@ export function VoiceControl({
             const transcriptPiece = alternative.transcript;
             if (result.isFinal) {
               final += transcriptPiece + ' ';
+              lastProcessedIndexRef.current = i + 1; // Track processed index
             } else {
               interim += transcriptPiece;
             }
@@ -178,12 +211,18 @@ export function VoiceControl({
         
         const textToSend = finalTranscriptRef.current.trim();
         // Only submit if we haven't already submitted this transcript
-        if (textToSend.length > 0 && !hasSubmittedRef.current) {
+        if (textToSend.length > 0 && !hasSubmittedRef.current && !isProcessingRef.current) {
+          isProcessingRef.current = true;
           hasSubmittedRef.current = true;
           onTranscriptRef.current(textToSend);
           finalTranscriptRef.current = '';
           setTranscript('');
           setInterimTranscript('');
+          
+          // Reset processing flag after a short delay
+          setTimeout(() => {
+            isProcessingRef.current = false;
+          }, 500);
         }
       } else if (silenceTimerRef.current !== null) {
         clearTimeout(silenceTimerRef.current);
@@ -191,6 +230,7 @@ export function VoiceControl({
       }
       
       waitingForSilenceRef.current = false;
+      lastProcessedIndexRef.current = 0; // Reset for next session
     };
 
     recognitionRef.current = recognition;
@@ -212,6 +252,8 @@ export function VoiceControl({
       finalTranscriptRef.current = "";
       waitingForSilenceRef.current = false;
       hasSubmittedRef.current = false; // Reset submission flag for new session
+      lastProcessedIndexRef.current = 0; // Reset processed index
+      isProcessingRef.current = false; // Reset processing flag
       setError(null);
       if (silenceTimerRef.current !== null) {
         clearTimeout(silenceTimerRef.current);
@@ -229,13 +271,20 @@ export function VoiceControl({
       recognitionRef.current.stop();
       const textToSend = finalTranscriptRef.current.trim();
       // Only submit if we haven't already submitted this transcript
-      if (textToSend.length > 0 && !hasSubmittedRef.current) {
+      if (textToSend.length > 0 && !hasSubmittedRef.current && !isProcessingRef.current) {
+        isProcessingRef.current = true;
         hasSubmittedRef.current = true;
         onTranscriptRef.current(textToSend);
+        
+        // Reset processing flag after a short delay
+        setTimeout(() => {
+          isProcessingRef.current = false;
+        }, 500);
       }
       finalTranscriptRef.current = "";
       setTranscript("");
       setInterimTranscript("");
+      lastProcessedIndexRef.current = 0;
     }
   };
 

@@ -4,6 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
 import { LegalModal } from "./LegalModal";
+import { FeedbackWidget } from "./FeedbackWidget";
 
 export function DemoSetup() {
   const [orgName, setOrgName] = useState("");
@@ -510,6 +511,9 @@ export function DemoSetup() {
         onAccept={handleLegalAccept}
         onDecline={handleLegalDecline}
       />
+
+      {/* Feedback Widget */}
+      <FeedbackWidget />
     </div>
   );
 }

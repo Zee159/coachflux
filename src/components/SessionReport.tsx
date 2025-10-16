@@ -1,6 +1,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
+import { useEffect, useRef } from "react";
 
 interface SessionReportProps {
   sessionId: Id<"sessions">;
@@ -11,12 +12,34 @@ interface SessionReportProps {
 export function SessionReport({ sessionId, onClose }: SessionReportProps) {
   const session = useQuery(api.queries.getSession, { sessionId });
   const reflections = useQuery(api.queries.getSessionReflections, { sessionId });
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus trap and ESC key handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    // Focus the close button when modal opens
+    closeButtonRef.current?.focus();
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   if (session === null || session === undefined || reflections === null || reflections === undefined) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Loading session report"
+      >
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6">
-          <p>Loading report...</p>
+          <p role="status" aria-live="polite">Loading report...</p>
         </div>
       </div>
     );
@@ -40,11 +63,25 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full my-4 sm:my-8 shadow-2xl print:shadow-none">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="report-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div 
+        ref={modalRef}
+        className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full my-4 sm:my-8 shadow-2xl print:shadow-none"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-indigo-600 text-white p-4 sm:p-6 rounded-t-lg print:bg-indigo-600">
-          <h1 className="text-xl sm:text-2xl font-bold mb-2">Coaching Session Report</h1>
+          <h1 id="report-title" className="text-xl sm:text-2xl font-bold mb-2">Coaching Session Report</h1>
           <p className="text-indigo-100 text-xs sm:text-sm">
             {session.framework} Framework • {new Date(session.startedAt).toLocaleDateString()}
           </p>
@@ -160,7 +197,9 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                       {option.pros !== undefined && option.pros !== null && option.pros.length > 0 && (
                         <div>
-                          <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase mb-1">Pros</p>
+                          <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase mb-1">
+                            <span aria-hidden="true">✓</span> Pros
+                          </p>
                           <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
                             {option.pros.map((pro, pIdx) => (
                               <li key={pIdx}>{pro}</li>
@@ -170,7 +209,9 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                       )}
                       {option.cons !== undefined && option.cons !== null && option.cons.length > 0 && (
                         <div>
-                          <p className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase mb-1">Cons</p>
+                          <p className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase mb-1">
+                            <span aria-hidden="true">✗</span> Cons
+                          </p>
                           <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
                             {option.cons.map((con, cIdx) => (
                               <li key={cIdx}>{con}</li>
@@ -201,19 +242,34 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                     <p className="text-gray-900 dark:text-white font-medium">{willPayload['chosen_option']}</p>
                   </div>
                 ) : null}
-                {Array.isArray(willPayload['actions']) && (
+                {Array.isArray(willPayload['actions']) && (willPayload['actions'] as unknown[]).length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">Action Items</p>
                     <div className="space-y-2">
-                      {(willPayload['actions'] as Array<{ title: string; owner: string; due_days: number }>).map((action, idx) => (
-                        <div key={idx} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded p-3">
-                          <p className="font-medium text-gray-900 dark:text-white">{action.title}</p>
-                          <div className="flex gap-4 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            <span>👤 {action.owner}</span>
-                            <span>📅 Due in {action.due_days} days</span>
+                      {(willPayload['actions'] as Array<{ title: string; owner: string; due_days: number }>).map((action, idx) => {
+                        const dueDate = new Date();
+                        dueDate.setDate(dueDate.getDate() + action.due_days);
+                        return (
+                          <div key={idx} className="bg-white dark:bg-gray-800 border-2 border-indigo-200 dark:border-indigo-800 rounded-lg p-3">
+                            <div className="flex items-start gap-2">
+                              <span className="text-indigo-600 dark:text-indigo-400 text-lg mt-0.5">✓</span>
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900 dark:text-white">{action.title}</p>
+                                <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                  <span className="flex items-center gap-1">
+                                    <span>👤</span>
+                                    <span>{action.owner}</span>
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <span>📅</span>
+                                    <span>Due: {dueDate.toLocaleDateString()} ({action.due_days} days)</span>
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -240,22 +296,79 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                   </div>
                 )}
                 
-                {typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 ? (
+                {/* User Reflections */}
+                {typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Summary</p>
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Key Takeaways</p>
+                    <p className="text-gray-900 dark:text-white">{reviewPayload['key_takeaways']}</p>
+                  </div>
+                )}
+                
+                {typeof reviewPayload['confidence_level'] === 'number' && (() => {
+                  const confidenceValue = Number(reviewPayload['confidence_level']);
+                  const progressBarProps = {
+                    role: 'progressbar' as const,
+                    'aria-valuenow': confidenceValue,
+                    'aria-valuemin': 0,
+                    'aria-valuemax': 100,
+                    'aria-label': `Confidence level: ${confidenceValue} percent`
+                  };
+                  return (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Confidence Level</p>
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-3"
+                          {...progressBarProps}
+                        >
+                          <div 
+                            className="bg-indigo-600 h-3 rounded-full transition-all"
+                            style={{ width: `${confidenceValue}%` }}
+                          />
+                        </div>
+                        <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400" aria-hidden="true">
+                          {confidenceValue}/100
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+                
+                {typeof reviewPayload['commitment'] === 'string' && reviewPayload['commitment'].length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Commitment</p>
+                    <p className="text-gray-900 dark:text-white">{reviewPayload['commitment']}</p>
+                  </div>
+                )}
+                
+                {typeof reviewPayload['immediate_step'] === 'string' && reviewPayload['immediate_step'].length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Next Immediate Step</p>
+                    <p className="text-gray-900 dark:text-white font-medium">→ {reviewPayload['immediate_step']}</p>
+                  </div>
+                )}
+                
+                {/* Summary */}
+                {typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 && (
+                  <div className="pt-2 border-t border-gray-300 dark:border-gray-600">
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Session Summary</p>
                     <p className="text-gray-900 dark:text-white">{reviewPayload['summary']}</p>
                   </div>
-                ) : null}
+                )}
               </div>
 
-              {/* AI Insights & Analysis */}
-              <div className="mt-4 space-y-4">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <span className="text-indigo-600">🤖</span>
-                  AI Insights & Analysis
-                </h3>
+              {/* AI Insights & Analysis - Only show if there's actual analysis data */}
+              {(typeof reviewPayload['ai_insights'] === 'string' || 
+                (Array.isArray(reviewPayload['unexplored_options']) && (reviewPayload['unexplored_options'] as unknown[]).length > 0) ||
+                (Array.isArray(reviewPayload['identified_risks']) && (reviewPayload['identified_risks'] as unknown[]).length > 0) ||
+                (Array.isArray(reviewPayload['potential_pitfalls']) && (reviewPayload['potential_pitfalls'] as unknown[]).length > 0)) && (
+                <div className="mt-4 space-y-4">
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span className="text-indigo-600">🤖</span>
+                    AI Insights & Analysis
+                  </h3>
 
-                {typeof reviewPayload['ai_insights'] === 'string' && (
+                  {typeof reviewPayload['ai_insights'] === 'string' && (
                   <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded-r-lg">
                     <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 uppercase mb-1">Key Insights</p>
                     <p className="text-sm text-gray-800 dark:text-gray-200">{reviewPayload['ai_insights']}</p>
@@ -303,7 +416,8 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                     </ul>
                   </div>
                 )}
-              </div>
+                </div>
+              )}
             </section>
           )}
         </div>
@@ -312,13 +426,16 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
         <div className="border-t border-gray-200 dark:border-gray-600 p-4 sm:p-6 bg-gray-50 dark:bg-gray-700 rounded-b-lg flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 print:hidden">
           <button
             onClick={handlePrint}
-            className="w-full sm:w-auto px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+            className="w-full sm:w-auto px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+            aria-label="Print or save report as PDF"
           >
-            Print / Save as PDF
+            <span aria-hidden="true">🖨️</span> Print / Save as PDF
           </button>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+            className="w-full sm:w-auto px-4 py-2 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+            aria-label="Close report dialog"
           >
             Close
           </button>

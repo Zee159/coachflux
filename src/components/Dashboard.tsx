@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Id } from "../../convex/_generated/dataModel";
 import { ThemeToggle } from "./ThemeToggle";
 import { SessionReport } from "./SessionReport";
+import { FeedbackWidget } from "./FeedbackWidget";
 
 // SessionCard component with executive summary
 interface SessionCardProps {
@@ -426,6 +427,9 @@ export function Dashboard() {
           onClose={() => setSelectedSessionId(null)}
         />
       )}
+
+      {/* Feedback Widget */}
+      <FeedbackWidget />
     </div>
   );
 }

@@ -14,7 +14,7 @@ const STEP_REQUIRED_FIELDS: Record<string, string[]> = {
   reality: ["current_state", "constraints", "resources", "risks"],
   options: ["options"],
   will: ["chosen_option", "actions"],
-  review: ["summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls"]
+  review: ["key_takeaways", "confidence_level", "commitment", "immediate_step", "summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls"]
 };
 
 // Aggregate captured state from reflections (AGENT MODE)
@@ -181,6 +181,10 @@ const getFramework = (): Framework => {
         required_fields_schema: {
           type: "object",
           properties: {
+            key_takeaways: { type: "string", minLength: 10, maxLength: 500 },
+            confidence_level: { type: "number", minimum: 0, maximum: 100 },
+            commitment: { type: "string", minLength: 10, maxLength: 500 },
+            immediate_step: { type: "string", minLength: 5, maxLength: 300 },
             summary: { type: "string", minLength: 16, maxLength: 400 },
             ai_insights: { type: "string", minLength: 20, maxLength: 400 },
             unexplored_options: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 4 },

@@ -253,15 +253,20 @@ Conversational Coaching Style:
 PHASE 1 - User Reflection (Ask questions ONE AT A TIME):
 Questions to ask (in sequence):
 1. "What are the key takeaways from this conversation for you?"
+   → Capture in: key_takeaways (string)
 2. "On a scale of 0-100, how confident are you in this plan?"
+   → Capture in: confidence_level (number 0-100)
 3. "What commitment are you making to yourself?"
+   → Capture in: commitment (string)
 4. "What's your next immediate step?"
+   → Capture in: immediate_step (string)
 
 During Phase 1:
 - Ask ONE question at a time
-- ACKNOWLEDGE their answer before moving to next question
+- ACKNOWLEDGE their answer and CAPTURE it in the appropriate field
+- As you ask each question, populate the corresponding field with their answer
 - DO NOT fill in summary, ai_insights, or analysis fields yet
-- Only include coach_reflection in your response
+- Include coach_reflection in your response
 - Build conversation naturally through all 4 questions
 
 PHASE 2 - AI Analysis (ONLY after user has answered all 4 questions):
@@ -284,11 +289,23 @@ CRITICAL - coach_reflection Field:
 
 Example Phase 1 Response (after user's first answer):
 {
+  "key_takeaways": "I need to track my expenses daily and start building my consulting business",
   "coach_reflection": "Those are valuable takeaways - you've identified concrete actions and a clear path forward. On a scale of 0-100, how confident are you in this plan?"
+}
+
+Example Phase 1 Response (after user's second answer):
+{
+  "key_takeaways": "I need to track my expenses daily and start building my consulting business",
+  "confidence_level": 75,
+  "coach_reflection": "A 75 shows good confidence! What commitment are you making to yourself?"
 }
 
 Example Phase 2 Response (after all questions answered):
 {
+  "key_takeaways": "I need to track my expenses daily and start building my consulting business",
+  "confidence_level": 75,
+  "commitment": "I commit to tracking every expense and reaching out to 5 potential clients this week",
+  "immediate_step": "Set up my expense tracking spreadsheet tonight",
   "summary": "Clear goal to save $50k through expense tracking and consulting work, with specific actions and timelines",
   "ai_insights": "Your systematic approach demonstrates strong planning skills. You've balanced short-term actions with resource development.",
   "unexplored_options": ["Negotiate payment plans with landlord", "Sell unused assets", "Temporary part-time employment"],
@@ -306,7 +323,7 @@ function getRequiredFieldsDescription(stepName: string): string {
     reality: "current_state AND at least 2 of: constraints, resources, or risks (thorough exploration needed)",
     options: "at least 3 options, with at least 2 options having BOTH pros AND cons explored",
     will: "chosen_option and at least 2 specific actions (each with title, owner, and due date)",
-    review: "summary, ai_insights, unexplored_options, identified_risks, and potential_pitfalls"
+    review: "Phase 1: key_takeaways, confidence_level, commitment, immediate_step. Phase 2: summary, ai_insights, unexplored_options, identified_risks, and potential_pitfalls"
   };
   return requirements[stepName] ?? "all relevant information";
 }
