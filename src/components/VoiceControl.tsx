@@ -78,6 +78,7 @@ export function VoiceControl({
   const isListeningRef = useRef(false);
   const waitingForSilenceRef = useRef(false);
   const onTranscriptRef = useRef(onTranscript);
+  const hasSubmittedRef = useRef(false);
   
   // Update callback ref when it changes
   useEffect(() => {
@@ -176,7 +177,9 @@ export function VoiceControl({
         waitingForSilenceRef.current = false;
         
         const textToSend = finalTranscriptRef.current.trim();
-        if (textToSend.length > 0) {
+        // Only submit if we haven't already submitted this transcript
+        if (textToSend.length > 0 && !hasSubmittedRef.current) {
+          hasSubmittedRef.current = true;
           onTranscriptRef.current(textToSend);
           finalTranscriptRef.current = '';
           setTranscript('');
@@ -208,6 +211,7 @@ export function VoiceControl({
       setInterimTranscript("");
       finalTranscriptRef.current = "";
       waitingForSilenceRef.current = false;
+      hasSubmittedRef.current = false; // Reset submission flag for new session
       setError(null);
       if (silenceTimerRef.current !== null) {
         clearTimeout(silenceTimerRef.current);
@@ -224,7 +228,9 @@ export function VoiceControl({
       waitingForSilenceRef.current = false;
       recognitionRef.current.stop();
       const textToSend = finalTranscriptRef.current.trim();
-      if (textToSend.length > 0) {
+      // Only submit if we haven't already submitted this transcript
+      if (textToSend.length > 0 && !hasSubmittedRef.current) {
+        hasSubmittedRef.current = true;
         onTranscriptRef.current(textToSend);
       }
       finalTranscriptRef.current = "";
