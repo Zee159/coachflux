@@ -7,22 +7,6 @@ interface SessionReportProps {
   onClose: () => void;
 }
 
-interface ProgressBarProps {
-  value: number;
-}
-
-function ProgressBar({ value }: ProgressBarProps) {
-  const percentage = Math.min(100, value);
-  return (
-    <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
-      {/* Inline style required for dynamic progress bar width */}
-      <div 
-        className="bg-indigo-600 h-3 rounded-full transition-all"
-        style={{ width: `${percentage}%` } as React.CSSProperties}
-      />
-    </div>
-  );
-}
 
 export function SessionReport({ sessionId, onClose }: SessionReportProps) {
   const session = useQuery(api.queries.getSession, { sessionId });
@@ -247,35 +231,12 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                 Review
               </h2>
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-                {typeof reviewPayload['summary'] === 'string' ? (
+                {typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 ? (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Summary</p>
                     <p className="text-gray-900 dark:text-white">{reviewPayload['summary']}</p>
                   </div>
                 ) : null}
-                {typeof reviewPayload['alignment_score'] === 'number' && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Alignment Score</p>
-                    <div className="flex items-center gap-3">
-                      <ProgressBar value={Number(reviewPayload['alignment_score'])} />
-                      <span className="text-lg font-bold text-indigo-600">
-                        {String(reviewPayload['alignment_score'])}/100
-                      </span>
-                    </div>
-                  </div>
-                )}
-                {Array.isArray(reviewPayload['value_tags']) && (reviewPayload['value_tags'] as unknown[]).length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">Aligned Values</p>
-                    <div className="flex flex-wrap gap-2">
-                      {(reviewPayload['value_tags'] as string[]).map((tag, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full text-sm font-medium">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* AI Insights & Analysis */}

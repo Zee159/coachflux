@@ -14,7 +14,7 @@ const STEP_REQUIRED_FIELDS: Record<string, string[]> = {
   reality: ["current_state", "constraints", "resources", "risks"],
   options: ["options"],
   will: ["chosen_option", "actions"],
-  review: ["summary", "alignment_score", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls"]
+  review: ["summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls"]
 };
 
 // Aggregate captured state from reflections (AGENT MODE)
@@ -177,20 +177,18 @@ const getFramework = (): Framework => {
       },
       {
         name: "review",
-        system_objective: "Summarise the plan, provide AI insights, and compute an alignment score with org values.",
+        system_objective: "Summarise the plan and provide AI insights.",
         required_fields_schema: {
           type: "object",
           properties: {
             summary: { type: "string", minLength: 16, maxLength: 400 },
-            alignment_score: { type: "integer", minimum: 0, maximum: 100 },
-            value_tags: { type: "array", items: { type: "string" }, maxItems: 3 },
             ai_insights: { type: "string", minLength: 20, maxLength: 400 },
             unexplored_options: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 4 },
             identified_risks: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 4 },
             potential_pitfalls: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 4 },
             coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
           },
-          required: ["summary", "alignment_score", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls", "coach_reflection"],
+          required: ["summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls", "coach_reflection"],
           additionalProperties: false
         }
       }
@@ -570,10 +568,9 @@ export const nextStep = action({
         }
       }
     } else if (step.name === "review") {
-      // Review step requires: summary, alignment_score, ai_insights, unexplored_options, identified_risks, potential_pitfalls
+      // Review step requires: summary, ai_insights, unexplored_options, identified_risks, potential_pitfalls
       shouldAdvance = Boolean(
         typeof payload["summary"] === "string" && payload["summary"].length > 0 && 
-        typeof payload["alignment_score"] === "number" &&
         typeof payload["ai_insights"] === "string" && payload["ai_insights"].length > 0 &&
         Array.isArray(payload["unexplored_options"]) && payload["unexplored_options"].length > 0 &&
         Array.isArray(payload["identified_risks"]) && payload["identified_risks"].length > 0 &&

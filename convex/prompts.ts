@@ -98,7 +98,6 @@ const COACHING_QUESTIONS: Record<string, string[]> = {
   ],
   review: [
     "What are the key takeaways from this conversation?",
-    "How does this plan align with your organization's values?",
     "On a scale of 0-100, how confident are you in this plan?",
     "What commitment are you making to yourself?",
     "What's your next immediate step?"
@@ -248,12 +247,11 @@ Conversational Coaching Style:
 - Build up actions gradually - don't extract incomplete actions
 - Example: "Great choice! 'Get up every morning and go for a walk' is a solid action. What other specific steps will you take?"`,
 
-  review: `REVIEW PHASE - Summarise, Analyse, and Align
+  review: `REVIEW PHASE - Summarise and Analyse
 Guidance:
 - Bring the conversation to a clear conclusion
 - Ensure the Four C's: Clarity, Commitment, Confidence, and Competence
 - Summarise the key outcomes and commitments
-- Assess alignment with organisational values (when naturally relevant)
 - Acknowledge the individual's ownership and commitment
 - Reinforce self-responsibility and capability
 
@@ -286,7 +284,7 @@ function getRequiredFieldsDescription(stepName: string): string {
     reality: "current_state AND at least 2 of: constraints, resources, or risks (thorough exploration needed)",
     options: "at least 3 options, with at least 2 options having BOTH pros AND cons explored",
     will: "chosen_option and at least 2 specific actions (each with title, owner, and due date)",
-    review: "summary, alignment_score (0-100), ai_insights, unexplored_options, identified_risks, and potential_pitfalls"
+    review: "summary, ai_insights, unexplored_options, identified_risks, and potential_pitfalls"
   };
   return requirements[stepName] ?? "all relevant information";
 }
