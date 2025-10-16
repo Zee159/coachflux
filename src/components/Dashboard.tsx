@@ -26,6 +26,12 @@ function SessionCard({ sessionId, framework, step, startedAt, isCompleted, onCli
     ? reviewPayload['summary'] 
     : undefined;
   
+  // Check if incomplete (Phase 1 only - has coach_reflection but no summary)
+  const isIncomplete = isCompleted && 
+    reviewPayload !== undefined && 
+    typeof reviewPayload['summary'] !== 'string' && 
+    typeof reviewPayload['coach_reflection'] === 'string';
+  
   return (
     <div
       onClick={onClick}
@@ -54,7 +60,7 @@ function SessionCard({ sessionId, framework, step, startedAt, isCompleted, onCli
       </div>
       
       {/* Executive Summary - only for completed sessions */}
-      {isCompleted && summary !== undefined && summary.length > 0 && (
+      {isCompleted && !isIncomplete && summary !== undefined && summary.length > 0 && (
         <div className="mt-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
           <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">
             Executive Summary
@@ -64,6 +70,15 @@ function SessionCard({ sessionId, framework, step, startedAt, isCompleted, onCli
           </p>
           <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 font-medium">
             Click to view full report →
+          </p>
+        </div>
+      )}
+      
+      {/* Warning for incomplete sessions */}
+      {isIncomplete && (
+        <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
+          <p className="text-xs text-yellow-700 dark:text-yellow-300">
+            ⚠️ Incomplete session - closed before review was finished
           </p>
         </div>
       )}

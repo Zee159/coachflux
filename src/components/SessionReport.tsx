@@ -231,6 +231,15 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                 Review
               </h2>
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
+                {/* Check if this is an incomplete session (Phase 1 only) */}
+                {typeof reviewPayload['summary'] !== 'string' && typeof reviewPayload['coach_reflection'] === 'string' && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      ⚠️ This session was completed before all review questions were answered. The full analysis is not available.
+                    </p>
+                  </div>
+                )}
+                
                 {typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 ? (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Summary</p>
