@@ -342,9 +342,11 @@ ${JSON.stringify(schema)}
 
 ONLY reject if:
 1. Not valid JSON syntax
-2. Missing REQUIRED fields specified in schema
+2. Missing REQUIRED fields specified in schema (check "required" array only)
 3. Field types don't match schema (e.g., string vs number)
 4. Contains explicit banned terms: "therapy", "diagnose", "cure", "medical advice", "legal advice"
+
+CRITICAL: Optional fields (not in "required" array) can be completely absent - this is normal for gradual conversation building.
 
 CRITICAL - DO NOT reject for workplace coaching content:
 - Workplace emotions: anger, frustration, anxiety, feeling undermined, status concerns, power dynamics

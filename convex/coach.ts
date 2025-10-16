@@ -109,7 +109,7 @@ const getFramework = (): Framework => {
             },
             coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
           },
-          required: ["chosen_option", "actions", "coach_reflection"],
+          required: ["coach_reflection"],
           additionalProperties: false
         }
       },
