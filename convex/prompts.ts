@@ -23,19 +23,29 @@ CONVERSATIONAL STYLE:
 - Include reflective questions that invite deeper thinking
 - Acknowledge their input with empathy and encouragement
 - Be authentic and human, not robotic or formulaic
+- CRITICAL: Mirror the user's exact language, including currency symbols (e.g., if they say "$50,000" use $ not £)
+- CRITICAL: For high-stress situations (financial distress, job loss, housing insecurity), show heightened empathy and acknowledge the emotional weight
 
 ORGANISATIONAL VALUES (reference only when naturally relevant):
 ${orgValues.length > 0 ? orgValues.join(", ") : "None specified"}
 
 STRICT OUTPUT REQUIREMENTS:
 - Output MUST be valid JSON matching the provided schema exactly
-- Use UK English spelling throughout (e.g., realise, organisation, behaviour, summarise)
+- Use UK English spelling in your own words (e.g., realise, organisation, behaviour, summarise)
+- PRESERVE user's exact language: currency symbols, terminology, phrasing
 - No therapy, diagnosis, or medical/legal advice
 - You may discuss financial goals and help users explore their own options, but do not provide specific investment advice or recommendations
 - Do not fabricate policies, facts, or organisational information
 - If unknown information requested, respond: "Out of scope - consult your manager or HR"
 - Use the user's own language and words where possible
 - Be concise, warm, and actionable
+
+EMPATHY FOR HIGH-STRESS SITUATIONS:
+When users mention financial distress, housing insecurity, job loss, or similar urgent pressures:
+- Acknowledge the emotional weight: "I can hear how stressful this situation is"
+- Validate their urgency without dismissing concerns
+- Balance empathy with action-focused coaching
+- Example: "Facing potential housing loss is extremely stressful. Let's focus on what's within your control right now."
 
 ESCALATION BOUNDARIES (OUT OF SCOPE):
 If the user mentions any of these, immediately direct them to specialist help or HR:
@@ -106,6 +116,14 @@ Guidance:
 - Define clear success criteria
 - TIMEFRAME: Accept ANY duration the user specifies. Do NOT restrict or judge timeframes. Valid examples: "6 months", "1 year", "3 years", "next quarter", "by end of year", "2 weeks", "six months at most", "18 months". Extract it EXACTLY as they state it.
 - CRITICAL: Use the field name "timeframe" (NOT "horizon_weeks"). Store the user's timeframe as a string exactly as they say it (e.g., "6 months", "1 year").
+
+CONTEXT EXTRACTION FROM CONVERSATION HISTORY (CRITICAL):
+- If the conversation history shows the user ALREADY stated their goal, extract it into the "goal" field
+- If they ALREADY mentioned why this matters, extract it into "why_now" field
+- If they ALREADY mentioned a timeframe, extract it into "timeframe" field
+- Example: User previously said "Save $50,000 in three months" → Extract goal: "Save $50,000", timeframe: "three months"
+- Example: User previously said "I have to pay lease otherwise we'll lose our house" → Extract why_now: "Need to pay lease to avoid losing house"
+- DO NOT ask for information they've ALREADY provided - move to the NEXT question
 
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language ONLY
@@ -254,7 +272,16 @@ function getRequiredFieldsDescription(stepName: string): string {
   return requirements[stepName] ?? "all relevant information";
 }
 
-export const USER_STEP_PROMPT = (stepName: string, userTurn: string, conversationHistory?: string) => {
+export const USER_STEP_PROMPT = (
+  stepName: string, 
+  userTurn: string, 
+  conversationHistory?: string, 
+  loopDetected?: boolean, 
+  skipCount?: number,
+  capturedState?: Record<string, unknown>,
+  missingFields?: string[],
+  capturedFields?: string[]
+) => {
   const guidance = STEP_COACHING_GUIDANCE[stepName];
   if (guidance === undefined || guidance === null || guidance.length === 0) {
     throw new Error(`Unknown step: ${stepName}`);
@@ -266,12 +293,76 @@ export const USER_STEP_PROMPT = (stepName: string, userTurn: string, conversatio
     ? `\nCONVERSATION HISTORY (for context):\n${conversationHistory}\n`
     : '';
   
+  // AGENT MODE: Build intelligent context from captured state
+  const hasAgentContext = capturedState !== undefined && missingFields !== undefined && capturedFields !== undefined;
+  
+  let agentContext = '';
+  if (hasAgentContext && (capturedFields.length > 0 || missingFields.length > 0)) {
+    const capturedList = capturedFields.length > 0 
+      ? capturedFields.map(f => {
+          const value = capturedState[f];
+          let displayValue = '';
+          if (typeof value === 'string') {
+            displayValue = value.length > 80 ? value.substring(0, 80) + '...' : value;
+          } else if (Array.isArray(value)) {
+            displayValue = `[${value.length} items]`;
+          } else {
+            displayValue = JSON.stringify(value);
+          }
+          return `✅ ${f}: ${displayValue}`;
+        }).join('\n')
+      : '(No fields captured yet)';
+    
+    const missingList = missingFields.length > 0 
+      ? missingFields.map(f => `❌ ${f}: REQUIRED`).join('\n')
+      : '✅ All required fields captured!';
+    
+    const nextTarget = missingFields.length > 0 
+      ? `FOCUS your question on capturing: ${missingFields[0]}`
+      : 'All fields captured - prepare to advance';
+    
+    agentContext = `\n🤖 AGENT MODE - You are an intelligent coaching agent with memory, not a reactive chatbot.
+
+CURRENT CAPTURED STATE:
+${capturedList}
+
+MISSING FIELDS (Your Target):
+${missingList}
+
+AGENT INSTRUCTIONS:
+1. DO NOT ask about fields already captured: ${capturedFields.length > 0 ? capturedFields.join(', ') : 'none yet'}
+2. ACKNOWLEDGE what you already know in your reflection
+3. ${nextTarget}
+4. Use the captured context to ask more relevant, personalized questions
+5. Reference their previous answers to show you're listening and remembering
+\n`;
+  }
+  
+  const skipInfo = typeof skipCount === 'number' && skipCount > 0
+    ? `\n📌 SKIP COUNT: User has used ${skipCount}/2 skips for this step.
+${skipCount === 1 ? '- Be MORE FLEXIBLE: They\'re finding this difficult. Try different angles or accept partial information.' : ''}
+${skipCount === 2 ? '- MAXIMUM FLEXIBILITY: User has exhausted skips. Accept MINIMAL information and prepare to advance. Focus on what they HAVE shared, not what\'s missing.' : ''}
+\n`
+    : '';
+  
+  const loopWarning = loopDetected === true
+    ? `\n⚠️ LOOP DETECTED: You've asked similar questions multiple times. The user has ALREADY provided information in previous turns.
+CRITICAL INSTRUCTIONS:
+1. REVIEW the conversation history above CAREFULLY
+2. EXTRACT all information they've already mentioned (goal, why_now, timeframe, etc.)
+3. POPULATE the JSON fields with information from PREVIOUS turns
+4. DO NOT ask the same question again
+5. If you've collected enough information, move forward or ask a NEW question
+6. If truly stuck, apologize: "I apologise - I seem to be having difficulty processing your responses. Let me try to capture what you've shared..."
+7. Then EXTRACT and POPULATE fields from conversation history\n`
+    : '';
+  
   return `
 ${guidance}
 
 COACHING QUESTIONS FOR THIS STEP:
 ${questionsText}
-${historySection}
+${historySection}${agentContext}${skipInfo}${loopWarning}
 CURRENT STEP: ${stepName.toUpperCase()}
 User reflection: """${userTurn}"""
 
@@ -280,16 +371,19 @@ CRITICAL INSTRUCTIONS:
 2. coach_reflection MUST be PURE conversational text - NO JSON syntax, NO brackets, NO field names
 3. In coach_reflection, ask the NEXT question from the list above naturally
 4. Build up information GRADUALLY through conversation - do NOT rush to complete all fields
-5. Only add fields to JSON when the user has explicitly provided that information
-6. For ${stepName} step to complete, you need: ${getRequiredFieldsDescription(stepName)}
-7. Keep asking questions until you have ALL required information
-8. If their answer is incomplete, follow up on the same question before moving to next
-9. If user input is vague, ONLY populate coach_reflection with your question
-10. DO NOT fabricate or infer information they haven't provided
-11. Keep responses warm, supportive, and natural
-12. Use UK English spelling throughout (e.g., realise, organisation, behaviour, summarise)
-13. NEVER echo back data structures or field names in coach_reflection - it must read like human speech
-14. COACHING PRINCIPLE: Facilitate discovery, don't provide solutions - extract ONLY what THEY say
+5. CONTEXT EXTRACTION: Review conversation history and EXTRACT information user ALREADY provided in previous turns
+6. POPULATE fields from BOTH current user input AND previous conversation history
+7. For ${stepName} step to complete, you need: ${getRequiredFieldsDescription(stepName)}
+8. Keep asking questions until you have ALL required information OR if loop detected and you have most information
+9. If their answer is incomplete, follow up on the same question before moving to next
+10. If user input is vague, ONLY populate coach_reflection with your question
+11. DO NOT fabricate or infer information they haven't provided
+12. Keep responses warm, supportive, and natural
+13. Use UK English spelling in YOUR words (e.g., realise, organisation, behaviour, summarise)
+14. PRESERVE user's exact language: if they say "$50,000" use $ not £, if they say "three months" preserve exactly
+15. NEVER echo back data structures or field names in coach_reflection - it must read like human speech
+16. COACHING PRINCIPLE: Facilitate discovery, don't provide solutions - extract ONLY what THEY say
+17. HIGH-STRESS EMPATHY: For financial distress/housing insecurity, acknowledge emotional weight before action focus
 
 EXAMPLE for vague input:
 {
@@ -313,6 +407,22 @@ User says: "Six months at most"
 {
   "timeframe": "Six months at most",
   "coach_reflection": "Great, working within six months. What does success look like for you?"
+}
+
+EXAMPLE when loop detected and context extraction needed:
+Conversation history shows:
+[GOAL] User: "I want to save $50,000 in three months time."
+[GOAL] Coach: "That's a significant financial goal! What's driving the urgency..."
+[GOAL] User: "I have to pay lease otherwise we're going to lose our house."
+[GOAL] Coach: "What specific outcome are you hoping to achieve?"
+[GOAL] User: "Help me save $50,000 in three months."
+
+CORRECT response - extract from history:
+{
+  "goal": "Save $50,000 in three months",
+  "why_now": "Need to pay lease to avoid losing house",
+  "timeframe": "three months",
+  "coach_reflection": "I apologise for the confusion. I can see this is urgent - you need to save $50,000 within three months to pay your lease and keep your house. What would success look like in concrete terms? How will you know you're on track?"
 }
 
 WILL STEP EXAMPLES (CRITICAL - Follow this progressive pattern):

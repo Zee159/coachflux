@@ -29,6 +29,7 @@ export default defineSchema({
     state: v.any(),        // JSON state: { skips: { goal: 0, reality: 0, ... } }
     startedAt: v.number(),
     closedAt: v.optional(v.number()),
+    escalated: v.optional(v.boolean()), // Session flagged for escalation to HR/specialist
   }).index("byUser", ["userId"]),
 
   reflections: defineTable({

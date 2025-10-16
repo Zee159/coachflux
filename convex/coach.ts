@@ -8,6 +8,69 @@ import { hasCoachReflection } from "./types";
 
 const BANNED = ["psychiatric", "prescribe", "diagnosis", "sue", "lawsuit"];
 
+// Required fields for each step (for agent state tracking)
+const STEP_REQUIRED_FIELDS: Record<string, string[]> = {
+  goal: ["goal", "why_now", "success_criteria", "timeframe"],
+  reality: ["current_state", "constraints", "resources", "risks"],
+  options: ["options"],
+  will: ["chosen_option", "actions"],
+  review: ["summary", "alignment_score", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls"]
+};
+
+// Aggregate captured state from reflections (AGENT MODE)
+function aggregateStepState(
+  reflections: Array<{ step: string; payload: ReflectionPayload }>,
+  currentStep: string
+): {
+  capturedState: Record<string, unknown>;
+  missingFields: string[];
+  capturedFields: string[];
+  completionPercentage: number;
+} {
+  const requiredFields = STEP_REQUIRED_FIELDS[currentStep] ?? [];
+  
+  // Get latest reflection for current step
+  const currentStepReflections = reflections.filter(r => r.step === currentStep);
+  const latestReflection = currentStepReflections[currentStepReflections.length - 1];
+  
+  if (latestReflection === undefined || latestReflection === null) {
+    return {
+      capturedState: {},
+      missingFields: requiredFields,
+      capturedFields: [],
+      completionPercentage: 0
+    };
+  }
+  
+  const payload = latestReflection.payload;
+  const capturedState: Record<string, unknown> = {};
+  const capturedFields: string[] = [];
+  
+  // Extract captured fields
+  for (const field of requiredFields) {
+    const value = payload[field];
+    
+    // Check if field has meaningful content
+    const isCaptured = 
+      (typeof value === 'string' && value.length > 0) ||
+      (Array.isArray(value) && value.length > 0) ||
+      (typeof value === 'number') ||
+      (typeof value === 'boolean');
+    
+    if (isCaptured) {
+      capturedState[field] = value;
+      capturedFields.push(field);
+    }
+  }
+  
+  const missingFields = requiredFields.filter(f => !capturedFields.includes(f));
+  const completionPercentage = requiredFields.length > 0 
+    ? Math.round((capturedFields.length / requiredFields.length) * 100)
+    : 0;
+  
+  return { capturedState, missingFields, capturedFields, completionPercentage };
+}
+
 // Serious workplace issues requiring escalation (not coaching)
 const ESCALATION_REQUIRED = [
   "sexual harassment", "sexually harassed", "sexual assault", "sexually assaulted",
@@ -144,6 +207,23 @@ export const nextStep = action({
     userTurn: v.string(),
   },
   handler: async (ctx, args) => {
+    // Check if session is already escalated
+    const session = await ctx.runQuery(api.queries.getSession, { sessionId: args.sessionId });
+    if (session === null || session === undefined) {
+      throw new Error("Session not found");
+    }
+    
+    if (session.escalated === true) {
+      return { 
+        ok: false, 
+        message: "This session requires specialist help or HR support. Please contact your HR department, manager, or appropriate specialist services through your organisation's official channels. If you're in immediate danger, contact emergency services."
+      };
+    }
+
+    // Get skip count for current step
+    const sessionState = session.state as { skips?: Record<string, number> } | undefined;
+    const skipCount = sessionState?.skips?.[args.stepName] ?? 0;
+
     // Validate input length (800 char cap)
     if (args.userTurn.length > 800) {
       return { ok: false, message: "Input too long. Please keep responses under 800 characters." };
@@ -155,6 +235,11 @@ export const nextStep = action({
     
     if (escalationHit) {
       const detectedTerms = ESCALATION_REQUIRED.filter(term => userInputLower.includes(term));
+      
+      // Mark session as escalated to prevent future coaching
+      await ctx.runMutation(api.mutations.markSessionEscalated, {
+        sessionId: args.sessionId
+      });
       
       // Log as high severity incident
       await ctx.runMutation(api.mutations.createSafetyIncident, {
@@ -209,6 +294,25 @@ export const nextStep = action({
       .filter((s) => s.length > 0)
       .join('\n\n');
 
+    // AGENT MODE: Aggregate current captured state
+    const stepState = aggregateStepState(sessionReflections, step.name);
+    const { capturedState, missingFields, capturedFields } = stepState;
+    // Note: completionPercentage available in stepState for future UI enhancements
+
+    // Loop detection - check if coach is asking similar questions repeatedly
+    const currentStepReflections = sessionReflections.filter(r => r.step === step.name);
+    const recentCoachMessages = currentStepReflections
+      .slice(-4) // Look at last 4 messages
+      .filter(r => hasCoachReflection(r.payload) && (r.userInput === undefined || r.userInput === null)) // Only coach messages
+      .map(r => hasCoachReflection(r.payload) ? r.payload.coach_reflection.toLowerCase() : '')
+      .filter(msg => msg.length > 0);
+    
+    // Check for repetitive questions (3+ similar questions in recent history)
+    const loopDetected = recentCoachMessages.length >= 3 && 
+      recentCoachMessages.every(msg => 
+        msg.includes('what') || msg.includes('why') || msg.includes('how') || msg.includes('?')
+      );
+
     // Initialize Anthropic client
     const apiKey = process.env["ANTHROPIC_API_KEY"];
     if (apiKey === undefined || apiKey === null || apiKey === '') {
@@ -216,9 +320,18 @@ export const nextStep = action({
     }
     const client = new Anthropic({ apiKey });
 
-    // Primary call
+    // Primary call with AGENT MODE context
     const system = SYSTEM_BASE(values);
-    const user = USER_STEP_PROMPT(step.name, args.userTurn, conversationHistory);
+    const user = USER_STEP_PROMPT(
+      step.name, 
+      args.userTurn, 
+      conversationHistory, 
+      loopDetected, 
+      skipCount,
+      capturedState,
+      missingFields,
+      capturedFields
+    );
 
     const primary = await client.messages.create({
       model: "claude-sonnet-4-20250514",
@@ -348,25 +461,60 @@ export const nextStep = action({
     
     // Define completion criteria for each step
     if (step.name === "goal") {
-      // Goal step requires: goal, why_now, success_criteria, timeframe
-      shouldAdvance = Boolean(
-        typeof payload["goal"] === "string" && payload["goal"].length > 0 && 
-        typeof payload["why_now"] === "string" && payload["why_now"].length > 0 && 
-        Array.isArray(payload["success_criteria"]) && payload["success_criteria"].length > 0 && 
-        typeof payload["timeframe"] === "string" && payload["timeframe"].length > 0
-      );
+      // Goal step requires: 3 out of 4 fields (goal, why_now, success_criteria, timeframe)
+      // This allows flexibility while ensuring meaningful goal capture
+      const hasGoal = typeof payload["goal"] === "string" && payload["goal"].length > 0;
+      const hasWhyNow = typeof payload["why_now"] === "string" && payload["why_now"].length > 0;
+      const hasSuccessCriteria = Array.isArray(payload["success_criteria"]) && payload["success_criteria"].length > 0;
+      const hasTimeframe = typeof payload["timeframe"] === "string" && payload["timeframe"].length > 0;
+      
+      const completedFields = [hasGoal, hasWhyNow, hasSuccessCriteria, hasTimeframe].filter(Boolean).length;
+      
+      // Progressive relaxation based on skip count and loop detection
+      // 0 skips: 3/4 fields required (strict)
+      // 1 skip:  2/4 fields required (lenient)
+      // 2 skips: 1-2/4 fields required (very lenient - force advance)
+      // Loop detected: 2/4 fields (override - system is stuck)
+      let requiredFields = 3;
+      
+      if (loopDetected) {
+        requiredFields = 2; // System is stuck, be lenient
+      } else if (skipCount >= 2) {
+        requiredFields = 1; // User has exhausted skips, force advance with minimal info
+      } else if (skipCount === 1) {
+        requiredFields = 2; // User has used one skip, be more lenient
+      }
+      
+      shouldAdvance = completedFields >= requiredFields;
     } else if (step.name === "reality") {
       // Reality step requires: current_state AND at least 2 of (constraints, resources, risks)
+      const hasCurrentState = typeof payload["current_state"] === "string" && payload["current_state"].length > 0;
       const hasConstraints = Array.isArray(payload["constraints"]) && payload["constraints"].length > 0;
       const hasResources = Array.isArray(payload["resources"]) && payload["resources"].length > 0;
       const hasRisks = Array.isArray(payload["risks"]) && payload["risks"].length > 0;
       const explorationCount = [hasConstraints, hasResources, hasRisks].filter(Boolean).length;
       
-      shouldAdvance = Boolean(typeof payload["current_state"] === "string" && payload["current_state"].length > 0 && explorationCount >= 2);
+      // Progressive relaxation based on skip count
+      // 0 skips: current_state + 2 exploration areas (strict)
+      // 1 skip:  current_state + 1 exploration area (lenient)
+      // 2 skips: current_state only (very lenient)
+      // Loop detected: current_state + 1 exploration area
+      let requiredExploration = 2;
+      
+      if (loopDetected) {
+        requiredExploration = 1;
+      } else if (skipCount >= 2) {
+        requiredExploration = 0; // Just need current_state
+      } else if (skipCount === 1) {
+        requiredExploration = 1;
+      }
+      
+      shouldAdvance = hasCurrentState && explorationCount >= requiredExploration;
     } else if (step.name === "options") {
       // Options step requires: at least 3 options AND at least 2 must have pros/cons explored
       const options = payload["options"];
-      if (!Array.isArray(options) || options.length < 3) {
+      
+      if (!Array.isArray(options) || options.length === 0) {
         shouldAdvance = false;
       } else {
         const exploredOptions = options.filter((opt: unknown) => {
@@ -374,22 +522,52 @@ export const nextStep = action({
           return Array.isArray(option.pros) && option.pros.length > 0 &&
                  Array.isArray(option.cons) && option.cons.length > 0;
         });
-        shouldAdvance = exploredOptions.length >= 2;
+        
+        // Progressive relaxation based on skip count
+        // 0 skips: 3+ options, 2+ fully explored (strict)
+        // 1 skip:  2+ options, 1+ fully explored (lenient)
+        // 2 skips: 1+ option with ANY detail (very lenient)
+        // Loop detected: 2+ options, 1+ explored
+        if (loopDetected) {
+          shouldAdvance = options.length >= 2 && exploredOptions.length >= 1;
+        } else if (skipCount >= 2) {
+          shouldAdvance = options.length >= 1; // Just need ANY option
+        } else if (skipCount === 1) {
+          shouldAdvance = options.length >= 2 && exploredOptions.length >= 1;
+        } else {
+          shouldAdvance = options.length >= 3 && exploredOptions.length >= 2;
+        }
       }
     } else if (step.name === "will") {
-      // Will step requires: chosen_option, at least 2 concrete actions with ALL details, and commitment confirmation
+      // Will step requires: chosen_option, at least 2 concrete actions with ALL details
+      const hasChosenOption = typeof payload["chosen_option"] === "string" && payload["chosen_option"].length > 0;
       const actions = payload["actions"];
-      if (typeof payload["chosen_option"] !== "string" || payload["chosen_option"].length === 0 || !Array.isArray(actions) || actions.length < 2) {
+      
+      if (!hasChosenOption || !Array.isArray(actions) || actions.length === 0) {
         shouldAdvance = false;
       } else {
-        // Check that all actions have complete details (title, owner, due_days)
+        // Check that actions have complete details (title, owner, due_days)
         const completeActions = actions.filter((a: unknown) => {
           const action = a as { title?: string; owner?: string; due_days?: number };
-          return typeof action.title === "string" && action.title.length > 0 && typeof action.owner === "string" && action.owner.length > 0 && typeof action.due_days === "number" && action.due_days > 0;
+          return typeof action.title === "string" && action.title.length > 0 && 
+                 typeof action.owner === "string" && action.owner.length > 0 && 
+                 typeof action.due_days === "number" && action.due_days > 0;
         });
         
-        // Need at least 2 complete actions to advance
-        shouldAdvance = completeActions.length >= 2;
+        // Progressive relaxation based on skip count
+        // 0 skips: 2+ complete actions (strict)
+        // 1 skip:  1+ complete action (lenient)
+        // 2 skips: 1+ action with ANY detail (very lenient)
+        // Loop detected: 1+ complete action
+        if (loopDetected) {
+          shouldAdvance = completeActions.length >= 1;
+        } else if (skipCount >= 2) {
+          shouldAdvance = actions.length >= 1; // Just need ANY action
+        } else if (skipCount === 1) {
+          shouldAdvance = completeActions.length >= 1;
+        } else {
+          shouldAdvance = completeActions.length >= 2;
+        }
       }
     } else if (step.name === "review") {
       // Review step requires: summary, alignment_score, ai_insights, unexplored_options, identified_risks, potential_pitfalls

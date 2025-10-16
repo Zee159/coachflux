@@ -124,6 +124,15 @@ export const closeSession = mutation({
   },
 });
 
+export const markSessionEscalated = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, { escalated: true });
+  },
+});
+
 export const createReflection = mutation({
   args: {
     orgId: v.id("orgs"),
