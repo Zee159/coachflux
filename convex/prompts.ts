@@ -86,7 +86,7 @@ Guidance:
 - Ensure the goal is achievable within their stated timeframe
 - Explore why this matters NOW
 - Define clear success criteria
-- TIMEFRAME: Accept ANY duration the user specifies (e.g., "6 months", "next quarter", "by end of year", "2 weeks", "six months at most"). Extract it exactly as they state it.
+- TIMEFRAME: Accept ANY duration the user specifies. Do NOT restrict or judge timeframes. Valid examples: "6 months", "1 year", "3 years", "next quarter", "by end of year", "2 weeks", "six months at most", "18 months". Extract it EXACTLY as they state it.
 
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language ONLY
@@ -276,10 +276,16 @@ EXAMPLE when user provides details:
 }
 
 EXAMPLE when user mentions timeframe (extract it exactly as stated):
+User says: "6 months"
+{
+  "timeframe": "6 months",
+  "coach_reflection": "That's a clear timeframe. What specific outcomes would you like to achieve within this period?"
+}
+
 User says: "Six months at most"
 {
   "timeframe": "Six months at most",
-  "coach_reflection": "That's a clear timeframe. What specific outcomes would you like to achieve within this period?"
+  "coach_reflection": "Great, working within six months. What does success look like for you?"
 }
 
 Produce ONLY valid JSON matching the schema - no additional text.
@@ -302,6 +308,9 @@ DO NOT reject for:
 - Discussions about financial planning, budgeting, or investment goals (coaching helps users discover their own options)
 - Emotional or situational descriptions
 - Partial information (some fields can be incomplete)
+- ANY timeframe duration (e.g., "6 months", "1 year", "3 months", "2 weeks", "next quarter") - ALL timeframes are valid
+
+IMPORTANT: The "timeframe" field accepts ANY string value the user provides. Do NOT reject based on duration length.
 
 Return ONLY:
 {"verdict":"pass","reasons":[]} if valid
