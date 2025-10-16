@@ -7,6 +7,23 @@ interface SessionReportProps {
   onClose: () => void;
 }
 
+interface ProgressBarProps {
+  value: number;
+}
+
+function ProgressBar({ value }: ProgressBarProps) {
+  const percentage = Math.min(100, value);
+  return (
+    <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
+      {/* Inline style required for dynamic progress bar width */}
+      <div 
+        className="bg-indigo-600 h-3 rounded-full transition-all"
+        style={{ width: `${percentage}%` } as React.CSSProperties}
+      />
+    </div>
+  );
+}
+
 export function SessionReport({ sessionId, onClose }: SessionReportProps) {
   const session = useQuery(api.queries.getSession, { sessionId });
   const reflections = useQuery(api.queries.getSessionReflections, { sessionId });
@@ -83,10 +100,10 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                     </ul>
                   </div>
                 ) : null}
-                {typeof goalPayload['horizon_weeks'] === 'number' ? (
+                {typeof goalPayload['timeframe'] === 'string' && goalPayload['timeframe'].length > 0 ? (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Timeframe</p>
-                    <p className="text-gray-900 dark:text-white">{goalPayload['horizon_weeks']} weeks</p>
+                    <p className="text-gray-900 dark:text-white">{goalPayload['timeframe']}</p>
                   </div>
                 ) : null}
               </div>
@@ -240,12 +257,7 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Alignment Score</p>
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
-                        <div 
-                          className="bg-indigo-600 h-3 rounded-full transition-all"
-                          style={{ width: `${Math.min(100, Number(reviewPayload['alignment_score']))}%` }}
-                        />
-                      </div>
+                      <ProgressBar value={Number(reviewPayload['alignment_score'])} />
                       <span className="text-lg font-bold text-indigo-600">
                         {String(reviewPayload['alignment_score'])}/100
                       </span>

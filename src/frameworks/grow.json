@@ -3,16 +3,16 @@
   "steps": [
     {
       "name": "goal",
-      "system_objective": "Clarify the desired outcome for the next 1-12 weeks.",
+      "system_objective": "Clarify the desired outcome and timeframe.",
       "required_fields_schema": {
         "type": "object",
         "properties": {
           "goal": { "type": "string", "minLength": 8, "maxLength": 240 },
           "why_now": { "type": "string", "minLength": 8, "maxLength": 240 },
           "success_criteria": { "type": "array", "items": { "type": "string", "minLength": 3 }, "minItems": 1, "maxItems": 5 },
-          "horizon_weeks": { "type": "integer", "minimum": 1, "maximum": 12 }
+          "timeframe": { "type": "string", "minLength": 1, "maxLength": 100 }
         },
-        "required": ["goal", "why_now", "success_criteria", "horizon_weeks"],
+        "required": ["goal", "why_now", "success_criteria", "timeframe"],
         "additionalProperties": false
       }
     },

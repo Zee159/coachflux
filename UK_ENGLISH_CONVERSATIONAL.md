@@ -171,7 +171,7 @@ GOAL
     "identify a clear focus area for discussion",
     "Define what success looks like for this conversation"
   ],
-  "horizon_weeks": 1
+  "timeframe": "this week"
 }
 ```
 

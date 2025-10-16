@@ -25,7 +25,7 @@
   ],
   "banned_terms": ["therapy", "diagnose", "medical", "cure", "legal advice", "financial advice"],
   "expected_outcomes": {
-    "goal": ["goal", "why_now", "success_criteria", "horizon_weeks"],
+    "goal": ["goal", "why_now", "success_criteria", "timeframe"],
     "reality": ["current_state"],
     "options": ["options"],
     "will": ["chosen_option", "actions"],
