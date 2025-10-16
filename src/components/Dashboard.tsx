@@ -258,12 +258,29 @@ export function Dashboard() {
             </div>
             <div className="flex items-center gap-3">
               <ThemeToggle />
-              <button
-                onClick={() => void handleStartSession()}
-                className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 text-sm rounded-md hover:bg-indigo-700 transition-colors"
-              >
-                {activeSessions.length > 0 ? "Continue Session" : "New Session"}
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => void handleStartSession()}
+                  className={`w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 text-sm rounded-md hover:bg-indigo-700 transition-colors ${
+                    sessions?.length === 0 ? 'animate-pulse-glow' : ''
+                  }`}
+                >
+                  {activeSessions.length > 0 ? "Continue Session" : "New Session"}
+                </button>
+                {/* First-time user tooltip */}
+                {sessions?.length === 0 && (
+                  <div className="absolute -bottom-16 right-0 bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-200 dark:border-indigo-800 rounded-lg p-3 shadow-lg animate-bounce-subtle pointer-events-none">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">👆</span>
+                      <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
+                        Start your first coaching session!
+                      </p>
+                    </div>
+                    {/* Arrow */}
+                    <div className="absolute -top-2 right-6 w-4 h-4 bg-indigo-50 dark:bg-indigo-900/20 border-t-2 border-l-2 border-indigo-200 dark:border-indigo-800 transform rotate-45"></div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
