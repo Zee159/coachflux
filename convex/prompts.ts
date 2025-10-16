@@ -86,6 +86,7 @@ Guidance:
 - Ensure the goal is achievable within their stated timeframe
 - Explore why this matters NOW
 - Define clear success criteria
+- TIMEFRAME: Accept ANY duration the user specifies (e.g., "6 months", "next quarter", "by end of year", "2 weeks", "six months at most"). Extract it exactly as they state it.
 
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language ONLY
@@ -272,6 +273,13 @@ EXAMPLE when user provides details:
 {
   "goal": "[their exact words]",
   "coach_reflection": "That's a meaningful goal. Why is this important to you right now?"
+}
+
+EXAMPLE when user mentions timeframe (extract it exactly as stated):
+User says: "Six months at most"
+{
+  "timeframe": "Six months at most",
+  "coach_reflection": "That's a clear timeframe. What specific outcomes would you like to achieve within this period?"
 }
 
 Produce ONLY valid JSON matching the schema - no additional text.
