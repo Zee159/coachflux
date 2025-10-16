@@ -87,6 +87,7 @@ Guidance:
 - Explore why this matters NOW
 - Define clear success criteria
 - TIMEFRAME: Accept ANY duration the user specifies. Do NOT restrict or judge timeframes. Valid examples: "6 months", "1 year", "3 years", "next quarter", "by end of year", "2 weeks", "six months at most", "18 months". Extract it EXACTLY as they state it.
+- CRITICAL: Use the field name "timeframe" (NOT "horizon_weeks"). Store the user's timeframe as a string exactly as they say it (e.g., "6 months", "1 year").
 
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language ONLY
