@@ -173,9 +173,18 @@ Guidance:
 - Once reality is explored, help them brainstorm THEIR OWN options
 - Ask open questions: "What are some ways you could move forward?"
 - Encourage creative thinking: "What would you do if there were no constraints?"
-- For each option THEY mention, explore pros and cons through questions
+- For EACH option THEY mention, you MUST explore pros and cons through questions
+- DO NOT advance until you have pros/cons for AT LEAST 2 options
+- If they mention an option without pros/cons, ask: "What advantages do you see with [option]? What challenges might you face?"
 - Help them evaluate which aligns best with their goals
 - Build on THEIR ideas, don't provide your own
+
+PRO/CON EXPLORATION - REQUIRED:
+- Each option needs: label, pros (array), cons (array)
+- Standard requirement: 3+ options, 2+ must have pros AND cons explored
+- If you have 3 options but only 1 has pros/cons, ask about the others: "What about [option 2] - what advantages and challenges do you see?"
+- Example: User mentions "consulting work" → Ask: "What advantages do you see? What challenges?"
+- Do NOT accept options at face value - dig deeper into pros/cons for each one
 
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language
@@ -305,7 +314,26 @@ export const USER_STEP_PROMPT = (
           if (typeof value === 'string') {
             displayValue = value.length > 80 ? value.substring(0, 80) + '...' : value;
           } else if (Array.isArray(value)) {
-            displayValue = `[${value.length} items]`;
+            // Special handling for OPTIONS step - show which options have pros/cons
+            if (stepName === 'options' && f === 'options') {
+              const options = value as Array<{label?: string; pros?: unknown[]; cons?: unknown[]}>;
+              const explored = options.filter(opt => 
+                Array.isArray(opt.pros) && opt.pros.length > 0 && 
+                Array.isArray(opt.cons) && opt.cons.length > 0
+              );
+              const unexplored = options.filter(opt => 
+                !Array.isArray(opt.pros) || opt.pros.length === 0 || 
+                !Array.isArray(opt.cons) || opt.cons.length === 0
+              );
+              
+              displayValue = `[${options.length} options total, ${explored.length} fully explored with pros/cons, ${unexplored.length} need exploration]`;
+              if (unexplored.length > 0) {
+                const unexploredLabels = unexplored.map(opt => (opt.label !== undefined && opt.label !== null && opt.label.length > 0) ? opt.label : 'unnamed').join(', ');
+                displayValue += `\n   ⚠️ NEED PROS/CONS: ${unexploredLabels}`;
+              }
+            } else {
+              displayValue = `[${value.length} items]`;
+            }
           } else {
             displayValue = JSON.stringify(value);
           }
@@ -317,9 +345,29 @@ export const USER_STEP_PROMPT = (
       ? missingFields.map(f => `❌ ${f}: REQUIRED`).join('\n')
       : '✅ All required fields captured!';
     
-    const nextTarget = missingFields.length > 0 
-      ? `FOCUS your question on capturing: ${missingFields[0]}`
-      : 'All fields captured - prepare to advance';
+    let nextTarget = '';
+    if (stepName === 'options' && capturedState.options !== undefined && capturedState.options !== null) {
+      // Special instructions for OPTIONS step
+      const options = capturedState.options as Array<{label?: string; pros?: unknown[]; cons?: unknown[]}>;
+      const unexplored = options.filter(opt => 
+        !Array.isArray(opt.pros) || opt.pros.length === 0 || 
+        !Array.isArray(opt.cons) || opt.cons.length === 0
+      );
+      
+      if (unexplored.length > 0) {
+        const nextOption = unexplored[0];
+        const optionLabel = (nextOption.label !== undefined && nextOption.label !== null && nextOption.label.length > 0) ? nextOption.label : 'next option';
+        nextTarget = `ASK about pros/cons for "${optionLabel}": "What advantages and challenges do you see with ${optionLabel}?"`;
+      } else if (options.length < 3) {
+        nextTarget = `ASK for more options: "What else could you do? What other approaches might work?"`;
+      } else {
+        nextTarget = 'All options explored - prepare to advance to WILL step';
+      }
+    } else {
+      nextTarget = missingFields.length > 0 
+        ? `FOCUS your question on capturing: ${missingFields[0]}`
+        : 'All fields captured - prepare to advance';
+    }
     
     agentContext = `\n🤖 AGENT MODE - You are an intelligent coaching agent with memory, not a reactive chatbot.
 
