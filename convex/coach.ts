@@ -759,7 +759,7 @@ export const generateReviewAnalysis = action({
     const reviewData = reviewPayload !== undefined && reviewPayload !== null ? JSON.stringify(reviewPayload, null, 2) : 'Not captured';
 
     // 5. Call AI to generate analysis
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env['ANTHROPIC_API_KEY'];
     if (apiKey === undefined || apiKey === null || apiKey.length === 0) {
       return { ok: false, message: "ANTHROPIC_API_KEY not configured" };
     }
@@ -801,11 +801,12 @@ export const generateReviewAnalysis = action({
 
       // 7. Validate required fields
       const requiredFields = ['summary', 'ai_insights', 'unexplored_options', 'identified_risks', 'potential_pitfalls'];
-      const missingFields = requiredFields.filter(field => 
-        analysis[field] === undefined || analysis[field] === null || 
-        (typeof analysis[field] === 'string' && (analysis[field] as string).length === 0) ||
-        (Array.isArray(analysis[field]) && (analysis[field] as unknown[]).length === 0)
-      );
+      const missingFields = requiredFields.filter(field => {
+        const value = analysis[field];
+        return value === undefined || value === null || 
+          (typeof value === 'string' && value.length === 0) ||
+          (Array.isArray(value) && value.length === 0);
+      });
 
       if (missingFields.length > 0) {
         console.error("Missing analysis fields:", missingFields);

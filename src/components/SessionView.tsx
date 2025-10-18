@@ -724,8 +724,8 @@ export function SessionView() {
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div 
-              className="bg-indigo-600 dark:bg-indigo-500 h-2 rounded-full transition-all duration-300"
-              style={{width: `${((["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1) / 5) * 100}%`}}
+              className="bg-indigo-600 dark:bg-indigo-500 h-2 rounded-full transition-all duration-300 progress-bar-dynamic"
+              style={{['--progress-width' as string]: `${((["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1) / 5) * 100}%`} as React.CSSProperties}
             />
           </div>
         </div>
@@ -1103,7 +1103,7 @@ export function SessionView() {
       </main>
 
       {/* Fixed Input Box at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-40 safe-area-bottom">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="py-2 sm:py-3">
             <div className="max-w-4xl">
@@ -1244,11 +1244,11 @@ export function SessionView() {
                   <span>Reviewing conversation history</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   <span>Identifying key insights</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   <span>Generating recommendations</span>
                 </div>
               </div>

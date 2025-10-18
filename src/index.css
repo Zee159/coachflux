@@ -110,3 +110,13 @@ body {
 .animate-bounce-subtle {
   animation: bounce-subtle 2s ease-in-out infinite;
 }
+
+/* Dynamic progress bar - supports CSS custom properties */
+.progress-bar-dynamic {
+  width: var(--progress-width, 0%);
+}
+
+/* Safe area inset for mobile devices */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
