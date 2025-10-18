@@ -196,6 +196,7 @@ export function SessionView() {
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
   const [notification, setNotification] = useState<{ type: "info" | "success" | "error"; message: string } | null>(null);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
@@ -219,6 +220,7 @@ export function SessionView() {
   );
 
   const nextStepAction = useAction(api.coach.nextStep);
+  const generateReviewAnalysisAction = useAction(api.coach.generateReviewAnalysis);
   const closeSession = useMutation(api.mutations.closeSession);
   const incrementSkip = useMutation(api.mutations.incrementSkipCount);
 
@@ -280,6 +282,62 @@ export function SessionView() {
       }, 500);
     }
   }, [reflections, autoPlayVoice, voiceControl]);
+
+  // Detect Phase 1 completion in review step and trigger report generation
+  useEffect(() => {
+    if (session?.step !== 'review' || session === null || session === undefined || reflections === null || reflections === undefined) {
+      return;
+    }
+
+    // Check if session is already closed
+    if (session.closedAt !== null && session.closedAt !== undefined) {
+      return;
+    }
+
+    // Check if we're already generating
+    if (generatingReport) {
+      return;
+    }
+
+    // Find review reflection
+    const reviewReflection = reflections.find((r) => r.step === 'review');
+    if (reviewReflection === undefined || reviewReflection === null) {
+      return;
+    }
+
+    const reviewPayload = reviewReflection.payload as Record<string, unknown>;
+    const hasKeyTakeaways = typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length > 0;
+    const hasImmediateStep = typeof reviewPayload['immediate_step'] === 'string' && reviewPayload['immediate_step'].length > 0;
+    const hasSummary = typeof reviewPayload['summary'] === 'string';
+
+    // If both questions answered but no summary yet, trigger report generation
+    if (hasKeyTakeaways && hasImmediateStep && !hasSummary) {
+      const generateReport = async () => {
+        setGeneratingReport(true);
+
+        try {
+          const analysisResult = await generateReviewAnalysisAction({
+            sessionId: session._id,
+            orgId: session.orgId,
+            userId: session.userId
+          });
+
+          if (analysisResult.ok) {
+            setNotification({ type: "success", message: "🎉 Coaching session complete! Your report is now ready." });
+          } else {
+            setNotification({ type: "error", message: `Report generation failed: ${analysisResult.message ?? 'Unknown error'}` });
+          }
+        } catch (error: unknown) {
+          console.error("Report generation error:", error);
+          setNotification({ type: "error", message: "Failed to generate report. Please try again." });
+        } finally {
+          setGeneratingReport(false);
+        }
+      };
+
+      void generateReport();
+    }
+  }, [session, reflections, generatingReport, generateReviewAnalysisAction]);
 
   // Load saved voice preference or set default
   useEffect(() => {
@@ -717,8 +775,44 @@ export function SessionView() {
             <div className="p-3 sm:p-6 min-h-[400px]">
               {reflections !== null && reflections !== undefined && reflections.length > 0 ? (
                 <div className="space-y-4">
-                  {reflections.map((reflection) => (
+                  {reflections.map((reflection, index) => {
+                    // Check if this is the first reflection of a new step
+                    const isFirstOfStep = index === 0 || reflections[index - 1]?.step !== reflection.step;
+                    const stepTip = isFirstOfStep ? STEP_TIPS[reflection.step as StepName] : null;
+                    const stepLabel = isFirstOfStep ? STEP_LABELS[reflection.step as StepName] : null;
+                    
+                    // Check if this is the last reflection and session is complete
+                    const isLastReflection = index === reflections.length - 1;
+                    const showCompletionActions = isLastReflection && isSessionComplete;
+                    
+                    return (
                     <div key={reflection._id} className="space-y-3">
+                      {/* Step Label and Tip - shown at start of each new step */}
+                      {isFirstOfStep && stepLabel !== null && stepTip !== null && (
+                        <div className="space-y-2 mb-4">
+                          {/* Step Label */}
+                          <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                            <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200">
+                              {stepLabel}
+                            </p>
+                          </div>
+                          {/* Step Tip */}
+                          <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                            <div className="flex items-start gap-2">
+                              <span className="text-amber-600 dark:text-amber-400 text-lg">💡</span>
+                              <div>
+                                <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-1">
+                                  Tip for this step:
+                                </p>
+                                <p className="text-sm text-amber-800 dark:text-amber-300">
+                                  {stepTip}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                       {/* User Input Message */}
                       {(reflection.userInput !== null && reflection.userInput !== undefined && reflection.userInput.length > 0) && (
                         <div className="flex justify-end">
@@ -759,8 +853,46 @@ export function SessionView() {
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Completion Actions - shown after last message when session is complete */}
+                      {showCompletionActions && (
+                        <div className="mt-6 space-y-3">
+                          {/* Completion message */}
+                          <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                              <span className="text-2xl">🎉</span>
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-green-900 dark:text-green-100 mb-1">
+                                  Session Complete!
+                                </p>
+                                <p className="text-sm text-green-800 dark:text-green-200">
+                                  Your coaching session is complete. View your full report or scroll to the top to access additional options.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Action buttons */}
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <button
+                              onClick={() => setShowReport(true)}
+                              className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                            >
+                              <span>📊</span>
+                              <span>View Full Report</span>
+                            </button>
+                            <button
+                              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                              className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                            >
+                              <span>↑</span>
+                              <span>Scroll to Top</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  );})}
                 </div>
               ) : (
                 <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -1083,6 +1215,47 @@ export function SessionView() {
           </div>
         </div>
       </div>
+
+      {/* Generating Report Loading Modal */}
+      {generatingReport && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full">
+            <div className="flex flex-col items-center">
+              {/* Animated spinner */}
+              <div className="relative w-20 h-20 mb-6">
+                <div className="absolute inset-0 border-4 border-indigo-200 dark:border-indigo-900 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-indigo-600 dark:border-indigo-400 rounded-full border-t-transparent animate-spin"></div>
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">
+                Generating Your Report
+              </h3>
+              
+              {/* Description */}
+              <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-4">
+                Analyzing your session and creating personalized insights...
+              </p>
+              
+              {/* Progress indicators */}
+              <div className="w-full space-y-2">
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span>Reviewing conversation history</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                  <span>Identifying key insights</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                  <span>Generating recommendations</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Show Report Modal */}
       {showReport && (

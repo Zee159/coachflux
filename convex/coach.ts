@@ -1,7 +1,7 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import Anthropic from "@anthropic-ai/sdk";
-import { SYSTEM_BASE, USER_STEP_PROMPT, VALIDATOR_PROMPT } from "./prompts";
+import { SYSTEM_BASE, USER_STEP_PROMPT, VALIDATOR_PROMPT, ANALYSIS_GENERATION_PROMPT } from "./prompts";
 import { api } from "./_generated/api";
 import type { Framework, OrgValue, ValidationResult, ReflectionPayload } from "./types";
 import { hasCoachReflection } from "./types";
@@ -46,7 +46,7 @@ const STEP_REQUIRED_FIELDS: Record<string, string[]> = {
   reality: ["current_state", "constraints", "resources", "risks"],
   options: ["options"],
   will: ["chosen_option", "actions"],
-  review: ["key_takeaways", "immediate_step", "summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls"]
+  review: ["key_takeaways", "immediate_step"] // Phase 2 fields generated separately by generateReviewAnalysis
 };
 
 // Aggregate captured state from reflections (AGENT MODE)
@@ -622,20 +622,11 @@ export const nextStep = action({
         }
       }
     } else if (step.name === "review") {
-      // Review step is two-phase:
-      // Phase 1 (questioning): Only coach_reflection present - DON'T advance
-      // Phase 2 (complete): All analysis fields present - ADVANCE
-      const hasSummary = typeof payload["summary"] === "string" && payload["summary"].length > 0;
-      const hasAllAnalysis = Boolean(
-        hasSummary &&
-        typeof payload["ai_insights"] === "string" && payload["ai_insights"].length > 0 &&
-        Array.isArray(payload["unexplored_options"]) && payload["unexplored_options"].length > 0 &&
-        Array.isArray(payload["identified_risks"]) && payload["identified_risks"].length > 0 &&
-        Array.isArray(payload["potential_pitfalls"]) && payload["potential_pitfalls"].length > 0
-      );
-      
-      // Only advance when Phase 2 is complete (all fields present)
-      shouldAdvance = hasAllAnalysis;
+      // Review step Phase 1: Just need both questions answered
+      // Phase 2 analysis is generated separately by generateReviewAnalysis action
+      // Frontend will trigger generateReviewAnalysis, which will close the session
+      // So we DON'T advance here - let the frontend handle it
+      shouldAdvance = false; // Never auto-advance from review step
     }
 
     // Only advance if step is complete
@@ -705,5 +696,153 @@ export const nextStep = action({
     }
 
     return { ok: true, nextStep: nextStepName, payload, sessionClosed };
+  }
+});
+
+/**
+ * Generate Phase 2 analysis for review step
+ * Called by frontend after user answers both review questions
+ */
+export const generateReviewAnalysis = action({
+  args: {
+    sessionId: v.id("sessions"),
+    orgId: v.id("orgs"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // 1. Get session and all reflections
+    const session = await ctx.runQuery(api.queries.getSession, { sessionId: args.sessionId });
+    if (session === null || session === undefined) {
+      return { ok: false, message: "Session not found" };
+    }
+
+    const reflections = await ctx.runQuery(api.queries.getSessionReflections, { sessionId: args.sessionId });
+    if (reflections === null || reflections === undefined || reflections.length === 0) {
+      return { ok: false, message: "No reflections found" };
+    }
+
+    // 2. Extract data from each step
+    const goalReflection = reflections.find((r) => r.step === "goal");
+    const realityReflection = reflections.find((r) => r.step === "reality");
+    const optionsReflection = reflections.find((r) => r.step === "options");
+    const willReflection = reflections.find((r) => r.step === "will");
+    const reviewReflection = reflections.find((r) => r.step === "review");
+
+    const goalPayload = goalReflection?.payload as Record<string, unknown> | undefined;
+    const realityPayload = realityReflection?.payload as Record<string, unknown> | undefined;
+    const optionsPayload = optionsReflection?.payload as Record<string, unknown> | undefined;
+    const willPayload = willReflection?.payload as Record<string, unknown> | undefined;
+    const reviewPayload = reviewReflection?.payload as Record<string, unknown> | undefined;
+
+    // 3. Build conversation history
+    const conversationHistory = reflections
+      .map((r) => {
+        const payload = r.payload as Record<string, unknown>;
+        const coachMsg = payload['coach_reflection'];
+        const userMsg = r.userInput;
+        let msg = `[${r.step.toUpperCase()}]`;
+        if (typeof userMsg === 'string' && userMsg.length > 0) {
+          msg += `\nUser: ${userMsg}`;
+        }
+        if (typeof coachMsg === 'string' && coachMsg.length > 0) {
+          msg += `\nCoach: ${coachMsg}`;
+        }
+        return msg;
+      })
+      .join('\n\n');
+
+    // 4. Format step data
+    const goalData = goalPayload !== undefined && goalPayload !== null ? JSON.stringify(goalPayload, null, 2) : 'Not captured';
+    const realityData = realityPayload !== undefined && realityPayload !== null ? JSON.stringify(realityPayload, null, 2) : 'Not captured';
+    const optionsData = optionsPayload !== undefined && optionsPayload !== null ? JSON.stringify(optionsPayload, null, 2) : 'Not captured';
+    const willData = willPayload !== undefined && willPayload !== null ? JSON.stringify(willPayload, null, 2) : 'Not captured';
+    const reviewData = reviewPayload !== undefined && reviewPayload !== null ? JSON.stringify(reviewPayload, null, 2) : 'Not captured';
+
+    // 5. Call AI to generate analysis
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (apiKey === undefined || apiKey === null || apiKey.length === 0) {
+      return { ok: false, message: "ANTHROPIC_API_KEY not configured" };
+    }
+
+    const anthropic = new Anthropic({ apiKey });
+    const prompt = ANALYSIS_GENERATION_PROMPT(conversationHistory, goalData, realityData, optionsData, willData, reviewData);
+
+    try {
+      const response = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 2000,
+        temperature: 0.7,
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
+      });
+
+      const content = response.content[0];
+      if (content === undefined || content.type !== "text") {
+        return { ok: false, message: "Invalid AI response format" };
+      }
+
+      // 6. Parse AI response
+      const analysisText = content.text.trim();
+      let analysis: Record<string, unknown>;
+      
+      try {
+        // Try to extract JSON from markdown code blocks if present
+        const jsonMatch = analysisText.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) ?? analysisText.match(/(\{[\s\S]*\})/);
+        const jsonText = jsonMatch !== null && jsonMatch !== undefined ? jsonMatch[1] : analysisText;
+        analysis = JSON.parse(jsonText ?? '{}') as Record<string, unknown>;
+      } catch (parseError) {
+        console.error("Failed to parse analysis JSON:", parseError);
+        return { ok: false, message: "Failed to parse AI analysis" };
+      }
+
+      // 7. Validate required fields
+      const requiredFields = ['summary', 'ai_insights', 'unexplored_options', 'identified_risks', 'potential_pitfalls'];
+      const missingFields = requiredFields.filter(field => 
+        analysis[field] === undefined || analysis[field] === null || 
+        (typeof analysis[field] === 'string' && (analysis[field] as string).length === 0) ||
+        (Array.isArray(analysis[field]) && (analysis[field] as unknown[]).length === 0)
+      );
+
+      if (missingFields.length > 0) {
+        console.error("Missing analysis fields:", missingFields);
+        return { ok: false, message: `Incomplete analysis: missing ${missingFields.join(', ')}` };
+      }
+
+      // 8. Merge analysis with existing review data
+      const finalPayload = {
+        ...reviewPayload,
+        ...analysis,
+        coach_reflection: "You've created a solid action plan with clear steps and accountability. I'm confident you have the self-awareness and commitment to make this work. Best of luck!"
+      };
+
+      // 9. Update the review reflection with analysis
+      const existingReview = reflections.find((r) => r.step === "review");
+      if (existingReview !== undefined && existingReview !== null) {
+        // Create a new reflection with complete data (we can't update existing ones)
+        await ctx.runMutation(api.mutations.createReflection, {
+          orgId: args.orgId,
+          userId: args.userId,
+          sessionId: args.sessionId,
+          step: "review",
+          userInput: undefined,
+          payload: finalPayload
+        });
+      }
+
+      // 10. Close the session
+      await ctx.runMutation(api.mutations.closeSession, {
+        sessionId: args.sessionId
+      });
+
+      return { ok: true, analysis };
+    } catch (error: unknown) {
+      console.error("Error generating analysis:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      return { ok: false, message: `AI error: ${errorMessage}` };
+    }
   }
 });

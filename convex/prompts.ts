@@ -339,64 +339,39 @@ Conversational Coaching Style:
 - Build up actions gradually - don't extract incomplete actions
 - Example: "Great choice! 'Get up every morning and go for a walk' is a solid action. What other specific steps will you take?"`,
 
-  review: `REVIEW PHASE - Two-Phase Process
-⚠️ CRITICAL: DO NOT generate AI analysis fields until user has answered BOTH review questions!
+  review: `REVIEW PHASE - Ask Two Questions
 
-PHASE 1 - User Reflection (Ask questions ONE AT A TIME):
-Questions to ask (in sequence):
-1. "What are the key takeaways from this conversation for you?"
-   → Capture in: key_takeaways (string)
-2. "What's your next immediate step?"
-   → Capture in: immediate_step (string)
+Your job is to ask TWO reflection questions and capture the user's answers. That's it.
+The analysis will be generated separately by the system.
 
-During Phase 1:
-- Ask ONE question at a time
-- ACKNOWLEDGE their answer and CAPTURE it in the appropriate field
-- As you ask each question, populate the corresponding field with their answer
-- DO NOT fill in summary, ai_insights, or analysis fields yet
-- Include coach_reflection in your response
-- Build conversation naturally through both questions
+QUESTION 1: "What are the key takeaways from this conversation for you?"
+- Capture their answer in: key_takeaways (string)
+- Ask question 2 in your coach_reflection
 
-PHASE 2 - AI Analysis (ONLY after user has answered BOTH questions):
-⚠️ CRITICAL FOR REPORT GENERATION: You MUST populate ALL 5 structured fields below.
-The report will NOT generate unless ALL these fields are present:
+QUESTION 2: "What's your next immediate step?"
+- Capture their answer in: immediate_step (string)
+- Provide warm encouragement in your coach_reflection
 
-1. summary (string, 16-400 chars): Synthesize the key outcomes and their commitments
-2. ai_insights (string, 20-400 chars): Based on ENTIRE conversation, offer 2-3 key observations about their approach and strengths
-3. unexplored_options (array of strings, 1-4 items): Alternative approaches they DIDN'T consider in Options step
-4. identified_risks (array of strings, 1-4 items): Potential risks from Reality step that could derail their plan
-5. potential_pitfalls (array of strings, 1-4 items): Common mistakes or blind spots based on what they shared
-
-⚠️ CRITICAL: These MUST be in separate JSON fields, NOT just in coach_reflection text!
-The report reads from these structured fields, not from conversational text.
-
-HOW TO KNOW WHEN TO ADVANCE:
-- Phase 1 (questioning): summary field is EMPTY or undefined
-- Phase 2 (complete): ALL 5 fields are populated (summary, ai_insights, unexplored_options, identified_risks, potential_pitfalls)
+⚠️ CRITICAL: DO NOT generate analysis fields (summary, ai_insights, etc.)
+These will be generated automatically by the system after both questions are answered.
 
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language ONLY
 - NEVER include JSON syntax, arrays, or field names
-- Phase 1: Just ask next question conversationally
-- Phase 2: Provide final encouragement and acknowledgment
-- Phase 2 analysis goes in STRUCTURED FIELDS, not in coach_reflection
+- After Q1: Ask question 2 conversationally
+- After Q2: Provide final encouragement and acknowledgment
 
-Example Phase 1 Response (after user's first answer):
+Example Response After Q1:
 {
   "key_takeaways": "I need to track my expenses daily and start building my consulting business",
   "coach_reflection": "Those are valuable takeaways - you've identified concrete actions and a clear path forward. What's your next immediate step?"
 }
 
-Example Phase 2 Response (CRITICAL - after both questions answered):
+Example Response After Q2:
 {
   "key_takeaways": "I need to track my expenses daily and start building my consulting business",
   "immediate_step": "Set up my expense tracking spreadsheet tonight",
-  "summary": "Clear goal to save $50k through expense tracking and consulting work, with specific actions and timelines",
-  "ai_insights": "Your systematic approach demonstrates strong planning skills. You've balanced short-term actions with resource development.",
-  "unexplored_options": ["Negotiate payment plans with landlord", "Sell unused assets", "Temporary part-time employment"],
-  "identified_risks": ["Marketing challenges in acquiring consulting clients", "Tracking discipline for expenses"],
-  "potential_pitfalls": ["Underestimating time needed for client acquisition", "Not having backup plan if consulting doesn't generate income quickly"],
-  "coach_reflection": "You've created a solid action plan with clear steps and accountability. I'm confident you have the self-awareness and commitment to make this work. Best of luck!"
+  "coach_reflection": "Excellent! You've got a clear first step. The system is now generating your personalized report with insights and analysis."
 }` 
 };
 
@@ -408,7 +383,7 @@ function getRequiredFieldsDescription(stepName: string): string {
     reality: "current_state AND risks (MANDATORY) AND at least 1 of: constraints or resources",
     options: "at least 2 options (user-generated or AI-suggested), with at least 1 option fully explored (pros AND cons)",
     will: "chosen_option and at least 2 specific actions (each with title, owner, and due date)",
-    review: "Phase 1: key_takeaways, immediate_step. Phase 2: summary, ai_insights, unexplored_options, identified_risks, and potential_pitfalls (ALL 5 fields required for report)"
+    review: "key_takeaways and immediate_step (analysis generated separately by system)"
   };
   return requirements[stepName] ?? "all relevant information";
 }
@@ -562,6 +537,18 @@ export const USER_STEP_PROMPT = (
         nextTarget = `ASK for more actions: "What other specific steps will you take?"`;
       } else {
         nextTarget = 'All actions complete - confirm commitment and prepare to advance';
+      }
+    } else if (stepName === 'review') {
+      // Special instructions for REVIEW step - Phase 1 only (ask 2 questions)
+      const hasKeyTakeaways = typeof capturedState['key_takeaways'] === 'string' && capturedState['key_takeaways'].length > 0;
+      const hasImmediateStep = typeof capturedState['immediate_step'] === 'string' && capturedState['immediate_step'].length > 0;
+      
+      if (!hasKeyTakeaways) {
+        nextTarget = 'ASK question 1: "What are the key takeaways from this conversation for you?"';
+      } else if (!hasImmediateStep) {
+        nextTarget = 'ASK question 2: "What\'s your next immediate step?"';
+      } else {
+        nextTarget = 'Both questions answered - provide warm encouragement. The system will generate the analysis automatically.';
       }
     } else {
       nextTarget = missingFields.length > 0 
@@ -761,4 +748,47 @@ OR
 
 Candidate:
 ${candidateJson}
+`;
+
+export const ANALYSIS_GENERATION_PROMPT = (conversationHistory: string, goalData: string, realityData: string, optionsData: string, willData: string, reviewData: string) => `
+You are generating the final analysis for a completed GROW coaching session.
+
+The user has completed all steps and answered both review questions. Your task is to generate comprehensive insights based on the ENTIRE conversation.
+
+CONVERSATION SUMMARY:
+${conversationHistory}
+
+CAPTURED DATA:
+GOAL: ${goalData}
+REALITY: ${realityData}
+OPTIONS: ${optionsData}
+WILL: ${willData}
+REVIEW (User Answers): ${reviewData}
+
+YOUR TASK:
+Generate ALL 5 analysis fields below. Be specific, insightful, and reference actual details from their session.
+
+REQUIRED OUTPUT (JSON):
+{
+  "summary": "string (16-400 chars) - Synthesize the key outcomes and their commitments",
+  "ai_insights": "string (20-400 chars) - Based on ENTIRE conversation, offer 2-3 key observations about their approach and strengths",
+  "unexplored_options": ["string", "string", ...] (1-4 items) - Alternative approaches they DIDN'T consider in Options step,
+  "identified_risks": ["string", "string", ...] (1-4 items) - Potential risks from Reality step that could derail their plan,
+  "potential_pitfalls": ["string", "string", ...] (1-4 items) - Common mistakes or blind spots based on what they shared
+}
+
+CRITICAL REQUIREMENTS:
+1. summary: Concise synthesis of their goal, chosen option, and key actions (16-400 chars)
+2. ai_insights: Highlight their strengths, approach, and what stood out positively (20-400 chars)
+3. unexplored_options: Suggest 1-4 alternative approaches they didn't explore (be creative but relevant)
+4. identified_risks: Extract risks from Reality step or infer based on their situation (1-4 items)
+5. potential_pitfalls: Common mistakes people make in similar situations (1-4 items)
+
+TONE:
+- Supportive and encouraging
+- Specific to THEIR situation (use their actual words/details)
+- Constructive and actionable
+- Use UK English spelling
+
+Return ONLY valid JSON with all 5 fields populated.
 `;
