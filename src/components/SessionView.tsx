@@ -122,6 +122,22 @@ const STEP_DESCRIPTIONS: Record<StepName, string> = {
   review: "Review key takeaways and define your next immediate step.",
 };
 
+const STEP_LABELS: Record<StepName, string> = {
+  goal: "🎯 GOAL: What do you want to achieve?",
+  reality: "📍 REALITY: What's your current situation?",
+  options: "🤔 OPTIONS: What are your possibilities?",
+  will: "✅ WILL: What will you actually do?",
+  review: "🔍 REVIEW: What have you learned?"
+};
+
+const STEP_TIPS: Record<StepName, string> = {
+  goal: "Be specific. Instead of 'do better,' say 'finish my certification by March.'",
+  reality: "Describe what's true NOW, not what you wish were true.",
+  options: "Let yourself brainstorm. Even wild ideas can spark practical solutions.",
+  will: "Pick ONE option. You can always revisit others later.",
+  review: "Reflect on what surprised you. That's where learning happens."
+};
+
 const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }> = {
   goal: {
     title: "Clarify the Topic and Goal",
@@ -416,7 +432,10 @@ export function SessionView() {
         });
 
         if (!result.ok) {
-          setNotification({ type: "error", message: result.message ?? "Unable to process your input. Please try rephrasing." });
+          const errorMsg = result.message ?? "Unable to process your input. Please try rephrasing.";
+          const hintMsg = (result as { hint?: string }).hint;
+          const fullMessage = hintMsg !== undefined ? `${errorMsg}\n\n${hintMsg}` : errorMsg;
+          setNotification({ type: "error", message: fullMessage });
           break;
         } else {
           setText("");
@@ -634,6 +653,47 @@ export function SessionView() {
       </header>
 
       <main className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 lg:px-8 pb-40 sm:pb-44 lg:pb-48">
+        {/* Progress Bar */}
+        <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="font-semibold text-gray-900 dark:text-white">
+              Step {["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1} of 5:{" "}
+              <span className="text-indigo-600 dark:text-indigo-400 capitalize">{currentStep}</span>
+            </h2>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {Math.round(((["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1) / 5) * 100)}% complete
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div 
+              className="bg-indigo-600 dark:bg-indigo-500 h-2 rounded-full transition-all duration-300"
+              style={{width: `${((["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1) / 5) * 100}%`}}
+            />
+          </div>
+        </div>
+
+        {/* Step Label */}
+        <div className="mb-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+          <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200">
+            {STEP_LABELS[currentStep]}
+          </p>
+        </div>
+
+        {/* Step Tip */}
+        <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+          <div className="flex items-start gap-2">
+            <span className="text-amber-600 dark:text-amber-400 text-lg">💡</span>
+            <div>
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-1">
+                Tip for this step:
+              </p>
+              <p className="text-sm text-amber-800 dark:text-amber-300">
+                {STEP_TIPS[currentStep]}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <section className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">

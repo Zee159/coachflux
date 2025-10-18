@@ -269,11 +269,19 @@ export function DemoSetup() {
 
           {/* Get Started Form */}
           <div id="get-started" className="max-w-5xl mx-auto">
+            <div className="mb-6 text-center">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Ready to Start?</h3>
+              <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                This is a structured coaching session using the GROW framework. 
+                It takes about 15-20 minutes. You'll define a goal, explore where you are, 
+                brainstorm options, commit to actions, and reflect on your path forward.
+              </p>
+            </div>
             <div className="grid md:grid-cols-2 gap-6">
               {/* Left Card: Demo Form */}
               <div className="bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-gray-700 dark:to-gray-600 rounded-2xl p-8 border border-violet-100 dark:border-gray-600">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Experience AI Coaching Now</h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-6">Create a sample organisation and start exploring</p>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Step 1: Your Details</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">Quick setup to personalize your coaching experience</p>
                 
                 <div className="space-y-4">
                   {error !== null && (
@@ -287,15 +295,18 @@ export function DemoSetup() {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Organisation Name
+                      Organisation or Context
                     </label>
                     <input
                       type="text"
                       value={orgName}
                       onChange={(e) => setOrgName(e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 dark:focus:ring-violet-400/20 transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                      placeholder="e.g., Acme Corp, Tech Startup, etc."
+                      placeholder="e.g., Acme Corp, My Team, Personal"
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      What organization or team are you part of? (For demo purposes)
+                    </p>
                   </div>
 
                   <div>
@@ -309,11 +320,35 @@ export function DemoSetup() {
                       className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 dark:focus:ring-violet-400/20 transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                       placeholder="Your first name or nickname"
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Your responses are private and only used to personalize your coaching
+                    </p>
+                  </div>
+
+                  {/* Legal Consent */}
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <div className="flex items-start gap-2">
+                      <input 
+                        type="checkbox" 
+                        checked={legalAccepted}
+                        onChange={(e) => setLegalAccepted(e.target.checked)}
+                        className="mt-1" 
+                        id="legal-consent"
+                      />
+                      <label htmlFor="legal-consent" className="text-sm text-gray-700 dark:text-gray-300">
+                        <span className="font-medium">I understand this is coaching, not therapy or medical advice.</span>
+                        <span className="block text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          This platform helps you clarify goals and take action. 
+                          For serious matters like harassment, discrimination, or mental health, 
+                          please contact appropriate professional services.
+                        </span>
+                      </label>
+                    </div>
                   </div>
 
                   <button
                     onClick={() => void handleSetup()}
-                    disabled={loading || orgName.trim() === '' || displayName.trim() === ''}
+                    disabled={loading || orgName.trim() === '' || displayName.trim() === '' || !legalAccepted}
                     className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white py-3 px-6 rounded-xl hover:shadow-xl hover:shadow-violet-500/30 dark:hover:shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-300 font-semibold flex items-center justify-center gap-2"
                   >
                     {loading ? (
@@ -325,9 +360,13 @@ export function DemoSetup() {
                         Setting up...
                       </>
                     ) : (
-                      "Try AI Coach Now"
+                      "Start Your Coaching Session"
                     )}
                   </button>
+                  
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+                    This session will take about 20 minutes. Make sure you have time to think.
+                  </p>
                 </div>
               </div>
 

@@ -259,7 +259,11 @@ export const nextStep = action({
 
     // Validate input length (800 char cap)
     if (args.userTurn.length > 800) {
-      return { ok: false, message: "Input too long. Please keep responses under 800 characters." };
+      return { 
+        ok: false, 
+        message: "That's a lot to unpack! 😊 Let's break it down.",
+        hint: "Please share one main thought in 100-150 words, then we'll dig deeper together."
+      };
     }
 
     // Check for serious workplace issues requiring escalation
@@ -286,7 +290,8 @@ export const nextStep = action({
       
       return { 
         ok: false, 
-        message: "This is a serious matter that requires specialist help. Please contact appropriate professional services, support hotlines, or authorities through official channels. If you're in immediate danger, contact emergency services."
+        message: "This is a serious matter that deserves proper support.",
+        hint: "Please reach out to appropriate professional services, support hotlines, or authorities through official channels. Once you've got support, I'm here to help with your other goals."
       };
     }
 
@@ -439,8 +444,11 @@ export const nextStep = action({
       return { 
         ok: false, 
         message: bannedHit 
-          ? "This topic requires specialist support beyond coaching. Please consult appropriate professional services."
-          : "I'm having trouble processing that. Could you rephrase your response?"
+          ? "I appreciate you sharing that, but this topic needs more specialized support than coaching can offer."
+          : "I'm having trouble understanding - let me ask differently.",
+        hint: bannedHit
+          ? "I'd recommend speaking with appropriate professional services. In the meantime, what else is on your mind about your goals?"
+          : "Could you rephrase that more directly? For example: 'I want to [specific action]'"
       };
     }
 
@@ -458,7 +466,11 @@ export const nextStep = action({
         llmOutput: raw,
         severity: "med"
       });
-      return { ok: false, message: "I can't process that. Try rephrasing with factual details." };
+      return { 
+        ok: false, 
+        message: "I'm having trouble understanding your response.",
+        hint: "Could you rephrase that more directly? Share one clear thought about your situation."
+      };
     }
 
     // Create reflection with user input
