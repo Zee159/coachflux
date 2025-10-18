@@ -6,7 +6,39 @@ import { api } from "./_generated/api";
 import type { Framework, OrgValue, ValidationResult, ReflectionPayload } from "./types";
 import { hasCoachReflection } from "./types";
 
-const BANNED = ["psychiatric", "prescribe", "diagnosis", "sue", "lawsuit"];
+const BANNED = ["psychiatric", "prescribe", "diagnosis", "lawsuit", "litigation"];
+
+// Strip validation constraints from schema for validator (keeps only structure and required fields)
+function stripValidationConstraints(schema: unknown): unknown {
+  if (typeof schema !== 'object' || schema === null) {
+    return schema;
+  }
+  
+  if (Array.isArray(schema)) {
+    return schema.map(item => stripValidationConstraints(item));
+  }
+  
+  const result: Record<string, unknown> = {};
+  const obj = schema as Record<string, unknown>;
+  
+  for (const [key, value] of Object.entries(obj)) {
+    // Skip validation constraints
+    if (key === 'minLength' || key === 'maxLength' || 
+        key === 'minItems' || key === 'maxItems' ||
+        key === 'minimum' || key === 'maximum') {
+      continue;
+    }
+    
+    // Recursively process nested objects/arrays
+    if (typeof value === 'object' && value !== null) {
+      result[key] = stripValidationConstraints(value);
+    } else {
+      result[key] = value;
+    }
+  }
+  
+  return result;
+}
 
 // Required fields for each step (for agent state tracking)
 const STEP_REQUIRED_FIELDS: Record<string, string[]> = {
@@ -14,7 +46,7 @@ const STEP_REQUIRED_FIELDS: Record<string, string[]> = {
   reality: ["current_state", "constraints", "resources", "risks"],
   options: ["options"],
   will: ["chosen_option", "actions"],
-  review: ["key_takeaways", "confidence_level", "commitment", "immediate_step", "summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls"]
+  review: ["key_takeaways", "immediate_step", "summary", "ai_insights", "unexplored_options", "identified_risks", "potential_pitfalls"]
 };
 
 // Aggregate captured state from reflections (AGENT MODE)
@@ -71,7 +103,7 @@ function aggregateStepState(
   return { capturedState, missingFields, capturedFields, completionPercentage };
 }
 
-// Serious workplace issues requiring escalation (not coaching)
+// Serious issues requiring escalation (not coaching)
 const ESCALATION_REQUIRED = [
   "sexual harassment", "sexually harassed", "sexual assault", "sexually assaulted",
   "harassment", "harassed", "harassing",
@@ -123,7 +155,7 @@ const getFramework = (): Framework => {
       },
       {
         name: "options",
-        system_objective: "Facilitate user discovering at least three viable options with pros and cons.",
+        system_objective: "Facilitate user discovering at least two viable options (user-generated or AI-suggested) with pros and cons.",
         required_fields_schema: {
           type: "object",
           properties: {
@@ -162,11 +194,12 @@ const getFramework = (): Framework => {
                 properties: {
                   title: { type: "string", minLength: 4, maxLength: 120 },
                   owner: { type: "string" },
-                  due_days: { type: "integer", minimum: 1, maximum: 90 }
+                  due_days: { type: "integer", minimum: 1 }
                 },
-                required: ["title", "owner", "due_days"],
+                required: ["title"],
                 additionalProperties: false
               },
+              minItems: 0,
               maxItems: 3
             },
             coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
@@ -182,8 +215,6 @@ const getFramework = (): Framework => {
           type: "object",
           properties: {
             key_takeaways: { type: "string", minLength: 10, maxLength: 500 },
-            confidence_level: { type: "number", minimum: 0, maximum: 100 },
-            commitment: { type: "string", minLength: 10, maxLength: 500 },
             immediate_step: { type: "string", minLength: 5, maxLength: 300 },
             summary: { type: "string", minLength: 16, maxLength: 400 },
             ai_insights: { type: "string", minLength: 20, maxLength: 400 },
@@ -218,7 +249,7 @@ export const nextStep = action({
     if (session.escalated === true) {
       return { 
         ok: false, 
-        message: "This session requires specialist help or HR support. Please contact your HR department, manager, or appropriate specialist services through your organisation's official channels. If you're in immediate danger, contact emergency services."
+        message: "This session requires specialist help. Please contact appropriate professional services, support hotlines, or authorities through official channels. If you're in immediate danger, contact emergency services."
       };
     }
 
@@ -255,7 +286,7 @@ export const nextStep = action({
       
       return { 
         ok: false, 
-        message: "This is a serious matter that requires specialist help or HR support. Please contact your HR department, manager, or appropriate specialist services through your organisation's official channels. If you're in immediate danger, contact emergency services."
+        message: "This is a serious matter that requires specialist help. Please contact appropriate professional services, support hotlines, or authorities through official channels. If you're in immediate danger, contact emergency services."
       };
     }
 
@@ -354,7 +385,8 @@ export const nextStep = action({
     }
     const raw = firstContent.type === "text" ? firstContent.text : "{}";
 
-    // Validator call
+    // Validator call - use stripped schema without validation constraints
+    const strippedSchema = stripValidationConstraints(step.required_fields_schema) as object;
     const validator = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 300,
@@ -363,7 +395,7 @@ export const nextStep = action({
       messages: [
         { 
           role: "user", 
-          content: VALIDATOR_PROMPT(step.required_fields_schema, raw) + "\n\nRespond with ONLY valid JSON: {\"verdict\":\"pass\"|\"fail\",\"reasons\":[]}"
+          content: VALIDATOR_PROMPT(strippedSchema, raw) + "\n\nRespond with ONLY valid JSON: {\"verdict\":\"pass\"|\"fail\",\"reasons\":[]}"
         }
       ]
     });
@@ -489,31 +521,33 @@ export const nextStep = action({
       
       shouldAdvance = completedFields >= requiredFields;
     } else if (step.name === "reality") {
-      // Reality step requires: current_state AND at least 2 of (constraints, resources, risks)
+      // Reality step requires: current_state AND risks (mandatory) AND at least 1 of (constraints or resources)
       const hasCurrentState = typeof payload["current_state"] === "string" && payload["current_state"].length > 0;
       const hasConstraints = Array.isArray(payload["constraints"]) && payload["constraints"].length > 0;
       const hasResources = Array.isArray(payload["resources"]) && payload["resources"].length > 0;
       const hasRisks = Array.isArray(payload["risks"]) && payload["risks"].length > 0;
-      const explorationCount = [hasConstraints, hasResources, hasRisks].filter(Boolean).length;
+      const additionalExplorationCount = [hasConstraints, hasResources].filter(Boolean).length;
       
       // Progressive relaxation based on skip count
-      // 0 skips: current_state + 2 exploration areas (strict)
-      // 1 skip:  current_state + 1 exploration area (lenient)
-      // 2 skips: current_state only (very lenient)
-      // Loop detected: current_state + 1 exploration area
-      let requiredExploration = 2;
+      // 0 skips: current_state + risks + 2 additional areas (constraints AND resources) - strict
+      // 1 skip:  current_state + risks + 1 additional area (lenient)
+      // 2 skips: current_state + risks only (very lenient)
+      // Loop detected: current_state + risks + 1 additional area
+      let requiredAdditionalExploration = 2;
       
       if (loopDetected) {
-        requiredExploration = 1;
+        requiredAdditionalExploration = 1;
       } else if (skipCount >= 2) {
-        requiredExploration = 0; // Just need current_state
+        requiredAdditionalExploration = 0; // Just need current_state + risks
       } else if (skipCount === 1) {
-        requiredExploration = 1;
+        requiredAdditionalExploration = 1;
       }
       
-      shouldAdvance = hasCurrentState && explorationCount >= requiredExploration;
+      // Risks is ALWAYS required, plus current_state and additional exploration based on skip count
+      shouldAdvance = hasCurrentState && hasRisks && additionalExplorationCount >= requiredAdditionalExploration;
     } else if (step.name === "options") {
-      // Options step requires: at least 3 options AND at least 2 must have pros/cons explored
+      // Options step requires: at least 2 options with at least 1 fully explored (pros AND cons)
+      // New flow supports mix of user-generated and AI-generated options
       const options = payload["options"];
       
       if (!Array.isArray(options) || options.length === 0) {
@@ -526,18 +560,18 @@ export const nextStep = action({
         });
         
         // Progressive relaxation based on skip count
-        // 0 skips: 3+ options, 2+ fully explored (strict)
-        // 1 skip:  2+ options, 1+ fully explored (lenient)
-        // 2 skips: 1+ option with ANY detail (very lenient)
+        // 0 skips: 2+ options, 1+ fully explored (standard)
+        // 1 skip:  2+ options, 1+ with ANY exploration (lenient)
+        // 2 skips: 1+ option with ANY content (very lenient)
         // Loop detected: 2+ options, 1+ explored
         if (loopDetected) {
           shouldAdvance = options.length >= 2 && exploredOptions.length >= 1;
         } else if (skipCount >= 2) {
           shouldAdvance = options.length >= 1; // Just need ANY option
         } else if (skipCount === 1) {
-          shouldAdvance = options.length >= 2 && exploredOptions.length >= 1;
+          shouldAdvance = options.length >= 2; // Just need 2 options, exploration optional
         } else {
-          shouldAdvance = options.length >= 3 && exploredOptions.length >= 2;
+          shouldAdvance = options.length >= 2 && exploredOptions.length >= 1;
         }
       }
     } else if (step.name === "will") {
@@ -548,12 +582,16 @@ export const nextStep = action({
       if (!hasChosenOption || !Array.isArray(actions) || actions.length === 0) {
         shouldAdvance = false;
       } else {
-        // Check that actions have complete details (title, owner, due_days)
+        // Check that actions have complete details (title, owner, and optionally due_days)
+        // Note: due_days is optional for ongoing commitments/habits without specific deadlines
         const completeActions = actions.filter((a: unknown) => {
           const action = a as { title?: string; owner?: string; due_days?: number };
-          return typeof action.title === "string" && action.title.length > 0 && 
-                 typeof action.owner === "string" && action.owner.length > 0 && 
-                 typeof action.due_days === "number" && action.due_days > 0;
+          const hasTitle = typeof action.title === "string" && action.title.length > 0;
+          const hasOwner = typeof action.owner === "string" && action.owner.length > 0;
+          const hasDueDate = typeof action.due_days === "number" && action.due_days > 0;
+          const isOngoing = action.due_days === undefined; // Ongoing commitment without deadline
+          
+          return hasTitle && hasOwner && (hasDueDate || isOngoing);
         });
         
         // Progressive relaxation based on skip count

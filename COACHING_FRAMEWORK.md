@@ -1,8 +1,8 @@
-# Professional Coaching Framework Integration
+# Coaching Framework Integration
 
 ## ✅ Enhanced with Evidence-Based Coaching Methodology
 
-CoachFlux now incorporates professional performance coaching principles from **Oisín Performance Coaching** methodology.
+CoachFlux incorporates evidence-based coaching principles from established coaching methodologies.
 
 ---
 
@@ -113,10 +113,11 @@ Expand ─────────────────→ Focus
 
 **Coaching Guidance:**
 - Once you and the coachee have thoroughly explored the reality, you are now in a position to **explore possible options for moving forward**
-- Develop a **number of broad options**, not just one or two
-- Once you have developed a number of options, start to **evaluate which option is most likely to yield the best outcome(s)**
+- Facilitate user discovering **at least two viable options** (user-generated or AI-suggested)
+- **NEW: AI Assistance Available** - Users can request AI-generated options based on their goal and reality
+- Once you have developed options, start to **evaluate which option is most likely to yield the best outcome(s)**
 - Encourage **creative thinking and alternative perspectives**
-- **Share ideas and explore alternatives** rather than giving direct advice
+- **Collaborative approach**: Facilitate user discovery first, then offer AI suggestions if requested
 
 **Implemented Prompts:**
 - What are the possible ways forward?
@@ -159,12 +160,16 @@ Expand ─────────────────→ Focus
 - Acknowledge the individual's **ownership and commitment**
 - Reinforce **self-responsibility and capability**
 
-**Implemented Prompts:**
+**Implemented Prompts (Simplified to 2 Questions):**
 - What are the key takeaways from this conversation?
-- How does this plan align with your organization's values?
-- On a scale of 0-100, how confident are you in this plan?
-- What commitment are you making to yourself?
 - What's your next immediate step?
+
+**AI Analysis (Generated After User Questions):**
+- Session summary
+- AI insights on approach and strengths
+- Unexplored options to consider
+- Identified risks that could derail the plan
+- Potential pitfalls to watch for
 
 ---
 

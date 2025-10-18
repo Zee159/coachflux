@@ -17,13 +17,13 @@ This will:
 - Create your development deployment
 - Generate `.env.local` with your `VITE_CONVEX_URL`
 
-## Step 3: Set OpenAI API Key
+## Step 3: Set Anthropic API Key
 
 In the Convex dashboard:
 1. Go to **Settings** → **Environment Variables**
 2. Add variable:
-   - Key: `OPENAI_API_KEY`
-   - Value: `sk-proj-...` (your OpenAI API key)
+   - Key: `ANTHROPIC_API_KEY`
+   - Value: `sk-ant-...` (your Anthropic API key)
 3. Click **Save**
 
 ## Step 4: Start Development Server

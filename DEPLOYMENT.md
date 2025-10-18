@@ -3,7 +3,7 @@
 ## Pre-Deployment Checklist
 
 ### 1. Environment Setup
-- [ ] OpenAI API key configured in Convex dashboard
+- [ ] Anthropic API key configured in Convex dashboard
 - [ ] Production Convex deployment created
 - [ ] Frontend build configured with production URLs
 - [ ] CSP headers configured for hosting platform
@@ -247,9 +247,9 @@ const CONCURRENT_SESSIONS = 2; // Increase from 1
 ```
 
 ### Cost Management
-- OpenAI GPT-4o-mini: ~$0.15 per 1K tokens
-- Estimate: 1000 tokens per session × 50 sessions/day = $7.50/day
-- Monitor usage in OpenAI dashboard
+- Anthropic Claude Sonnet 4: ~$3 per 1M input tokens, ~$15 per 1M output tokens
+- Estimate: 1000 tokens per session × 50 sessions/day = ~$0.75/day
+- Monitor usage in Anthropic Console
 
 ### Performance
 - Convex auto-scales
@@ -279,7 +279,7 @@ const CONCURRENT_SESSIONS = 2; // Increase from 1
 ## Support Contacts
 
 - **Convex Issues:** support@convex.dev
-- **OpenAI Issues:** help.openai.com
+- **Anthropic Issues:** support@anthropic.com
 - **Internal Team:** [Your team contact]
 
 ---

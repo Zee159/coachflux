@@ -1,4 +1,4 @@
-Purpose: ship a B2B leadership-reflection MVP on Convex with deterministic flows, strict guardrails, and low hallucination risk.
+Purpose: ship a GROW coaching MVP on Convex with deterministic flows, strict guardrails, and low hallucination risk.
 
 
 0) Repo bootstrap
@@ -111,7 +111,7 @@ export default defineSchema({
     },
     {
       "name": "options",
-      "system_objective": "Generate at least three viable options with pros and cons.",
+      "system_objective": "Facilitate user discovering at least two viable options (user-generated or AI-suggested) with pros and cons.",
       "required_fields_schema": {
         "type": "object",
         "properties": {
@@ -127,7 +127,7 @@ export default defineSchema({
               "required": ["label"],
               "additionalProperties": false
             },
-            "minItems": 3,
+            "minItems": 2,
             "maxItems": 5
           }
         },
@@ -242,9 +242,9 @@ ${candidateJson}
 import { action, mutation, query } from "./_generated/server";
 import grow from "../../src/frameworks/grow.json";
 import { v } from "convex/values";
-import OpenAI from "openai"; // or Anthropic
+import Anthropic from "@anthropic-ai/sdk";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const frameworks: Record<string, any> = { GROW: grow };
 const BANNED = ["therapy","diagnose","cure","medical","legal","financial advice"];
 

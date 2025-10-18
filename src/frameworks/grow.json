@@ -33,7 +33,7 @@
     },
     {
       "name": "options",
-      "system_objective": "Generate at least three viable options with pros and cons.",
+      "system_objective": "Facilitate user discovering at least two viable options (user-generated or AI-suggested) with pros and cons.",
       "required_fields_schema": {
         "type": "object",
         "properties": {
@@ -49,7 +49,7 @@
               "required": ["label"],
               "additionalProperties": false
             },
-            "minItems": 3,
+            "minItems": 2,
             "maxItems": 5
           }
         },

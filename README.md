@@ -1,6 +1,6 @@
 # CoachFlux MVP
 
-A B2B leadership reflection platform built on Convex with deterministic flows, strict guardrails, and low hallucination risk.
+A GROW coaching platform built on Convex with deterministic flows, strict guardrails, and low hallucination risk.
 
 ## Features
 
@@ -15,7 +15,7 @@ A B2B leadership reflection platform built on Convex with deterministic flows, s
 
 - **Backend**: Convex (serverless database + functions)
 - **Frontend**: React + TypeScript + TailwindCSS
-- **LLM**: OpenAI GPT-4o-mini (temperature 0, JSON mode)
+- **LLM**: Anthropic Claude Sonnet 4 (temperature 0, JSON mode)
 - **Routing**: React Router
 - **Build**: Vite
 
@@ -24,7 +24,7 @@ A B2B leadership reflection platform built on Convex with deterministic flows, s
 ### Prerequisites
 - Node.js 20+
 - pnpm 9+
-- OpenAI API key
+- Anthropic API key
 
 ### Installation
 
@@ -36,7 +36,7 @@ pnpm install
 pnpm convex:dev
 
 # In Convex dashboard:
-# 1. Set environment variable: OPENAI_API_KEY=sk-...
+# 1. Set environment variable: ANTHROPIC_API_KEY=sk-...
 # 2. Note your deployment URL
 
 # Start frontend dev server

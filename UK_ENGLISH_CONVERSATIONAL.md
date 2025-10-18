@@ -340,4 +340,4 @@ Users experience:
 
 ---
 
-**Your B2B leadership reflection tool now feels like a real conversation with a professional coach!** 🎯
+**Your GROW coaching tool now feels like a real conversation with a supportive coach!** 🎯

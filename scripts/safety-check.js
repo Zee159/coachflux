@@ -20,7 +20,8 @@ const EXCLUDED_DIRS = [
   '_generated',
   '.vscode',
   '.git',
-  'scripts'
+  'scripts',
+  'tests'
 ];
 
 const EXCLUDED_FILES = [

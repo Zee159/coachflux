@@ -40,5 +40,5 @@
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src", "convex"]
+  "include": ["src", "convex", "tests"]
 }

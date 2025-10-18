@@ -17,6 +17,9 @@ vite.config.ts
 tailwind.config.js
 postcss.config.js
 
+# Scripts
+scripts
+
 # Misc
 coverage
 .DS_Store

@@ -116,10 +116,10 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
 
 const STEP_DESCRIPTIONS: Record<StepName, string> = {
   goal: "Clarify your desired outcome and timeframe.",
-  reality: "Assess your current situation, constraints, and resources.",
-  options: "Explore at least three viable paths forward.",
+  reality: "Assess your current situation, constraints, resources, and risks.",
+  options: "Explore at least two viable options (you can ask for AI suggestions).",
   will: "Choose an option and define specific actions.",
-  review: "Review your plan and alignment with organizational values.",
+  review: "Review key takeaways and define your next immediate step.",
 };
 
 const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }> = {
@@ -169,9 +169,6 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
     title: "Review & Summarize",
     questions: [
       "What are the key takeaways from this conversation?",
-      "How does this plan align with your organization's values?",
-      "On a scale of 0-100, how confident are you in this plan?",
-      "What commitment are you making to yourself?",
       "What's your next immediate step?"
     ]
   }
@@ -379,11 +376,10 @@ export function SessionView() {
   const isReviewComplete = Boolean(
     reviewPayload !== null && reviewPayload !== undefined &&
     typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 &&
-    typeof reviewPayload['alignment_score'] === 'number' &&
     typeof reviewPayload['ai_insights'] === 'string' && reviewPayload['ai_insights'].length > 0 &&
-    Array.isArray(reviewPayload['unexplored_options']) &&
-    Array.isArray(reviewPayload['identified_risks']) &&
-    Array.isArray(reviewPayload['potential_pitfalls'])
+    Array.isArray(reviewPayload['unexplored_options']) && reviewPayload['unexplored_options'].length > 0 &&
+    Array.isArray(reviewPayload['identified_risks']) && reviewPayload['identified_risks'].length > 0 &&
+    Array.isArray(reviewPayload['potential_pitfalls']) && reviewPayload['potential_pitfalls'].length > 0
   );
   const isSessionComplete = (currentStep === "review" && isReviewComplete) || 
     (session.closedAt !== null && session.closedAt !== undefined);
@@ -466,6 +462,21 @@ export function SessionView() {
     } catch (error: unknown) {
       console.error("Skip error:", error);
       setNotification({ type: "error", message: "Failed to skip question. Please try again." });
+    }
+  }
+
+  async function handleContinueToNextStep(): Promise<void> {
+    if (session === null || session === undefined || submitting || currentStep === 'review') {
+      return;
+    }
+
+    try {
+      await incrementSkip({ sessionId: session._id, step: currentStep });
+      // Signal to AI that user wants to move to next step with what they've provided
+      await handleSubmit("I'd like to move to the next step now with what we've covered so far.");
+    } catch (error: unknown) {
+      console.error("Continue error:", error);
+      setNotification({ type: "error", message: "Failed to continue. Please try again." });
     }
   }
 
@@ -995,6 +1006,18 @@ export function SessionView() {
                     </button>
                   )}
                 </div>
+                
+                {/* Continue to next step button - subtle text link */}
+                {currentStep !== 'review' && !submitting && (
+                  <button
+                    onClick={() => void handleContinueToNextStep()}
+                    disabled={submitting}
+                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed transition-colors text-center py-1"
+                    title="Move to the next step with what you've shared"
+                  >
+                    Continue to next step →
+                  </button>
+                )}
               </div>
             </div>
           </div>

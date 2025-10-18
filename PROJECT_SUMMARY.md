@@ -2,7 +2,7 @@
 
 ## ✅ Implementation Complete
 
-Production-ready B2B leadership reflection platform built with deterministic flows, strict guardrails, and minimal hallucination risk.
+Production-ready GROW coaching platform built with deterministic flows, strict guardrails, and minimal hallucination risk.
 
 ---
 
@@ -117,7 +117,7 @@ safetyIncidents // Flagged content for review
 | **Frontend** | React 18 + TypeScript | UI framework |
 | **Styling** | TailwindCSS | Utility-first CSS |
 | **Routing** | React Router v6 | Client-side navigation |
-| **LLM** | OpenAI GPT-4o-mini | JSON-mode generation |
+| **LLM** | Anthropic Claude Sonnet 4 | JSON-mode generation |
 | **Build** | Vite 5 | Fast dev server + bundler |
 | **Type Safety** | TypeScript 5.6 | Static typing |
 | **Validation** | Zod | Runtime schema validation |

@@ -13,6 +13,9 @@
     "safety-scan": "node scripts/safety-check.js",
     "safety": "pnpm type-check && pnpm lint && pnpm safety-scan",
     "check": "pnpm safety",
+    "test:simulate": "tsx tests/simple-test.ts",
+    "test:multi": "tsx tests/multi-perspective-sim.ts",
+    "test:live": "tsx tests/run-live-test.ts",
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy"
   },

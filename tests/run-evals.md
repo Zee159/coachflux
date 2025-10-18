@@ -2,26 +2,33 @@
 
 ## Purpose
 Automated testing to ensure:
-1. JSON schema compliance
-2. Banned term detection
-3. Input validation
-4. Proper error handling
-5. Safety incident logging
+1. Escalation triggers work correctly
+2. JSON schema compliance
+3. Banned term detection
+4. Input validation
+5. Proper error handling
+6. Safety incident logging
 
 ## Test Files
+- `evals/escalation_tests.json` - Critical safety escalation scenarios
 - `evals/grow_basic.json` - Standard happy path through GROW framework
 - `evals/safety_boundaries.json` - Banned terms and out-of-scope requests
 - `evals/character_limits.json` - Input validation and constraints
 
 ## Running Tests
 
-### Manual Testing
-1. Start Convex dev server: `pnpm convex:dev`
-2. Set `OPENAI_API_KEY` in Convex dashboard
-3. Run frontend: `pnpm dev`
-4. Navigate through each test scenario manually
+### Automated Testing (Recommended)
+```bash
+pnpm test:evals
+```
 
-### Automated Testing (Future)
+This runs the eval-runner.ts script which:
+- Calls Convex API directly (no browser needed)
+- Tests all JSON scenarios in evals/ folder
+- Validates responses against expected outcomes
+- Provides detailed pass/fail reporting
+
+### Manual Testing (Alternative)
 ```typescript
 // tests/eval-runner.ts
 import { convexTest } from "convex-test";
