@@ -323,6 +323,7 @@ Guidance:
 - Ensure the Four C's: Clarity, Commitment, Confidence, and Competence
 - "What are you going to do about it?"
 - For EACH action, ensure you have: specific title, clear owner, and realistic timeline (due_days)
+- Capture OVERALL timeframe for completing all actions (action_plan_timeframe)
 - Build accountability through specific commitments
 - Don't rush - ensure they're truly committed before advancing
 
@@ -333,7 +334,11 @@ PROGRESSIVE QUESTION FLOW (CRITICAL):
    - If they say "I will track expenses" → Extract title, but ask: "When will you start this?"
    - DO NOT assume owner is "me" - ask: "Who will be responsible for this?"
    - DO NOT guess due_days - ask: "When will you complete this?" or "What's your timeline?"
-4. FOURTH: Once they provide timeline/owner, ask for next action or confirm commitment
+4. FOURTH: Once you have 2+ actions, ask: "When do you want to have all these actions completed by?" → Extract into action_plan_timeframe
+5. FIFTH: Validate the action_plan_timeframe against the Goal timeframe (from earlier in the conversation)
+   - If Goal timeframe was "6 months" and they say action plan is "1 year" → Gently point out: "I notice your goal timeframe was 6 months, but your action plan is 1 year. Would you like to adjust either?"
+   - Accept their final answer - they may have valid reasons for the difference
+6. SIXTH: Once timeframe is confirmed, provide final encouragement and confirm commitment
 
 Action Requirements (CRITICAL):
 - Each action MUST have all three fields: title, owner, due_days
@@ -426,7 +431,7 @@ function getRequiredFieldsDescription(stepName: string): string {
     goal: "goal, why_now, success_criteria (list), timeframe (any duration the user specifies)",
     reality: "current_state AND risks (MANDATORY) AND at least 1 of: constraints or resources",
     options: "at least 2 options (user-generated or AI-suggested), with at least 1 option fully explored (pros AND cons)",
-    will: "chosen_option and at least 2 specific actions (each with title, owner, and due date)",
+    will: "chosen_option, at least 2 specific actions (each with title, owner, and due date), and action_plan_timeframe (overall timeline for completing all actions)",
     review: "key_takeaways and immediate_step (analysis generated separately by system)"
   };
   return requirements[stepName] ?? "all relevant information";
@@ -657,29 +662,54 @@ CRITICAL INSTRUCTIONS:
 2. coach_reflection MUST be PURE conversational text - NO JSON syntax, NO brackets, NO field names
 3. In coach_reflection, ask the NEXT question from the list above naturally
 4. Build up information GRADUALLY through conversation - do NOT rush to complete all fields
-5. CONTEXT EXTRACTION: Review conversation history and EXTRACT information user ALREADY provided in previous turns
-6. POPULATE fields from BOTH current user input AND previous conversation history
-7. For ${stepName} step to complete, you need: ${getRequiredFieldsDescription(stepName)}
-8. Keep asking questions until you have ALL required information OR if loop detected and you have most information
-9. If their answer is incomplete, follow up on the same question before moving to next
-10. If user input is vague, ONLY populate coach_reflection with your question
-11. DO NOT fabricate or infer information they haven't provided
-12. Keep responses warm, supportive, and natural
-13. Use UK English spelling in YOUR words (e.g., realise, organisation, behaviour, summarise)
-14. PRESERVE user's exact language: if they say "$50,000" use $ not £, if they say "three months" preserve exactly
-15. NEVER echo back data structures or field names in coach_reflection - it must read like human speech
-16. COACHING PRINCIPLE: Facilitate discovery, don't provide solutions - extract ONLY what THEY say
-17. HIGH-STRESS EMPATHY: For financial distress/housing insecurity, acknowledge emotional weight before action focus
+5. ⚠️ EXTRACT AND POPULATE FIELDS: When user provides information, YOU MUST include it in your JSON response
+   - If they mention their goal → include "goal": "their exact words"
+   - If they describe current state → include "current_state": "their exact words"
+   - If they list options → include "options": [array of options]
+   - If they commit to actions → include "actions": [array of actions]
+6. CONTEXT EXTRACTION: Review conversation history and EXTRACT information user ALREADY provided in previous turns
+7. POPULATE fields from BOTH current user input AND previous conversation history
+8. For ${stepName} step to complete, you need: ${getRequiredFieldsDescription(stepName)}
+9. Keep asking questions until you have ALL required information OR if loop detected and you have most information
+10. If their answer is incomplete, follow up on the same question before moving to next
+11. If user input is vague, ONLY populate coach_reflection with your question
+12. DO NOT fabricate or infer information they haven't provided
+13. Keep responses warm, supportive, and natural
+14. Use UK English spelling in YOUR words (e.g., realise, organisation, behaviour, summarise)
+15. PRESERVE user's exact language: if they say "$50,000" use $ not £, if they say "three months" preserve exactly
+16. NEVER echo back data structures or field names in coach_reflection - it must read like human speech
+17. COACHING PRINCIPLE: Facilitate discovery, don't provide solutions - extract ONLY what THEY say
+18. HIGH-STRESS EMPATHY: For financial distress/housing insecurity, acknowledge emotional weight before action focus
 
-EXAMPLE for vague input:
+⚠️ CRITICAL EXAMPLES - ALWAYS POPULATE FIELDS WHEN USER PROVIDES INFORMATION:
+
+EXAMPLE 1 - Vague input (no data to extract):
+User: "I want to work on something"
 {
-  "coach_reflection": "Great question! Let's explore that together. What is it you wish to discuss today?"
+  "coach_reflection": "Great! Let's explore that together. What specific goal would you like to focus on?"
 }
 
-EXAMPLE when user provides details:
+EXAMPLE 2 - User provides goal (MUST extract it):
+User: "I want to save $500 for emergencies"
 {
-  "goal": "[their exact words]",
-  "coach_reflection": "That's a meaningful goal. Why is this important to you right now?"
+  "goal": "Save $500 for emergencies",
+  "coach_reflection": "That's a clear financial goal. Why is building this emergency fund important to you right now?"
+}
+
+EXAMPLE 3 - User provides multiple pieces of info (MUST extract ALL):
+User: "I want to save $500 in 3 months because I have no safety net"
+{
+  "goal": "Save $500 for emergencies",
+  "timeframe": "3 months",
+  "why_now": "I have no safety net",
+  "coach_reflection": "I can hear the urgency there - having no safety net is stressful. What would success look like for you?"
+}
+
+EXAMPLE 4 - Reality step (MUST extract current state):
+User: "I'm spending more than I earn each month"
+{
+  "current_state": "Spending more than I earn each month",
+  "coach_reflection": "That's a challenging situation. What risks do you see if this pattern continues?"
 }
 
 EXAMPLE when user mentions timeframe (extract it exactly as stated):

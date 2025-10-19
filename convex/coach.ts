@@ -182,7 +182,7 @@ const getFramework = (): Framework => {
       },
       {
         name: "will",
-        system_objective: "Select one option and define SMART actions.",
+        system_objective: "Select one option and define SMART actions with overall timeline.",
         required_fields_schema: {
           type: "object",
           properties: {
@@ -202,6 +202,7 @@ const getFramework = (): Framework => {
               minItems: 0,
               maxItems: 3
             },
+            action_plan_timeframe: { type: "string", minLength: 2, maxLength: 100 },
             coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
           },
           required: ["coach_reflection"],
