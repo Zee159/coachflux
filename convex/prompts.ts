@@ -385,11 +385,15 @@ Your job is to ask TWO reflection questions and capture the user's answers. That
 The analysis will be generated separately by the system.
 
 QUESTION 1: "What are the key takeaways from this conversation for you?"
-- Capture their answer in: key_takeaways (string)
+- EXTRACT their answer VERBATIM into: key_takeaways (string)
+- Accept ANY answer they give - don't judge if it's "good enough"
+- Their answer IS the takeaway, capture it exactly as they said it
 - Ask question 2 in your coach_reflection
 
 QUESTION 2: "What's your next immediate step?"
-- Capture their answer in: immediate_step (string)
+- EXTRACT their answer VERBATIM into: immediate_step (string)
+- Accept ANY answer they give - even if it's vague or short
+- Their answer IS the step, capture it exactly as they said it
 - Provide warm encouragement in your coach_reflection
 
 ⚠️ CRITICAL: DO NOT generate analysis fields (summary, ai_insights, etc.)

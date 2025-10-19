@@ -45,12 +45,19 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
     );
   }
 
-  // Extract data from reflections
-  const goalReflection = reflections.find((r) => r.step === "goal");
-  const realityReflection = reflections.find((r) => r.step === "reality");
-  const optionsReflection = reflections.find((r) => r.step === "options");
-  const willReflection = reflections.find((r) => r.step === "will");
-  // Get the LAST review reflection (in case there are multiple after analysis generation)
+  // Extract data from reflections - Get LAST reflection for each step (in case there are multiple)
+  const goalReflections = reflections.filter((r) => r.step === "goal");
+  const goalReflection = goalReflections[goalReflections.length - 1];
+  
+  const realityReflections = reflections.filter((r) => r.step === "reality");
+  const realityReflection = realityReflections[realityReflections.length - 1];
+  
+  const optionsReflections = reflections.filter((r) => r.step === "options");
+  const optionsReflection = optionsReflections[optionsReflections.length - 1];
+  
+  const willReflections = reflections.filter((r) => r.step === "will");
+  const willReflection = willReflections[willReflections.length - 1];
+  
   const reviewReflections = reflections.filter((r) => r.step === "review");
   const reviewReflection = reviewReflections[reviewReflections.length - 1];
 
