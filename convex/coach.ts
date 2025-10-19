@@ -730,11 +730,14 @@ export const generateReviewAnalysis = action({
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    // 1. Get session and all reflections
+    // 1. Get session, user, and all reflections
     const session = await ctx.runQuery(api.queries.getSession, { sessionId: args.sessionId });
     if (session === null || session === undefined) {
       return { ok: false, message: "Session not found" };
     }
+
+    const user = await ctx.runQuery(api.queries.getUser, { userId: args.userId });
+    const userName = user?.displayName ?? "there";
 
     const reflections = await ctx.runQuery(api.queries.getSessionReflections, { sessionId: args.sessionId });
     if (reflections === null || reflections === undefined || reflections.length === 0) {
@@ -835,11 +838,23 @@ export const generateReviewAnalysis = action({
         return { ok: false, message: `Incomplete analysis: missing ${missingFields.join(', ')}` };
       }
 
-      // 8. Merge analysis with existing review data
+      // 8. Build personalized final message with insights
+      const summaryText = typeof analysis['summary'] === 'string' ? analysis['summary'] : '';
+      const insightsText = typeof analysis['ai_insights'] === 'string' ? analysis['ai_insights'] : '';
+      const unexploredText = Array.isArray(analysis['unexplored_options']) && (analysis['unexplored_options'] as unknown[]).length > 0
+        ? `\n\nUnexplored options you might consider: ${(analysis['unexplored_options'] as string[]).join(', ')}.`
+        : '';
+      const pitfallsText = Array.isArray(analysis['potential_pitfalls']) && (analysis['potential_pitfalls'] as unknown[]).length > 0
+        ? `\n\nPotential pitfalls to watch out for: ${(analysis['potential_pitfalls'] as string[]).join(', ')}.`
+        : '';
+      
+      const finalMessage = `${summaryText}\n\n${insightsText}${unexploredText}${pitfallsText}\n\nYou've created a solid action plan with clear steps and accountability. I'm confident you have the self-awareness and commitment to make this work. Best wishes, ${userName}!`;
+
+      // 9. Merge analysis with existing review data
       const finalPayload = {
         ...reviewPayload,
         ...analysis,
-        coach_reflection: "You've created a solid action plan with clear steps and accountability. I'm confident you have the self-awareness and commitment to make this work. Best of luck!"
+        coach_reflection: finalMessage
       };
 
       // 9. Update the review reflection with analysis

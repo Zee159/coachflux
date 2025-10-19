@@ -2,16 +2,78 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { useEffect, useRef } from "react";
+import { hasCoachReflection } from "../../convex/types";
 
 interface SessionReportProps {
   sessionId: Id<"sessions">;
   onClose: () => void;
 }
 
+interface ReflectionData {
+  userInput?: string;
+  payload: Record<string, unknown>;
+  step: string;
+}
+
+// Helper: Check if payload has meaningful structured data for a step
+function hasStructuredData(payload: Record<string, unknown> | undefined, stepName: string): boolean {
+  if (payload === undefined || payload === null) {
+    return false;
+  }
+  
+  switch (stepName) {
+    case "goal":
+      return typeof payload['goal'] === 'string' && payload['goal'].length > 0;
+    case "reality":
+      return typeof payload['current_state'] === 'string' && payload['current_state'].length > 0;
+    case "options":
+      return Array.isArray(payload['options']) && payload['options'].length > 0;
+    case "will":
+      return (Array.isArray(payload['actions']) && payload['actions'].length > 0) ||
+             (typeof payload['chosen_option'] === 'string' && payload['chosen_option'].length > 0);
+    default:
+      return false;
+  }
+}
+
+// Component: Display conversation transcript for a step
+function ConversationTranscript({ reflections }: { reflections: ReflectionData[] }) {
+  if (reflections.length === 0) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+        <p className="text-sm text-gray-500 dark:text-gray-400 italic">No conversation recorded for this step.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">💬 Conversation</p>
+      {reflections.map((reflection, idx) => (
+        <div key={idx} className="space-y-2">
+          {reflection.userInput !== undefined && reflection.userInput !== null && reflection.userInput.length > 0 && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 rounded-r-lg p-3">
+              <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">👤 You</p>
+              <p className="text-sm text-gray-800 dark:text-gray-200">{reflection.userInput}</p>
+            </div>
+          )}
+          {hasCoachReflection(reflection.payload) && (
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">🤖 Coach</p>
+              <p className="text-sm text-gray-800 dark:text-gray-200">{reflection.payload.coach_reflection}</p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function SessionReport({ sessionId, onClose }: SessionReportProps) {
   const session = useQuery(api.queries.getSession, { sessionId });
   const reflections = useQuery(api.queries.getSessionReflections, { sessionId });
+  const user = useQuery(api.queries.getUser, session !== null && session !== undefined ? { userId: session.userId } : "skip");
+  const org = useQuery(api.queries.getOrg, session !== null && session !== undefined ? { orgId: session.orgId } : "skip");
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -90,37 +152,150 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
       >
         {/* Header */}
         <div className="bg-indigo-600 text-white p-4 sm:p-6 rounded-t-lg print:bg-indigo-600">
-          <h1 id="report-title" className="text-xl sm:text-2xl font-bold mb-2">Coaching Session Report</h1>
-          <p className="text-indigo-100 text-xs sm:text-sm">
-            {session.framework} Framework • {new Date(session.startedAt).toLocaleDateString()}
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex-1">
+              <h1 id="report-title" className="text-xl sm:text-2xl font-bold mb-2">Coaching Session Report</h1>
+              <p className="text-indigo-100 text-xs sm:text-sm mb-2">
+                {session.framework} Framework • {new Date(session.startedAt).toLocaleDateString()}
+              </p>
+              {user !== undefined && user !== null && (
+                <div className="flex flex-col gap-1 text-indigo-100">
+                  <p className="text-sm font-medium">
+                    <span className="opacity-75">Participant:</span> {user.displayName}
+                  </p>
+                  {org !== undefined && org !== null && (
+                    <p className="text-xs opacity-75">
+                      {org.name}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+            <button
+              className="print:hidden px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-md text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled
+              title="Coming soon: Email this report"
+            >
+              <span>✉️</span>
+              <span>Email Report</span>
+              <span className="text-xs opacity-75">(Soon)</span>
+            </button>
+          </div>
         </div>
 
         {/* Content */}
         <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-h-[70vh] overflow-y-auto print:max-h-none">
+          {/* Session Summary & AI Insights - Top Section */}
+          {reviewPayload !== undefined && reviewPayload !== null && (
+            <>
+              {/* Session Summary */}
+              {typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 && (
+                <section className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg p-6 border-l-4 border-indigo-500">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <span className="text-2xl">📊</span>
+                    <span>Session Summary</span>
+                  </h2>
+                  <p className="text-gray-800 dark:text-gray-200 leading-relaxed">{reviewPayload['summary']}</p>
+                </section>
+              )}
+
+              {/* AI Insights & Analysis */}
+              {(typeof reviewPayload['ai_insights'] === 'string' || 
+                (Array.isArray(reviewPayload['unexplored_options']) && (reviewPayload['unexplored_options'] as unknown[]).length > 0) ||
+                (Array.isArray(reviewPayload['identified_risks']) && (reviewPayload['identified_risks'] as unknown[]).length > 0) ||
+                (Array.isArray(reviewPayload['potential_pitfalls']) && (reviewPayload['potential_pitfalls'] as unknown[]).length > 0)) && (
+                <section>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <span className="text-2xl">🤖</span>
+                    <span>AI Insights & Analysis</span>
+                  </h2>
+                  <div className="space-y-4">
+                    {typeof reviewPayload['ai_insights'] === 'string' && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded-r-lg">
+                        <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 uppercase mb-2">Key Insights</p>
+                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{reviewPayload['ai_insights']}</p>
+                      </div>
+                    )}
+
+                    {Array.isArray(reviewPayload['unexplored_options']) && (reviewPayload['unexplored_options'] as unknown[]).length > 0 && (
+                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border-l-4 border-purple-500">
+                        <p className="text-xs font-semibold text-purple-900 dark:text-purple-100 uppercase mb-2">💡 Unexplored Options</p>
+                        <ul className="space-y-2">
+                          {(reviewPayload['unexplored_options'] as string[]).map((option, idx) => (
+                            <li key={idx} className="flex gap-2 text-sm text-gray-800 dark:text-gray-200">
+                              <span className="text-purple-600 dark:text-purple-400 font-bold">→</span>
+                              <span>{option}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {Array.isArray(reviewPayload['identified_risks']) && (reviewPayload['identified_risks'] as unknown[]).length > 0 && (
+                      <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border-l-4 border-orange-500">
+                        <p className="text-xs font-semibold text-orange-900 dark:text-orange-100 uppercase mb-2">⚠️ Identified Risks</p>
+                        <ul className="space-y-2">
+                          {(reviewPayload['identified_risks'] as string[]).map((risk, idx) => (
+                            <li key={idx} className="flex gap-2 text-sm text-gray-800 dark:text-gray-200">
+                              <span className="text-orange-600 dark:text-orange-400 font-bold">!</span>
+                              <span>{risk}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {Array.isArray(reviewPayload['potential_pitfalls']) && (reviewPayload['potential_pitfalls'] as unknown[]).length > 0 && (
+                      <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border-l-4 border-red-500">
+                        <p className="text-xs font-semibold text-red-900 dark:text-red-100 uppercase mb-2">🚨 Potential Pitfalls</p>
+                        <ul className="space-y-2">
+                          {(reviewPayload['potential_pitfalls'] as string[]).map((pitfall, idx) => (
+                            <li key={idx} className="flex gap-2 text-sm text-gray-800 dark:text-gray-200">
+                              <span className="text-red-600 dark:text-red-400 font-bold">×</span>
+                              <span>{pitfall}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
+
+              {/* Divider */}
+              <div className="border-t-2 border-gray-300 dark:border-gray-600 my-8">
+                <p className="text-center text-sm font-semibold text-gray-500 dark:text-gray-400 -mt-3 bg-white dark:bg-gray-800 inline-block px-4 relative left-1/2 -translate-x-1/2">
+                  SESSION DETAILS
+                </p>
+              </div>
+            </>
+          )}
+
           {/* Goal Section */}
-          {goalPayload !== undefined && goalPayload !== null && (
-            <section>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
-                  G
-                </span>
-                Goal
-              </h2>
+          <section>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
+                G
+              </span>
+              Goal
+            </h2>
+            {(() => {
+              const hasData = goalPayload !== undefined && goalPayload !== null && hasStructuredData(goalPayload, "goal");
+              return hasData ? (
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-                {typeof goalPayload['goal'] === 'string' ? (
+                {typeof goalPayload['goal'] === 'string' && (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Your Goal</p>
                     <p className="text-gray-900 dark:text-white">{goalPayload['goal']}</p>
                   </div>
-                ) : null}
-                {typeof goalPayload['why_now'] === 'string' ? (
+                )}
+                {typeof goalPayload['why_now'] === 'string' && (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Why Now</p>
                     <p className="text-gray-900 dark:text-white">{goalPayload['why_now']}</p>
                   </div>
-                ) : null}
-                {Array.isArray(goalPayload['success_criteria']) ? (
+                )}
+                {Array.isArray(goalPayload['success_criteria']) && (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Success Criteria</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -129,33 +304,38 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                       ))}
                     </ul>
                   </div>
-                ) : null}
-                {typeof goalPayload['timeframe'] === 'string' && goalPayload['timeframe'].length > 0 ? (
+                )}
+                {typeof goalPayload['timeframe'] === 'string' && goalPayload['timeframe'].length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Timeframe</p>
                     <p className="text-gray-900 dark:text-white">{goalPayload['timeframe']}</p>
                   </div>
-                ) : null}
+                )}
               </div>
-            </section>
-          )}
+              ) : (
+                <ConversationTranscript reflections={goalReflections.map(r => ({ userInput: r.userInput, payload: r.payload as Record<string, unknown>, step: r.step }))} />
+              );
+            })()}
+          </section>
 
           {/* Reality Section */}
-          {realityPayload !== undefined && realityPayload !== null && (
-            <section>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
-                  R
-                </span>
-                Reality
-              </h2>
+          <section>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
+                R
+              </span>
+              Reality
+            </h2>
+            {(() => {
+              const hasData = realityPayload !== undefined && realityPayload !== null && hasStructuredData(realityPayload, "reality");
+              return hasData ? (
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-                {typeof realityPayload['current_state'] === 'string' ? (
+                {typeof realityPayload['current_state'] === 'string' && (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Current State</p>
                     <p className="text-gray-900 dark:text-white">{realityPayload['current_state']}</p>
                   </div>
-                ) : null}
+                )}
                 {Array.isArray(realityPayload['constraints']) && (realityPayload['constraints'] as unknown[]).length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Constraints</p>
@@ -187,18 +367,23 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                   </div>
                 )}
               </div>
-            </section>
-          )}
+              ) : (
+                <ConversationTranscript reflections={realityReflections.map(r => ({ userInput: r.userInput, payload: r.payload as Record<string, unknown>, step: r.step }))} />
+              );
+            })()}
+          </section>
 
           {/* Options Section */}
-          {optionsPayload !== undefined && optionsPayload !== null && Array.isArray(optionsPayload['options']) && (
-            <section>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
-                  O
-                </span>
-                Options
-              </h2>
+          <section>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
+                O
+              </span>
+              Options
+            </h2>
+            {(() => {
+              const hasData = optionsPayload !== undefined && optionsPayload !== null && hasStructuredData(optionsPayload, "options");
+              return hasData ? (
               <div className="space-y-3">
                 {(optionsPayload['options'] as Array<{ label: string; pros?: string[]; cons?: string[] }>).map((option, idx) => (
                   <div key={idx} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
@@ -232,25 +417,30 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                   </div>
                 ))}
               </div>
-            </section>
-          )}
+              ) : (
+                <ConversationTranscript reflections={optionsReflections.map(r => ({ userInput: r.userInput, payload: r.payload as Record<string, unknown>, step: r.step }))} />
+              );
+            })()}
+          </section>
 
           {/* Will Section */}
-          {willPayload !== undefined && willPayload !== null && (
-            <section>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
-                  W
-                </span>
-                Will (Action Plan)
-              </h2>
+          <section>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
+                W
+              </span>
+              Will (Action Plan)
+            </h2>
+            {(() => {
+              const hasData = willPayload !== undefined && willPayload !== null && hasStructuredData(willPayload, "will");
+              return hasData ? (
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-                {typeof willPayload['chosen_option'] === 'string' ? (
+                {typeof willPayload['chosen_option'] === 'string' && (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Chosen Option</p>
                     <p className="text-gray-900 dark:text-white font-medium">{willPayload['chosen_option']}</p>
                   </div>
-                ) : null}
+                )}
                 {Array.isArray(willPayload['actions']) && (willPayload['actions'] as unknown[]).length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">Action Items</p>
@@ -283,33 +473,44 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                   </div>
                 )}
               </div>
-            </section>
-          )}
+              ) : (
+                <ConversationTranscript reflections={willReflections.map(r => ({ userInput: r.userInput, payload: r.payload as Record<string, unknown>, step: r.step }))} />
+              );
+            })()}
+          </section>
 
-          {/* Review Section */}
+          {/* User Reflections - Bottom Section */}
           {reviewPayload !== undefined && reviewPayload !== null && (
             <section>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
-                  R
-                </span>
-                Review
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <span className="text-2xl">💬</span>
+                <span>Your Reflections</span>
               </h2>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-                {/* Check if this is an incomplete session (Phase 1 only) */}
-                {typeof reviewPayload['summary'] !== 'string' && typeof reviewPayload['coach_reflection'] === 'string' && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                      ⚠️ This session was completed before all review questions were answered. The full analysis is not available.
-                    </p>
+              
+              {/* Check if this is an incomplete session (Phase 1 only) */}
+              {typeof reviewPayload['summary'] !== 'string' && typeof reviewPayload['coach_reflection'] === 'string' && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    ⚠️ This session was completed before all review questions were answered. The full analysis is not available.
+                  </p>
+                </div>
+              )}
+              
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 space-y-4">
+                {typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">Key Takeaways</p>
+                    <p className="text-gray-900 dark:text-white leading-relaxed">{reviewPayload['key_takeaways']}</p>
                   </div>
                 )}
                 
-                {/* User Reflections */}
-                {typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Key Takeaways</p>
-                    <p className="text-gray-900 dark:text-white">{reviewPayload['key_takeaways']}</p>
+                {typeof reviewPayload['immediate_step'] === 'string' && reviewPayload['immediate_step'].length > 0 && (
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-500 rounded-r-lg p-4">
+                    <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-100 uppercase mb-2">Next Immediate Step</p>
+                    <p className="text-gray-900 dark:text-white font-medium flex items-center gap-2">
+                      <span className="text-indigo-600 dark:text-indigo-400 text-xl">→</span>
+                      <span>{reviewPayload['immediate_step']}</span>
+                    </p>
                   </div>
                 )}
                 
@@ -324,7 +525,7 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                   };
                   return (
                     <div>
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Confidence Level</p>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">Confidence Level</p>
                       <div className="flex items-center gap-3">
                         <div 
                           className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-3"
@@ -345,88 +546,11 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                 
                 {typeof reviewPayload['commitment'] === 'string' && reviewPayload['commitment'].length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Commitment</p>
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">Commitment</p>
                     <p className="text-gray-900 dark:text-white">{reviewPayload['commitment']}</p>
                   </div>
                 )}
-                
-                {typeof reviewPayload['immediate_step'] === 'string' && reviewPayload['immediate_step'].length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Next Immediate Step</p>
-                    <p className="text-gray-900 dark:text-white font-medium">→ {reviewPayload['immediate_step']}</p>
-                  </div>
-                )}
-                
-                {/* Summary */}
-                {typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 && (
-                  <div className="pt-2 border-t border-gray-300 dark:border-gray-600">
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Session Summary</p>
-                    <p className="text-gray-900 dark:text-white">{reviewPayload['summary']}</p>
-                  </div>
-                )}
               </div>
-
-              {/* AI Insights & Analysis - Only show if there's actual analysis data */}
-              {(typeof reviewPayload['ai_insights'] === 'string' || 
-                (Array.isArray(reviewPayload['unexplored_options']) && (reviewPayload['unexplored_options'] as unknown[]).length > 0) ||
-                (Array.isArray(reviewPayload['identified_risks']) && (reviewPayload['identified_risks'] as unknown[]).length > 0) ||
-                (Array.isArray(reviewPayload['potential_pitfalls']) && (reviewPayload['potential_pitfalls'] as unknown[]).length > 0)) && (
-                <div className="mt-4 space-y-4">
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <span className="text-indigo-600">🤖</span>
-                    AI Insights & Analysis
-                  </h3>
-
-                  {typeof reviewPayload['ai_insights'] === 'string' && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded-r-lg">
-                    <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 uppercase mb-1">Key Insights</p>
-                    <p className="text-sm text-gray-800 dark:text-gray-200">{reviewPayload['ai_insights']}</p>
-                  </div>
-                )}
-
-                {Array.isArray(reviewPayload['unexplored_options']) && (reviewPayload['unexplored_options'] as unknown[]).length > 0 && (
-                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
-                    <p className="text-xs font-semibold text-purple-900 dark:text-purple-100 uppercase mb-2">💡 Unexplored Options</p>
-                    <ul className="space-y-2">
-                      {(reviewPayload['unexplored_options'] as string[]).map((option, idx) => (
-                        <li key={idx} className="flex gap-2 text-sm text-gray-800 dark:text-gray-200">
-                          <span className="text-purple-600 dark:text-purple-400 font-bold">→</span>
-                          <span>{option}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {Array.isArray(reviewPayload['identified_risks']) && (reviewPayload['identified_risks'] as unknown[]).length > 0 && (
-                  <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
-                    <p className="text-xs font-semibold text-orange-900 dark:text-orange-100 uppercase mb-2">⚠️ Identified Risks</p>
-                    <ul className="space-y-2">
-                      {(reviewPayload['identified_risks'] as string[]).map((risk, idx) => (
-                        <li key={idx} className="flex gap-2 text-sm text-gray-800 dark:text-gray-200">
-                          <span className="text-orange-600 dark:text-orange-400 font-bold">!</span>
-                          <span>{risk}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {Array.isArray(reviewPayload['potential_pitfalls']) && (reviewPayload['potential_pitfalls'] as unknown[]).length > 0 && (
-                  <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
-                    <p className="text-xs font-semibold text-red-900 dark:text-red-100 uppercase mb-2">🚨 Potential Pitfalls</p>
-                    <ul className="space-y-2">
-                      {(reviewPayload['potential_pitfalls'] as string[]).map((pitfall, idx) => (
-                        <li key={idx} className="flex gap-2 text-sm text-gray-800 dark:text-gray-200">
-                          <span className="text-red-600 dark:text-red-400 font-bold">×</span>
-                          <span>{pitfall}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                </div>
-              )}
             </section>
           )}
         </div>
