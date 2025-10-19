@@ -20,8 +20,9 @@ interface SessionCardProps {
 function SessionCard({ sessionId, framework, step, startedAt, isCompleted, onClick }: SessionCardProps) {
   const reflections = useQuery(api.queries.getSessionReflections, { sessionId });
   
-  // Get review summary if session is completed
-  const reviewReflection = reflections?.find((r) => r.step === "review");
+  // Get review summary if session is completed - use LAST review reflection
+  const reviewReflections = reflections?.filter((r) => r.step === "review") ?? [];
+  const reviewReflection = reviewReflections[reviewReflections.length - 1];
   const reviewPayload = reviewReflection?.payload as Record<string, unknown> | undefined;
   const summary = reviewPayload !== undefined && typeof reviewPayload['summary'] === 'string' 
     ? reviewPayload['summary'] 

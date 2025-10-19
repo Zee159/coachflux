@@ -50,7 +50,9 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
   const realityReflection = reflections.find((r) => r.step === "reality");
   const optionsReflection = reflections.find((r) => r.step === "options");
   const willReflection = reflections.find((r) => r.step === "will");
-  const reviewReflection = reflections.find((r) => r.step === "review");
+  // Get the LAST review reflection (in case there are multiple after analysis generation)
+  const reviewReflections = reflections.filter((r) => r.step === "review");
+  const reviewReflection = reviewReflections[reviewReflections.length - 1];
 
   const goalPayload = goalReflection?.payload as Record<string, unknown> | undefined;
   const realityPayload = realityReflection?.payload as Record<string, unknown> | undefined;

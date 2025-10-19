@@ -310,9 +310,12 @@ export function SessionView() {
     const hasKeyTakeaways = typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length > 0;
     const hasImmediateStep = typeof reviewPayload['immediate_step'] === 'string' && reviewPayload['immediate_step'].length > 0;
     const hasSummary = typeof reviewPayload['summary'] === 'string';
+    
+    // Check if analysis is already complete (to prevent duplicate generation)
+    const hasAnalysis = typeof reviewPayload['ai_insights'] === 'string' && reviewPayload['ai_insights'].length > 0;
 
-    // If both questions answered but no summary yet, trigger report generation
-    if (hasKeyTakeaways && hasImmediateStep && !hasSummary) {
+    // If both questions answered but no summary/analysis yet, trigger report generation
+    if (hasKeyTakeaways && hasImmediateStep && !hasSummary && !hasAnalysis) {
       const generateReport = async () => {
         setGeneratingReport(true);
 
