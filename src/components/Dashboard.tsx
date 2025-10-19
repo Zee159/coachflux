@@ -272,10 +272,10 @@ export function Dashboard() {
                 {sessions?.length === 0 && (
                   <div className="absolute -bottom-16 right-0 bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-200 dark:border-indigo-800 rounded-lg p-3 shadow-lg animate-bounce-subtle pointer-events-none">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">👆</span>
                       <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
                         Start your first coaching session!
                       </p>
+                      <span className="text-2xl">👆</span>
                     </div>
                     {/* Arrow */}
                     <div className="absolute -top-2 right-6 w-4 h-4 bg-indigo-50 dark:bg-indigo-900/20 border-t-2 border-l-2 border-indigo-200 dark:border-indigo-800 transform rotate-45"></div>

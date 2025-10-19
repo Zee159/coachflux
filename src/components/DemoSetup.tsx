@@ -3,7 +3,6 @@ import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
-import { LegalModal } from "./LegalModal";
 import { FeedbackWidget } from "./FeedbackWidget";
 
 export function DemoSetup() {
@@ -11,21 +10,15 @@ export function DemoSetup() {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showLegalModal, setShowLegalModal] = useState(false);
-  const [legalAccepted, setLegalAccepted] = useState(false);
+  const [coachingAccepted, setCoachingAccepted] = useState(false);
+  const [termsPrivacyAccepted, setTermsPrivacyAccepted] = useState(false);
   const navigate = useNavigate();
 
   const createOrg = useMutation(api.mutations.createOrg);
   const createUser = useMutation(api.mutations.createUser);
   const acceptLegal = useMutation(api.mutations.acceptLegalTerms);
 
-  async function handleSetup(skipLegalCheck = false) {
-    // Check if legal terms accepted
-    if (!skipLegalCheck && !legalAccepted) {
-      setShowLegalModal(true);
-      return;
-    }
-
+  async function handleSetup() {
     setLoading(true);
     setError(null);
     try {
@@ -64,23 +57,6 @@ export function DemoSetup() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleLegalAccept() {
-    setLegalAccepted(true);
-    setShowLegalModal(false);
-    // Automatically proceed with setup after accepting
-    // Skip legal check since we just accepted
-    if (orgName !== "" && displayName !== "") {
-      void handleSetup(true); // Pass true to skip legal check
-    }
-  }
-
-  function handleLegalDecline() {
-    setShowLegalModal(false);
-    // Redirect to homepage/setup
-    navigate("/setup");
-    setError("You must accept the Terms of Service and Privacy Policy to use CoachFlux.");
   }
 
   function scrollToSection(id: string) {
@@ -326,16 +302,16 @@ export function DemoSetup() {
                   </div>
 
                   {/* Legal Consent */}
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800 space-y-3">
                     <div className="flex items-start gap-2">
                       <input 
                         type="checkbox" 
-                        checked={legalAccepted}
-                        onChange={(e) => setLegalAccepted(e.target.checked)}
-                        className="mt-1" 
-                        id="legal-consent"
+                        checked={coachingAccepted}
+                        onChange={(e) => setCoachingAccepted(e.target.checked)}
+                        className="mt-1 flex-shrink-0" 
+                        id="coaching-consent"
                       />
-                      <label htmlFor="legal-consent" className="text-sm text-gray-700 dark:text-gray-300">
+                      <label htmlFor="coaching-consent" className="text-sm text-gray-700 dark:text-gray-300">
                         <span className="font-medium">I understand this is coaching, not therapy or medical advice.</span>
                         <span className="block text-xs text-gray-600 dark:text-gray-400 mt-1">
                           This platform helps you clarify goals and take action. 
@@ -344,11 +320,43 @@ export function DemoSetup() {
                         </span>
                       </label>
                     </div>
+                    
+                    <div className="flex items-start gap-2">
+                      <input 
+                        type="checkbox" 
+                        checked={termsPrivacyAccepted}
+                        onChange={(e) => setTermsPrivacyAccepted(e.target.checked)}
+                        className="mt-1 flex-shrink-0" 
+                        id="terms-privacy-consent"
+                      />
+                      <label htmlFor="terms-privacy-consent" className="text-sm text-gray-700 dark:text-gray-300">
+                        <span className="font-medium">
+                          I accept the{' '}
+                          <a 
+                            href="/terms" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-violet-600 dark:text-violet-400 hover:underline"
+                          >
+                            Terms & Conditions
+                          </a>
+                          {' '}and{' '}
+                          <a 
+                            href="/privacy" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-violet-600 dark:text-violet-400 hover:underline"
+                          >
+                            Privacy Policy
+                          </a>
+                        </span>
+                      </label>
+                    </div>
                   </div>
 
                   <button
                     onClick={() => void handleSetup()}
-                    disabled={loading || orgName.trim() === '' || displayName.trim() === '' || !legalAccepted}
+                    disabled={loading || orgName.trim() === '' || displayName.trim() === '' || !coachingAccepted || !termsPrivacyAccepted}
                     className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white py-3 px-6 rounded-xl hover:shadow-xl hover:shadow-violet-500/30 dark:hover:shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-300 font-semibold flex items-center justify-center gap-2"
                   >
                     {loading ? (
@@ -543,13 +551,6 @@ export function DemoSetup() {
           </div>
         </div>
       </section>
-
-      {/* Legal Modal */}
-      <LegalModal
-        isOpen={showLegalModal}
-        onAccept={handleLegalAccept}
-        onDecline={handleLegalDecline}
-      />
 
       {/* Feedback Widget */}
       <FeedbackWidget />
