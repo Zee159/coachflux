@@ -299,8 +299,9 @@ export function SessionView() {
       return;
     }
 
-    // Find review reflection
-    const reviewReflection = reflections.find((r) => r.step === 'review');
+    // Find the LAST review reflection (in case there are multiple)
+    const reviewReflections = reflections.filter((r) => r.step === 'review');
+    const reviewReflection = reviewReflections[reviewReflections.length - 1];
     if (reviewReflection === undefined || reviewReflection === null) {
       return;
     }

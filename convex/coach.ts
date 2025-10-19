@@ -854,9 +854,14 @@ export const generateReviewAnalysis = action({
       }
 
       // 10. Close the session
-      await ctx.runMutation(api.mutations.closeSession, {
-        sessionId: args.sessionId
-      });
+      try {
+        await ctx.runMutation(api.mutations.closeSession, {
+          sessionId: args.sessionId
+        });
+      } catch (closeError: unknown) {
+        console.error("Failed to close session:", closeError);
+        // Continue anyway - we still want to return the analysis
+      }
 
       return { ok: true, analysis };
     } catch (error: unknown) {
