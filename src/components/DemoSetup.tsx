@@ -373,7 +373,7 @@ export function DemoSetup() {
                   </button>
                   
                   <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
-                    This session will take about 20 minutes. Make sure you have time to think.
+                    This session will take approximately 20 minutes. Make sure you have time to think.
                   </p>
                 </div>
               </div>
@@ -430,7 +430,7 @@ export function DemoSetup() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                      <strong className="text-gray-900 dark:text-white">Complete in one session</strong> - takes approximately 10-15 minutes
+                      <strong className="text-gray-900 dark:text-white">Complete in one session</strong> - takes approximately 20 minutes
                     </span>
                   </li>
                 </ul>
