@@ -745,7 +745,9 @@ export const generateReviewAnalysis = action({
     const realityReflection = reflections.find((r) => r.step === "reality");
     const optionsReflection = reflections.find((r) => r.step === "options");
     const willReflection = reflections.find((r) => r.step === "will");
-    const reviewReflection = reflections.find((r) => r.step === "review");
+    // Get the LAST review reflection (in case there are multiple)
+    const reviewReflections = reflections.filter((r) => r.step === "review");
+    const reviewReflection = reviewReflections[reviewReflections.length - 1];
 
     const goalPayload = goalReflection?.payload as Record<string, unknown> | undefined;
     const realityPayload = realityReflection?.payload as Record<string, unknown> | undefined;
@@ -840,6 +842,7 @@ export const generateReviewAnalysis = action({
       };
 
       // 9. Update the review reflection with analysis
+      // Check if ANY review reflection exists (we'll create a new complete one)
       const existingReview = reflections.find((r) => r.step === "review");
       if (existingReview !== undefined && existingReview !== null) {
         // Create a new reflection with complete data (we can't update existing ones)
