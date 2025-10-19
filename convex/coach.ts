@@ -441,15 +441,23 @@ export const nextStep = action({
         severity: "low"
       });
       
-      return { 
-        ok: false, 
-        message: bannedHit 
-          ? "I appreciate you sharing that, but this topic needs more specialized support than coaching can offer."
-          : "I'm having trouble understanding - let me ask differently.",
-        hint: bannedHit
-          ? "I'd recommend speaking with appropriate professional services. In the meantime, what else is on your mind about your goals?"
-          : "Could you rephrase that more directly? For example: 'I want to [specific action]'"
+      // Create a reflection with error message so it flows through chat naturally
+      const errorPayload: ReflectionPayload = {
+        coach_reflection: bannedHit 
+          ? "I appreciate you sharing that, but this topic needs more specialized support than coaching can offer. I'd recommend speaking with appropriate professional services. In the meantime, what else is on your mind about your goals?"
+          : "I'm having a bit of trouble processing that response. Could you rephrase it more directly? For example, share one clear thought about your situation."
       };
+      
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: step.name,
+        userInput: args.userTurn,
+        payload: errorPayload
+      });
+      
+      return { ok: true };
     }
 
     // Parse primary JSON
@@ -462,15 +470,26 @@ export const nextStep = action({
         orgId: args.orgId,
         userId: args.userId,
         sessionId: args.sessionId,
-        reason: "validator_fail_or_banned",
+        reason: "json_parse_error",
         llmOutput: raw,
         severity: "med"
       });
-      return { 
-        ok: false, 
-        message: "I'm having trouble understanding your response.",
-        hint: "Could you rephrase that more directly? Share one clear thought about your situation."
+      
+      // Create a reflection with error message so it flows through chat naturally
+      const errorPayload: ReflectionPayload = {
+        coach_reflection: "I'm having a bit of trouble processing that response. Could you rephrase it more directly? Share one clear thought about your situation."
       };
+      
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: step.name,
+        userInput: args.userTurn,
+        payload: errorPayload
+      });
+      
+      return { ok: true };
     }
 
     // Create reflection with user input

@@ -445,7 +445,9 @@ export function SessionView() {
   const canSkip = skipCount < 2 && currentStep !== "review"; // No skip on review step
   
   // Check if session is complete (review step done OR session closed)
-  const reviewReflection = reflections?.find((r) => r.step === "review");
+  // Find the LAST review reflection (in case there are multiple after analysis generation)
+  const reviewReflections = reflections?.filter((r) => r.step === "review") ?? [];
+  const reviewReflection = reviewReflections[reviewReflections.length - 1];
   const reviewPayload = reviewReflection?.payload as Record<string, unknown> | undefined;
   const isReviewComplete = Boolean(
     reviewPayload !== null && reviewPayload !== undefined &&
