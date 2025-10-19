@@ -790,18 +790,21 @@ Validate this coaching reflection JSON against the schema.
 
 ONLY reject if:
 1. Not valid JSON syntax
-2. Missing REQUIRED fields at TOP LEVEL (check schema "required" array only)
+2. Missing REQUIRED fields listed in schema "required" array (check ONLY those fields)
 3. Field types don't match schema (e.g., string vs number, array vs object)
 4. Contains explicit banned terms in COACH OUTPUT: "diagnose", "cure", "medical advice", "legal advice", "I recommend therapy", "you should see a therapist"
 
-✅ ACCEPT these (NORMAL during progressive conversation):
+✅ ALWAYS ACCEPT these (NORMAL during progressive conversation):
 - Empty arrays []
 - Arrays with any number of items (0, 1, 2, etc.)
-- Strings of any length
+- Strings of any length (even if minLength/maxLength in schema)
 - Missing optional fields (not in "required" array)
 - Missing fields in nested objects (e.g., actions missing "owner" or "due_days")
 - Incomplete nested objects (e.g., options missing "pros" or "cons")
 - Partial data in any field
+- JSON with ONLY required fields and nothing else
+- JSON with SOME optional fields populated and others missing
+- Progressive data building (e.g., only "key_takeaways" without "immediate_step" yet)
 
 Schema (length/count constraints already removed):
 ${JSON.stringify(schema)}

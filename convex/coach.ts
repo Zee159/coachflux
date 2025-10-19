@@ -373,7 +373,7 @@ export const nextStep = action({
     );
 
     const primary = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-3-7-sonnet-20250219",
       max_tokens: 600,
       temperature: 0,
       system: system + "\n\nYou MUST respond with valid JSON only. No other text.",
@@ -394,7 +394,7 @@ export const nextStep = action({
     // Validator call - use stripped schema without validation constraints
     const strippedSchema = stripValidationConstraints(step.required_fields_schema) as object;
     const validator = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-3-7-sonnet-20250219",
       max_tokens: 300,
       temperature: 0,
       system: "You validate JSON output for schema conformance and banned terms. Respond with ONLY valid JSON.",
@@ -791,7 +791,7 @@ export const generateReviewAnalysis = action({
 
     try {
       const response = await anthropic.messages.create({
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-3-7-sonnet-20250219",
         max_tokens: 2000,
         temperature: 0.7,
         messages: [
