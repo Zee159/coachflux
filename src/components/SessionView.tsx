@@ -758,8 +758,8 @@ export function SessionView() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <section className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className={`grid grid-cols-1 ${isSessionComplete ? '' : 'lg:grid-cols-3'} gap-4 sm:gap-6`}>
+          <section className={`${isSessionComplete ? '' : 'lg:col-span-2'} bg-white dark:bg-gray-800 rounded-lg shadow`}>
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
@@ -909,6 +909,8 @@ export function SessionView() {
             </div>
           </section>
 
+          {/* Hide sidebar when session is complete to give full focus to summary */}
+          {!isSessionComplete && (
           <aside className="hidden lg:block lg:col-span-1 space-y-4">
             {/* Dynamic Coaching Sidebar: Questions or Summary */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 lg:sticky lg:top-8">
@@ -1105,6 +1107,7 @@ export function SessionView() {
               </div>
             </div>
           </aside>
+          )}
         </div>
       </main>
 

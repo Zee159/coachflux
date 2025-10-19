@@ -50,19 +50,107 @@ function ConversationTranscript({ reflections }: { reflections: ReflectionData[]
     <div className="space-y-3">
       <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">💬 Conversation</p>
       {reflections.map((reflection, idx) => (
-        <div key={idx} className="space-y-2">
+        <div key={idx} className="space-y-3">
+          {/* User Input */}
           {reflection.userInput !== undefined && reflection.userInput !== null && reflection.userInput.length > 0 && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 rounded-r-lg p-3">
               <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">👤 You</p>
               <p className="text-sm text-gray-800 dark:text-gray-200">{reflection.userInput}</p>
             </div>
           )}
-          {hasCoachReflection(reflection.payload) && (
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">🤖 Coach</p>
-              <p className="text-sm text-gray-800 dark:text-gray-200">{reflection.payload.coach_reflection}</p>
-            </div>
-          )}
+          
+          {/* Coach Response */}
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
+            {/* Coach Reflection Text */}
+            {hasCoachReflection(reflection.payload) && (
+              <div className="border-l-4 border-indigo-500 pl-3">
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">🤖 Coach</p>
+                <p className="text-sm text-gray-800 dark:text-gray-200 italic">{reflection.payload.coach_reflection}</p>
+              </div>
+            )}
+            
+            {/* Structured Reflection Data */}
+            {Object.entries(reflection.payload)
+              .filter(([key]) => key !== 'coach_reflection')
+              .map(([key, value]) => {
+                const label = key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+                
+                // Arrays
+                if (Array.isArray(value) && value.length > 0) {
+                  return (
+                    <div key={key}>
+                      <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 uppercase mb-1">{label}</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        {value.map((item, itemIdx) => {
+                          // Handle options with pros/cons
+                          if (typeof item === 'object' && item !== null && 'label' in item) {
+                            const option = item as { label: string; pros?: string[]; cons?: string[] };
+                            return (
+                              <li key={itemIdx} className="text-sm text-gray-700 dark:text-gray-300">
+                                <span className="font-medium">{option.label}</span>
+                                {option.pros !== undefined && option.pros !== null && option.pros.length > 0 && (
+                                  <div className="ml-6 text-xs text-green-700 dark:text-green-400 mt-1">
+                                    ✓ Pros: {option.pros.join(', ')}
+                                  </div>
+                                )}
+                                {option.cons !== undefined && option.cons !== null && option.cons.length > 0 && (
+                                  <div className="ml-6 text-xs text-red-700 dark:text-red-400">
+                                    ✗ Cons: {option.cons.join(', ')}
+                                  </div>
+                                )}
+                              </li>
+                            );
+                          }
+                          // Handle actions with owner/due_days
+                          if (typeof item === 'object' && item !== null && 'title' in item) {
+                            const action = item as { title: string; owner?: string; due_days?: number };
+                            return (
+                              <li key={itemIdx} className="text-sm text-gray-700 dark:text-gray-300">
+                                <span className="font-medium">{action.title}</span>
+                                {action.owner !== undefined && action.owner !== null && (
+                                  <span className="text-xs text-gray-600 dark:text-gray-400"> (Owner: {action.owner})</span>
+                                )}
+                                {action.due_days !== undefined && action.due_days !== null && (
+                                  <span className="text-xs text-gray-600 dark:text-gray-400"> • Due in {action.due_days} days</span>
+                                )}
+                              </li>
+                            );
+                          }
+                          // Simple strings
+                          return (
+                            <li key={itemIdx} className="text-sm text-gray-700 dark:text-gray-300">
+                              {String(item)}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  );
+                }
+                
+                // Strings
+                if (typeof value === 'string' && value.length > 0) {
+                  return (
+                    <div key={key}>
+                      <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 uppercase mb-1">{label}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{value}</p>
+                    </div>
+                  );
+                }
+                
+                // Numbers
+                if (typeof value === 'number') {
+                  return (
+                    <div key={key}>
+                      <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 uppercase mb-1">{label}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{value}</p>
+                    </div>
+                  );
+                }
+                
+                return null;
+              })}
+          </div>
         </div>
       ))}
     </div>
