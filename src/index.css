@@ -41,11 +41,31 @@ body {
 /* Print styles */
 @media print {
   @page {
-    margin: 1cm;
+    margin: 0.75cm;
+    size: auto;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   body {
-    background: white;
+    background: white !important;
+  }
+
+  /* Hide modal backdrop and show report as full page */
+  .fixed.inset-0.bg-black {
+    position: static !important;
+    background: white !important;
+  }
+
+  /* Report container takes full page */
+  .fixed.inset-0 > div {
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
   }
 
   .print\:hidden {
@@ -64,6 +84,50 @@ body {
 
   .print\:max-h-none {
     max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Compact spacing for print */
+  .print\:p-3 {
+    padding: 0.75rem !important;
+  }
+
+  .print\:space-y-3 > * + * {
+    margin-top: 0.75rem !important;
+  }
+
+  .print\:text-sm {
+    font-size: 0.875rem !important;
+  }
+
+  /* Prevent page breaks inside important elements */
+  .print\:break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Allow page breaks between sections */
+  section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Ensure headings stay with content */
+  h1, h2, h3, h4, h5, h6 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Compact lists for print */
+  ul, ol {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  /* Keep conversation bubbles together */
+  .space-y-3 > div {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 

@@ -223,7 +223,7 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto print:p-0 print:static print:bg-white"
       role="dialog"
       aria-modal="true"
       aria-labelledby="report-title"
@@ -235,11 +235,11 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
     >
       <div 
         ref={modalRef}
-        className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full my-4 sm:my-8 shadow-2xl print:shadow-none"
+        className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full my-4 sm:my-8 shadow-2xl print:shadow-none print:max-w-full print:my-0 print:rounded-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-indigo-600 text-white p-4 sm:p-6 rounded-t-lg print:bg-indigo-600">
+        <div className="bg-indigo-600 text-white p-4 sm:p-6 rounded-t-lg print:bg-indigo-600 print:p-3 print:rounded-none print:break-inside-avoid">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex-1">
               <h1 id="report-title" className="text-xl sm:text-2xl font-bold mb-2">Coaching Session Report</h1>
@@ -272,13 +272,13 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-h-[70vh] overflow-y-auto print:max-h-none">
+        <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-h-[70vh] overflow-y-auto print:max-h-none print:p-3 print:space-y-3">
           {/* Session Summary & AI Insights - Top Section */}
           {reviewPayload !== undefined && reviewPayload !== null && (
             <>
               {/* Session Summary */}
               {typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 && (
-                <section className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg p-6 border-l-4 border-indigo-500">
+                <section className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg p-6 border-l-4 border-indigo-500 print:p-3 print:break-inside-avoid">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                     <span className="text-2xl">📊</span>
                     <span>Session Summary</span>
@@ -292,8 +292,8 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                 (Array.isArray(reviewPayload['unexplored_options']) && (reviewPayload['unexplored_options'] as unknown[]).length > 0) ||
                 (Array.isArray(reviewPayload['identified_risks']) && (reviewPayload['identified_risks'] as unknown[]).length > 0) ||
                 (Array.isArray(reviewPayload['potential_pitfalls']) && (reviewPayload['potential_pitfalls'] as unknown[]).length > 0)) && (
-                <section>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <section className="print:break-inside-avoid">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2 print:text-sm print:mb-2">
                     <span className="text-2xl">🤖</span>
                     <span>AI Insights & Analysis</span>
                   </h2>
@@ -360,7 +360,7 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
           )}
 
           {/* Goal Section */}
-          <section>
+          <section className="print:break-inside-avoid">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
                 G
@@ -407,7 +407,7 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
           </section>
 
           {/* Reality Section */}
-          <section>
+          <section className="print:break-inside-avoid">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
                 R
@@ -462,7 +462,7 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
           </section>
 
           {/* Options Section */}
-          <section>
+          <section className="print:break-inside-avoid">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
                 O
@@ -512,7 +512,7 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
           </section>
 
           {/* Will Section */}
-          <section>
+          <section className="print:break-inside-avoid">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
                 W
@@ -569,7 +569,7 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
 
           {/* User Reflections - Bottom Section */}
           {reviewPayload !== undefined && reviewPayload !== null && (
-            <section>
+            <section className="print:break-inside-avoid">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <span className="text-2xl">💬</span>
                 <span>Your Reflections</span>
