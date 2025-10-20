@@ -18,9 +18,9 @@
 
 The 6 frameworks cover **100% of leadership coaching situations:**
 
-1. **GROW** (Goal-Reality-Options-Will) — Generic goals
+1. **GROW** (Goal-Reality-Options-Will) — Generic goals & performance
 2. **CLEAR** (Contracting-Listening-Exploring-Action-Review) — Complex/emotional situations
-3. **ADKAR** (Awareness-Desire-Knowledge-Ability-Reinforcement) — Change management
+3. **COMPASS** (Clarity-Ownership-Mapping-Practice-Anchoring-Sustaining) — Change management & transformation
 4. **Power-Interest Grid** (Map-Assess-Strategise) — Stakeholder management
 5. **Psychological Safety** (Assess-Barriers-Interventions-Rituals) — Team development
 6. **Executive Presence** + **Conflict Resolution** (or another 2 specialised frameworks)
@@ -68,8 +68,8 @@ The 6 frameworks cover **100% of leadership coaching situations:**
 - Test with 5-10 users
 - Iterate on UX
 
-**Week 4: Build ADKAR**
-- Implement 6-step ADKAR framework
+**Week 4: Build COMPASS**
+- Implement 6-step COMPASS framework
 - Add barrier diagnosis logic
 - Test with 5-10 users
 - Validate LOWEST score = barrier logic
@@ -144,11 +144,12 @@ The 6 frameworks cover **100% of leadership coaching situations:**
 - **Key:** Deep listening, understanding precedes solutions
 - **Coachee:** "This is complex and I need to be understood"
 
-### 3. ADKAR (New)
-- **When:** Change management, adoption
-- **Duration:** 20 min | **Steps:** 6
-- **Key:** Diagnose barrier (LOWEST score), intervene there
-- **Coachee:** "We're implementing change and people resist"
+### 3. COMPASS (New - Exclusive to CoachFlux)
+- **When:** Change management, transformation, adoption
+- **Duration:** 20 min | **Steps:** 6  
+- **Key:** Diagnose barrier (LOWEST score), intervene there; synthesized from 5 major frameworks
+- **Coachee:** "I'm navigating change" or "We're implementing change and people resist"
+- **Unique:** Only framework integrating individual psychology + environmental design + visible leadership
 
 ### 4. Power-Interest Grid (New)
 - **When:** Stakeholder management
