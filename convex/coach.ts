@@ -5,8 +5,19 @@ import { SYSTEM_BASE, USER_STEP_PROMPT, VALIDATOR_PROMPT, ANALYSIS_GENERATION_PR
 import { api } from "./_generated/api";
 import type { Framework, OrgValue, ValidationResult, ReflectionPayload } from "./types";
 import { hasCoachReflection } from "./types";
+// Phase 1: Modular framework registry (feature flag controlled)
+import { getFrameworkLegacy } from "./frameworks/registry";
 
 const BANNED = ["psychiatric", "prescribe", "diagnosis", "lawsuit", "litigation"];
+
+// ============================================================================
+// FEATURE FLAG: Modular Framework Registry
+// ============================================================================
+// Set to true to use new modular registry (Phase 1 testing)
+// Set to false to use legacy hardcoded framework (rollback safety)
+const USE_MODULAR_REGISTRY = false;
+
+// ============================================================================
 
 // Strip validation constraints from schema for validator (keeps only structure and required fields)
 function stripValidationConstraints(schema: unknown): unknown {
@@ -117,7 +128,8 @@ const ESCALATION_REQUIRED = [
 ];
 
 // Framework configuration loaded at runtime
-const getFramework = (): Framework => {
+// Legacy hardcoded framework (kept for rollback safety)
+const getFrameworkHardcoded = (): Framework => {
   return {
     id: "GROW",
     steps: [
@@ -230,6 +242,19 @@ const getFramework = (): Framework => {
       }
     ]
   };
+};
+
+/**
+ * Get framework with feature flag support
+ * Returns modular registry version if USE_MODULAR_REGISTRY=true, otherwise hardcoded
+ */
+const getFramework = (): Framework => {
+  if (USE_MODULAR_REGISTRY) {
+    // Phase 1: Use modular registry (converts LegacyFramework to Framework)
+    return getFrameworkLegacy() as Framework;
+  }
+  // Default: Use hardcoded framework (current production behavior)
+  return getFrameworkHardcoded();
 };
 
 export const nextStep = action({

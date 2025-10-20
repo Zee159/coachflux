@@ -14,6 +14,9 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as coach from "../coach.js";
+import type * as frameworks_grow from "../frameworks/grow.js";
+import type * as frameworks_registry from "../frameworks/registry.js";
+import type * as frameworks_types from "../frameworks/types.js";
 import type * as metrics from "../metrics.js";
 import type * as mutations from "../mutations.js";
 import type * as prompts from "../prompts.js";
@@ -31,6 +34,9 @@ import type * as types from "../types.js";
  */
 declare const fullApi: ApiFromModules<{
   coach: typeof coach;
+  "frameworks/grow": typeof frameworks_grow;
+  "frameworks/registry": typeof frameworks_registry;
+  "frameworks/types": typeof frameworks_types;
   metrics: typeof metrics;
   mutations: typeof mutations;
   prompts: typeof prompts;
