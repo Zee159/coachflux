@@ -5,7 +5,7 @@
 This directory contains everything you need to build 6 coaching frameworks in 8 weeks.
 
 **Quick Facts:**
-- ✅ 5 frameworks already detailed (CLEAR, ADKAR, Power-Interest Grid, Psychological Safety + GROW existing)
+- ✅ 5 frameworks already detailed (CLEAR, COMPASS, Power-Interest Grid, Psychological Safety + GROW existing)
 - 📋 Complete 8-week implementation plan
 - 🏗️ Modular architecture (90% code reuse)
 - 📊 Detailed timelines, checklists, templates
@@ -61,8 +61,8 @@ This directory contains everything you need to build 6 coaching frameworks in 8 
    - Coaching questions per step
    - Real session example
 
-8. **3_FRAMEWORK_ADKAR.md**
-   - ADKAR (Awareness → Desire → Knowledge → Ability → Reinforcement)
+8. **3_FRAMEWORK_COMPASS.md**
+   - COMPASS (Clarity → Ownership → Mapping → Practice → Anchoring → Sustaining)
    - 6 complete steps with barrier diagnosis
    - Real session example
 
@@ -133,13 +133,13 @@ This directory contains everything you need to build 6 coaching frameworks in 8 
 ### What's a "Framework"?
 A coaching model that structures conversations with specific steps, questions, and decision points. Examples:
 - GROW = 4 steps (Goal-Reality-Options-Will)
-- ADKAR = 6 steps (diagnosis of change barriers)
+- COMPASS = 6 steps (diagnosis of change barriers)
 - Each framework optimized for different situations
 
 ### Why 6 Frameworks?
 Different coaching challenges need different approaches. One size doesn't fit all.
 - Strategic decisions → GROW or CLEAR
-- Change management → ADKAR
+- Change management → COMPASS
 - Stakeholder influence → Power-Interest Grid
 - Team issues → Psychological Safety
 - Personal presence → Executive Presence
@@ -176,7 +176,7 @@ Different coaching challenges need different approaches. One size doesn't fit al
 
 **Weeks 2-6:**
 - `/src/lib/frameworks/clear.ts` — CLEAR framework
-- `/src/lib/frameworks/adkar.ts` — ADKAR framework
+- `/src/lib/frameworks/compass.ts` — COMPASS framework
 - `/src/lib/frameworks/power_interest_grid.ts` — PIGrid framework
 - `/src/lib/frameworks/psychological_safety.ts` — Psych Safety framework
 - `/src/lib/frameworks/executive_presence.ts` — Exec Presence framework
@@ -193,7 +193,7 @@ Different coaching challenges need different approaches. One size doesn't fit al
    - Adding new framework = 1-2 days
 
 2. **Barrier Diagnosis Matters**
-   - ADKAR: Find the LOWEST score (that's the barrier)
+   - COMPASS: Find the LOWEST score (that's the barrier)
    - Psychological Safety: Root causes (not symptoms)
    - Don't treat symptoms, fix barriers
 

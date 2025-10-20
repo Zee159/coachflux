@@ -21,7 +21,7 @@ This document serves as the master index for all framework and strategy document
 | # | File | Purpose | Status |
 |---|------|---------|--------|
 | 6 | FRAMEWORK_CLEAR.md | CLEAR framework (5 steps) | ✅ Created |
-| 7 | FRAMEWORK_ADKAR.md | ADKAR framework (6 steps) | ✅ Created |
+| 7 | FRAMEWORK_COMPASS.md | COMPASS framework (6 steps) | ✅ Created |
 | 8 | FRAMEWORK_POWER_INTEREST_GRID.md | Power-Interest Grid (3 steps) | ✅ Created |
 | 9 | FRAMEWORK_PSYCHOLOGICAL_SAFETY.md | Psychological Safety (5 steps) | ✅ Created |
 | 10 | FRAMEWORK_EXECUTIVE_PRESENCE.md | Executive Presence/Gravitas (5 steps) | 📝 Creating now |
@@ -71,8 +71,8 @@ This document serves as the master index for all framework and strategy document
 - JSON schemas
 - CLEAR vs. GROW comparison
 
-✅ **3_FRAMEWORK_ADKAR.md**
-- ADKAR 6-step framework
+✅ **3_FRAMEWORK_COMPASS.md**
+- COMPASS 6-step framework
 - Barrier diagnosis (critical insight: LOWEST score is barrier)
 - Intervention matrix
 - Real session example
@@ -162,7 +162,7 @@ In your project directory:
 ```
 ✅ 1_FRAMEWORK_SELECTION_GUIDE.md
 ✅ 2_FRAMEWORK_CLEAR.md
-✅ 3_FRAMEWORK_ADKAR.md
+✅ 3_FRAMEWORK_COMPASS.md
 ✅ 4_FRAMEWORK_POWER_INTEREST_GRID.md
 ✅ 5_FRAMEWORK_PSYCHOLOGICAL_SAFETY.md
 📝 [9 more files to create]

@@ -70,7 +70,7 @@
 - [ ] Polish CLEAR implementation
 - [ ] All tests passing
 - [ ] Commit code
-- [ ] Ready for ADKAR Week 3
+- [ ] Ready for COMPASS Week 3
 
 ### Success Criteria
 - ✅ CLEAR framework loads via selector
@@ -84,14 +84,14 @@
 
 ---
 
-## Week 3: ADKAR Framework
+## Week 3: COMPASS Framework
 
 ### Daily Breakdown
 
 **Monday:**
-- [ ] Copy ADKAR framework definition (from 3_FRAMEWORK_ADKAR.md)
+- [ ] Copy COMPASS framework definition (from 3_FRAMEWORK_COMPASS.md)
 - [ ] Add to registry
-- [ ] Create `/src/lib/frameworks/adkar.ts`
+- [ ] Create `/src/lib/frameworks/compass.ts`
 
 **Tuesday:**
 - [ ] Implement barrier diagnosis logic
@@ -99,14 +99,14 @@
 - [ ] Create tests for barrier detection
 
 **Wednesday:**
-- [ ] Test ADKAR steps 1-3 (Awareness, Desire, Knowledge)
+- [ ] Test COMPASS steps 1-3 (Clarity, Ownership, Mapping)
 - [ ] Test rating logic (1-5 for each)
 - [ ] Validate schemas
 
 **Thursday:**
-- [ ] Test ADKAR steps 4-5 (Ability, Reinforcement)
+- [ ] Test COMPASS steps 4-6 (Practice, Anchoring, Sustaining)
 - [ ] Test review step with barrier diagnosis
-- [ ] Run full ADKAR session E2E
+- [ ] Run full COMPASS session E2E
 
 **Friday:**
 - [ ] Polish implementation
@@ -116,7 +116,7 @@
 - [ ] Ready for Week 4
 
 ### Success Criteria
-- ✅ ADKAR framework loads via selector
+- ✅ COMPASS framework loads via selector
 - ✅ All 6 steps work correctly
 - ✅ Barrier diagnosis logic working (LOWEST score identified)
 - ✅ E2E session completes
@@ -160,7 +160,7 @@
 - [ ] Verify barrier fixes match framework
 
 ### Success Criteria (End of Week 5)
-- ✅ 4 frameworks fully implemented (CLEAR, ADKAR, PIGrid, PsychSafety)
+- ✅ 4 frameworks fully implemented (CLEAR, COMPASS, PIGrid, PsychSafety)
 - ✅ All tests passing
 - ✅ 4 complete E2E sessions working
 - ✅ Framework selection accurate for all 4
@@ -313,7 +313,7 @@ By end of Week 8, you will have:
 |------|-----------|--------|
 | 1 | Foundation built, GROW refactored | Goal |
 | 2 | CLEAR implemented | Goal |
-| 3 | ADKAR implemented | Goal |
+| 3 | COMPASS implemented | Goal |
 | 4-5 | Power-Interest Grid + Psych Safety implemented | Goal |
 | 6 | 6 frameworks complete | Goal |
 | 7 | Testing complete, pilot ready | Goal |

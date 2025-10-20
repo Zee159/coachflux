@@ -50,7 +50,7 @@ Layer 5: Completion Evaluator
 export const frameworkRegistry: Record<string, FrameworkDefinition> = {
   GROW: growFramework,
   CLEAR: clearFramework,
-  ADKAR: adkarFramework,
+  COMPASS: compassFramework,
   POWER_INTEREST_GRID: powerInterestGridFramework,
   PSYCHOLOGICAL_SAFETY: psychologicalSafetyFramework,
   EXECUTIVE_PRESENCE: executivePresenceFramework
@@ -146,28 +146,28 @@ export function validateResponse(
 
 ---
 
-## Data Flow Example: ADKAR Session
+## Data Flow Example: COMPASS Session
 
 ```
 User: "We're implementing a new system and people are resisting"
     ↓
-[Router] selectFramework("implementing") → "ADKAR"
+[Router] selectFramework("implementing") → "COMPASS"
     ↓
-[Registry] getFramework("ADKAR") → Returns ADKAR definition
+[Registry] getFramework("COMPASS") → Returns COMPASS definition
     ↓
-[StepExecutor] executeStep(ADKAR, step=0, userInput)
-    - Generates system prompt from ADKAR step 0
+[StepExecutor] executeStep(COMPASS, step=0, userInput)
+    - Generates system prompt from COMPASS step 0
     - Calls Claude with prompt
     - Gets JSON response
     ↓
 [Validator] validateResponse(response, step.schema)
-    - Checks: awareness_rating is 1-5
+    - Checks: clarity_rating is 1-5
     - Checks: their_understanding is 20-300 chars
     - Checks: coach_reflection is 20-300 chars
     ↓
 If valid:
     - Store response in session
-    - Move to step 1 (ADKAR Desire step)
+    - Move to step 1 (COMPASS Ownership step)
     ↓
 If invalid:
     - Return error to user
@@ -191,7 +191,9 @@ If invalid:
 
 **Total:** ~2,000 lines of generic code + 300-400 lines per framework definition = 4,000 total LOC for 6 frameworks
 
-**vs. GROW only:** 600 lines per framework × 6 = 3,600 lines needed if built separately (23% smaller with modular approach)
+**vs. GROW only:** 600 lines per framework × 6 = 3,600 lines needed if built separately
+
+**Reality:** Modular approach is 11% MORE code for first 6 frameworks, BUT each framework after that costs only 350 lines vs 600 lines (42% savings at scale)
 
 ---
 
@@ -200,18 +202,18 @@ If invalid:
 Each framework is defined as a data object (no code logic):
 
 ```typescript
-const adkarFramework: FrameworkDefinition = {
-  id: "ADKAR",
-  name: "ADKAR",
+const compassFramework: FrameworkDefinition = {
+  id: "COMPASS",
+  name: "COMPASS",
   description: "Change management model",
   duration_minutes: 20,
   challenge_types: ["change_leadership"],
   steps: [
     {
-      name: "awareness",
+      name: "clarity",
       order: 1,
       duration_minutes: 4,
-      objective: "Assess if they understand WHY the change is happening",
+      objective: "Assess if they understand WHAT is changing and WHY",
       required_fields_schema: {
         type: "object",
         properties: {
@@ -253,7 +255,7 @@ const adkarFramework: FrameworkDefinition = {
 ### Integration Tests (End-to-End)
 - Full GROW session (existing)
 - Full CLEAR session (new)
-- Full ADKAR session (new)
+- Full COMPASS session (new)
 - Framework switching (mid-session change)
 
 ### Regression Tests
@@ -272,8 +274,8 @@ const adkarFramework: FrameworkDefinition = {
 4. Run E2E tests
 5. → Done in 1-2 days
 
-### Week 4: Add ADKAR
-1. Define ADKAR framework
+### Week 4: Add COMPASS
+1. Define COMPASS framework
 2. Add to registry
 3. Test barrier diagnosis logic
 4. Run E2E tests
@@ -307,4 +309,121 @@ Each takes 1-2 days using same pattern
 
 ---
 
-**This architecture allows 6 frameworks in 8 weeks vs. 6 months separately.** 🚀
+---
+
+## Cost-Benefit Analysis
+
+### Upfront Investment
+**Week 1-2: Building the Engine**
+- Time: 2 weeks (10 days)
+- What you build: Registry, Router, Selector, Step Executor, Validator
+- Output: 0 new frameworks (just GROW refactored)
+- Risk: High (if architecture is wrong, you waste 2 weeks)
+
+### Break-Even Point
+**After Framework #3 (Week 5)**
+- Modular approach: 2 weeks (engine) + 1 week (CLEAR) + 1 week (COMPASS) + 3 days (Grid) = **4.6 weeks**
+- Separate approach: 1 week × 3 frameworks = **3 weeks**
+- Status: **Still behind by 1.6 weeks** ⚠️
+
+**After Framework #6 (Week 8)**
+- Modular approach: 2 weeks (engine) + 6 frameworks × 1.5 days avg = **3.8 weeks total**
+- Separate approach: 1 week × 6 frameworks = **6 weeks**
+- Status: **Ahead by 2.2 weeks** ✅
+
+### Long-Term Payoff
+**Adding framework #7-10:**
+- Modular: 1-2 days each = **1 week for 4 frameworks**
+- Separate: 1 week each = **4 weeks for 4 frameworks**
+- Savings: **75% time reduction**
+
+### When to Use This Architecture
+✅ **Use modular if**: You plan to build 4+ frameworks
+✅ **Use modular if**: You need consistent quality across frameworks
+✅ **Use modular if**: You have 2 weeks to invest upfront
+
+❌ **Don't use modular if**: You only need 1-2 frameworks
+❌ **Don't use modular if**: You need results in < 2 weeks
+❌ **Don't use modular if**: Requirements are unclear
+
+---
+
+## Rollback Strategy
+
+### If Modular Architecture Fails
+
+**Scenario 1: Week 2 - Architecture doesn't work**
+- **Symptom**: Can't get GROW refactored by end of Week 2
+- **Decision point**: Friday Week 2
+- **Rollback action**: 
+  1. Revert frontend to last working commit (GitHub)
+  2. Keep Convex as-is (GROW already works)
+  3. Build CLEAR as standalone (1 week)
+  4. Reassess modular approach after CLEAR works
+- **Time lost**: 2 weeks
+- **Recovery**: Build 2-3 frameworks separately, revisit modular later
+
+**Scenario 2: Week 4 - Framework selection failing**
+- **Symptom**: Selector picks wrong framework >30% of time
+- **Decision point**: End of Week 4
+- **Rollback action**:
+  1. Make framework selection MANUAL (dropdown menu)
+  2. Keep engine intact
+  3. Improve selector algorithm in parallel
+  4. Switch to auto-selection when accuracy >90%
+- **Time lost**: 0 (manual selection is acceptable)
+- **Risk**: Lower but acceptable
+
+**Scenario 3: Week 6 - Performance issues**
+- **Symptom**: Sessions take >5 seconds to respond
+- **Decision point**: Load testing in Week 6
+- **Rollback action**:
+  1. Identify bottleneck (likely schema validator or prompt generation)
+  2. Optimize hot path
+  3. If unfixable: Cache aggressively or pre-compute prompts
+- **Time lost**: 2-3 days
+- **Acceptable**: Yes, optimization is normal
+
+### Convex-Specific Rollback
+**Problem**: No CI/CD, so bad deploy = manual fix
+
+**Prevention**:
+1. **Schema versioning**: Keep old schemas alongside new ones during migration
+2. **Feature flags**: Use Convex environment variables to toggle modular mode
+3. **Shadow mode**: Run old GROW and new engine in parallel, compare outputs
+4. **Data backup**: Export all sessions before major Convex changes
+
+**Emergency Rollback** (if production breaks):
+```bash
+# 1. Revert Convex functions
+npx convex deploy --prod --schema-only  # Keep data, revert functions
+
+# 2. Revert frontend
+git revert <commit-hash>
+git push
+
+# 3. Verify
+# Run test session manually
+```
+
+**Max downtime target**: 30 minutes
+
+### Go/No-Go Checkpoints
+
+**Week 2 Friday (Architecture):**
+- ✅ GROW works via new engine → Continue
+- ❌ GROW broken or slower → Rollback to separate frameworks
+
+**Week 4 Friday (Multi-framework):**
+- ✅ 2+ frameworks working, selector >70% accurate → Continue
+- ⚠️ Selector <70% → Make it manual, keep building
+- ❌ Only 1 framework working → Consider rollback
+
+**Week 6 Friday (Scale test):**
+- ✅ All frameworks work, performance acceptable → Continue to pilot
+- ⚠️ Performance issues → Fix before pilot
+- ❌ Major bugs, can't fix in 1 week → Delay pilot 2 weeks
+
+---
+
+**This architecture breaks even after framework #6 and saves 75% time for frameworks #7+.** 🚀

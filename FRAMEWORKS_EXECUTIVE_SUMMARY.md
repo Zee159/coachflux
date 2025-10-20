@@ -5,7 +5,7 @@
 **ValueAlign is building 6 deterministic coaching frameworks** in 8 weeks (not 6 months).
 
 - **Phase 1 (Weeks 1-2):** GROW refactoring + architecture foundation
-- **Phase 2 (Weeks 3-5):** Build 4 frameworks (CLEAR, ADKAR, Power-Interest Grid, Psychological Safety)
+- **Phase 2 (Weeks 3-5):** Build 4 frameworks (CLEAR, COMPASS, Power-Interest Grid, Psychological Safety)
 - **Phase 3 (Weeks 6-8):** Build 2 frameworks + testing + pilot launch
 
 **ROI:** Each framework generates 20-30% better measurability vs. existing GROW approach. Frameworks become increasingly valuable as library grows.
@@ -233,7 +233,7 @@ UI Renderer (shows same UI, different questions)
 |------|--------|--------|
 | 1-2 | GROW refactoring complete | 100% |
 | 3 | CLEAR framework functional | 95% |
-| 4 | ADKAR framework functional | 95% |
+| 4 | COMPASS framework functional | 95% |
 | 5 | 4 frameworks complete | 95% |
 | 6 | 6 frameworks complete | 95% |
 | 7 | Testing pass rate | 95% |

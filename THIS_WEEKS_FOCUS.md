@@ -100,7 +100,7 @@ interface FrameworkStep {
 
 **Decision Tree (Pseudo-code):**
 ```
-If "change" → ADKAR
+If "change" → COMPASS
 Else if "stakeholder" → POWER_INTEREST_GRID
 Else if "team" → PSYCHOLOGICAL_SAFETY
 Else if "complex" → CLEAR
@@ -113,7 +113,7 @@ Else → GROW
 - `/tests/frameworks/selector.test.ts`
 
 **Success Criteria:**
-- ✅ `selectFramework("implementing change")` → returns ADKAR ID
+- ✅ `selectFramework("implementing change")` → returns COMPASS ID
 - ✅ `selectFramework("need to influence CFO")` → returns POWER_INTEREST_GRID ID
 - ✅ Router correctly loads framework definition
 - ✅ Tests pass
@@ -254,7 +254,7 @@ function selectFramework(userInput: string): string {
   const lowerInput = userInput.toLowerCase();
   
   if (lowerInput.includes("change") || lowerInput.includes("implement")) {
-    return "ADKAR";
+    return "COMPASS";
   }
   if (lowerInput.includes("stakeholder") || lowerInput.includes("influence")) {
     return "POWER_INTEREST_GRID";
