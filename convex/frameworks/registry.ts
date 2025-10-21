@@ -31,7 +31,11 @@ const legacyFrameworkRegistry: Record<string, LegacyFramework> = {
  * This is a drop-in replacement for the hardcoded getFramework() in coach.ts
  */
 export function getFrameworkLegacy(): LegacyFramework {
-  return legacyFrameworkRegistry['GROW'];
+  const framework = legacyFrameworkRegistry['GROW'];
+  if (framework === null || framework === undefined) {
+    throw new Error('GROW framework not found in legacy registry');
+  }
+  return framework;
 }
 
 // ============================================================================

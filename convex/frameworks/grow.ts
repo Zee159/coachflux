@@ -357,8 +357,8 @@ export const growFramework: FrameworkDefinition = {
     {
       required_fields: ['goal', 'current_state', 'options', 'actions'],
       validation: (data: Record<string, unknown>): boolean => {
-        const hasGoal = 'goal' in data && typeof data.goal === 'string';
-        const hasCurrentState = 'current_state' in data && typeof data.current_state === 'string';
+        const hasGoal = 'goal' in data && typeof data['goal'] === 'string';
+        const hasCurrentState = 'current_state' in data && typeof data['current_state'] === 'string';
         return hasGoal && hasCurrentState;
       },
       error_message: 'Goal and current state are required to complete session'

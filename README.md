@@ -1,209 +1,79 @@
-# CoachFlux MVP
+# CoachFlux
 
-A GROW coaching platform built on Convex with deterministic flows, strict guardrails, and low hallucination risk.
+**AI-powered GROW coaching platform for personal development and goal achievement**
 
-## Features
+CoachFlux is a conversational AI coaching application that guides users through structured coaching frameworks, starting with the GROW (Goal, Reality, Options, Will) model.
 
-✅ **GROW Framework** - Structured coaching methodology (Goal, Reality, Options, Will, Review)  
-✅ **Deterministic Flows** - Schema-driven conversation with strict validation  
-✅ **LLM Guardrails** - Two-pass validation, banned term detection, safety incident logging  
-✅ **Organizational Alignment** - Track alignment with company values  
-✅ **Action Tracking** - Convert reflections into actionable items  
-✅ **Safety First** - No therapy, medical, legal, or financial advice  
-
-## Tech Stack
-
-- **Backend**: Convex (serverless database + functions)
-- **Frontend**: React + TypeScript + TailwindCSS
-- **LLM**: Anthropic Claude Sonnet 4 (temperature 0, JSON mode)
-- **Routing**: React Router
-- **Build**: Vite
-
-## Quick Start
-
-### Prerequisites
-- Node.js 20+
-- pnpm 9+
-- Anthropic API key
-
-### Installation
+## 🚀 Quick Start
 
 ```bash
 # Install dependencies
 pnpm install
 
-# Start Convex dev server (opens dashboard)
-pnpm convex:dev
+# Set up environment variables
+cp .env.example .env.local
+# Add your Anthropic API key to .env.local
 
-# In Convex dashboard:
-# 1. Set environment variable: ANTHROPIC_API_KEY=sk-...
-# 2. Note your deployment URL
-
-# Start frontend dev server
+# Start development server
 pnpm dev
+
+# In another terminal, start Convex
+pnpm convex:dev
 ```
 
-Visit `http://localhost:3000`
+Visit `http://localhost:5173` to start coaching!
 
-## Project Structure
+## 📚 Documentation
 
-```
-coachflux/
-├── convex/              # Backend functions and schema
-│   ├── schema.ts        # Database schema
-│   ├── coach.ts         # LLM coordinator with guardrails
-│   ├── prompts.ts       # System and validation prompts
-│   ├── mutations.ts     # Write operations
-│   ├── queries.ts       # Read operations
-│   └── metrics.ts       # Analytics and scoring
-├── src/
-│   ├── components/      # React components
-│   │   ├── DemoSetup.tsx
-│   │   ├── Dashboard.tsx
-│   │   └── SessionView.tsx
-│   ├── frameworks/      # Coaching frameworks
-│   │   └── grow.json
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css
-├── tests/
-│   └── evals/          # Test scenarios
-│       ├── grow_basic.json
-│       ├── safety_boundaries.json
-│       └── character_limits.json
-└── COACHFLUX_MVP_GUIDE.md  # Complete implementation guide
-```
+All project documentation is organized in the [`docs/`](./docs/) folder:
 
-## How It Works
+- **[Getting Started](./docs/01-getting-started/)** - Setup and project overview
+- **[Frameworks](./docs/02-frameworks/)** - Coaching framework specifications
+- **[Architecture](./docs/03-architecture/)** - Technical architecture and design
+- **[Features](./docs/04-features/)** - Feature specifications
+- **[Business](./docs/05-business/)** - Business model and strategy
+- **[Legal](./docs/06-legal/)** - Legal compliance and policies
+- **[Planning](./docs/07-planning/)** - Project planning and roadmap
+- **[Development](./docs/08-development/)** - Development guidelines
 
-### 1. Deterministic Coaching Framework
-The GROW model is defined as a JSON schema with required fields for each step:
-- **Goal**: Desired outcome, timeline, success criteria
-- **Reality**: Current state, constraints, resources
-- **Options**: Multiple paths with pros/cons
-- **Will**: Selected option with SMART actions
-- **Review**: Summary and org value alignment score
+👉 **[View Full Documentation Index](./docs/README.md)**
 
-### 2. LLM Guardrails (Two-Pass Validation)
+## 🛠️ Tech Stack
 
-**Primary Call** → LLM generates JSON response matching schema  
-**Validator Call** → Separate LLM validates output and checks for banned terms
+- **Frontend**: React + TypeScript + Vite + TailwindCSS
+- **Backend**: Convex (serverless backend)
+- **AI**: Anthropic Claude (via Convex HTTP actions)
+- **Deployment**: Netlify (frontend) + Convex Cloud (backend)
 
-If validation fails:
-- Log safety incident
-- Return user-friendly error message
-- Request rephrasing
+## 🎯 Current Status
 
-### 3. Safety Controls
-- Temperature: 0.0 (deterministic)
-- Max input: 800 characters
-- Max output: 300-600 tokens
-- Banned terms: therapy, diagnose, cure, medical, legal advice, financial advice
-- Rate limits: 1 active session per user, 20 LLM calls/day
+**Phase 1: GROW Framework MVP** ✅ Complete
+- Anonymous coaching sessions
+- Full GROW framework implementation
+- Session reports with structured data
+- Safety escalation system
+- UK English conversational tone
 
-### 4. Data Model
+**Phase 2: User Onboarding & Freemium** 🚧 In Progress
+- User authentication
+- Session history
+- Email capture and newsletter
+- Free vs. paid tier implementation
 
-**Organizations** → company name + value glossary  
-**Users** → linked to org, role-based access  
-**Sessions** → one active per user, GROW framework state  
-**Reflections** → validated LLM outputs per step  
-**Actions** → SMART action items with due dates  
-**Safety Incidents** → flagged content for review  
+## 🤝 Contributing
 
-## Usage Flow
+See [CONTRIBUTING.md](./docs/01-getting-started/CONTRIBUTING.md) for contribution guidelines.
 
-1. **Setup** - Create demo org with predefined values
-2. **Start Session** - Initiates GROW framework flow
-3. **Goal** - User describes desired outcome
-4. **Reality** - User assesses current situation
-5. **Options** - Explore multiple approaches
-6. **Will** - Commit to specific actions
-7. **Review** - Summarize and score alignment
-8. **Dashboard** - View sessions, actions, stats
+## 📄 License
 
-## Environment Variables
+MIT License - see [LICENSE](./LICENSE) for details.
 
-```bash
-# .env.local (auto-generated by Convex)
-VITE_CONVEX_URL=https://your-deployment.convex.cloud
+## 🔗 Links
 
-# Set in Convex Dashboard → Settings → Environment Variables
-OPENAI_API_KEY=sk-...
-```
-
-## Testing
-
-### Manual Testing
-1. Run through GROW flow with normal inputs
-2. Test banned terms (therapy, diagnose, etc.)
-3. Test input length limits (>800 chars)
-4. Verify safety incident logging
-
-### Evaluation Harness
-See `tests/evals/` for canned test scenarios.
-
-```bash
-# Future: automated eval runner
-pnpm test:evals
-```
-
-## Deployment
-
-### Convex Backend
-```bash
-# Deploy to production
-pnpm convex:deploy
-
-# Set production environment variables in dashboard
-```
-
-### Frontend
-```bash
-# Build for production
-pnpm build
-
-# Deploy to Vercel/Netlify/etc
-# Ensure VITE_CONVEX_URL points to production deployment
-```
-
-## Monitoring
-
-Track in Convex dashboard:
-- Function execution logs
-- Error rates
-- Safety incident severity
-- LLM token usage
-
-Alerts:
-- >10% validator failure rate in 24h
-- High severity safety incidents
-
-## Roadmap
-
-- [ ] Add CLEAR framework
-- [ ] Manager dashboard with team analytics
-- [ ] SSO integration (Google Workspace, Azure AD)
-- [ ] Values-aware RAG for policy guidance
-- [ ] Stripe integration for paid tiers
-- [ ] Export reflections and actions (PDF, CSV)
-
-## Security
-
-- No PII in logs
-- CSP headers on frontend
-- Rate limiting per user
-- Input sanitization
-- No therapy or medical advice
-- Safety disclaimers throughout UI
-
-## License
-
-Proprietary - Internal Use Only
-
-## Support
-
-For issues or questions, contact: [Your team contact info]
+- **Live Demo**: [Coming Soon]
+- **Documentation**: [docs/](./docs/)
+- **Issues**: [GitHub Issues](https://github.com/Zee159/coachflux/issues)
 
 ---
 
-**Built with deterministic flows, strict guardrails, and production-first principles.**
+*Built with ❤️ for better coaching conversations*

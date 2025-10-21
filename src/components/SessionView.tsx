@@ -716,48 +716,30 @@ export function SessionView() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 lg:px-8 pb-40 sm:pb-44 lg:pb-48">
-        {/* Progress Bar */}
-        <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="font-semibold text-gray-900 dark:text-white">
-              Step {["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1} of 5:{" "}
-              <span className="text-indigo-600 dark:text-indigo-400 capitalize">{currentStep}</span>
-            </h2>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {Math.round(((["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1) / 5) * 100)}% complete
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div 
-              className="bg-indigo-600 dark:bg-indigo-500 h-2 rounded-full transition-all duration-300 progress-bar-dynamic"
-              style={{['--progress-width' as string]: `${((["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1) / 5) * 100}%`} as React.CSSProperties}
-            />
-          </div>
-        </div>
-
-        {/* Step Label */}
-        <div className="mb-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
-          <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200">
-            {STEP_LABELS[currentStep]}
-          </p>
-        </div>
-
-        {/* Step Tip */}
-        <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-          <div className="flex items-start gap-2">
-            <span className="text-amber-600 dark:text-amber-400 text-lg">💡</span>
-            <div>
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-1">
-                Tip for this step:
-              </p>
-              <p className="text-sm text-amber-800 dark:text-amber-300">
-                {STEP_TIPS[currentStep]}
-              </p>
+      {/* Sticky Progress Bar */}
+      <div className="sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-3">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
+                Step {["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1} of 5:{" "}
+                <span className="text-indigo-600 dark:text-indigo-400 capitalize">{currentStep}</span>
+              </h2>
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                {Math.round(((["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1) / 5) * 100)}% complete
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-indigo-600 dark:bg-indigo-500 h-2 rounded-full transition-all duration-300 progress-bar-dynamic"
+                style={{['--progress-width' as string]: `${((["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1) / 5) * 100}%`} as React.CSSProperties}
+              />
             </div>
           </div>
         </div>
+      </div>
 
+      <main className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 lg:px-8 pb-40 sm:pb-44 lg:pb-48">
         <div className={`grid grid-cols-1 ${isSessionComplete ? '' : 'lg:grid-cols-3'} gap-4 sm:gap-6`}>
           <section className={`${isSessionComplete ? '' : 'lg:col-span-2'} bg-white dark:bg-gray-800 rounded-lg shadow`}>
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
