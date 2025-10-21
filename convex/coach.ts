@@ -15,7 +15,7 @@ const BANNED = ["psychiatric", "prescribe", "diagnosis", "lawsuit", "litigation"
 // ============================================================================
 // Set to true to use new modular registry (Phase 1 testing)
 // Set to false to use legacy hardcoded framework (rollback safety)
-const USE_MODULAR_REGISTRY = false;
+const USE_MODULAR_REGISTRY = true; // ⚠️ TESTING MODE - Modular registry enabled
 
 // ============================================================================
 
