@@ -80,16 +80,60 @@ export const createSession = mutation({
     }
 
     // Determine first step and greeting based on framework
-    let firstStep = "goal";
-    let greeting = "Welcome! I'm delighted to be your thinking partner today. What goal is on your mind that you'd like to work through?";
-    let skipSteps: Record<string, number> = { goal: 0, reality: 0, options: 0, will: 0, review: 0 };
+    // UPDATED: All sessions now start with introduction phase
+    let firstStep = "introduction";
+    let greeting = `Welcome! I'm here to help you think through your goals and challenges.
+
+We'll be using the GROW method - a proven coaching approach that helps you move from where you are now to where you want to be. GROW stands for Goal, Reality, Options, and Will.
+
+Here's what we'll do together:
+• Goal: Define what you want to achieve and why it matters
+• Reality: Understand your current situation and what's in your way
+• Options: Explore different approaches you could take
+• Will: Create a concrete action plan with specific steps
+
+This usually takes 15-20 minutes.
+
+GROW works particularly well for:
+• Setting and achieving specific goals (career, personal, business)
+• Making important decisions when you have multiple options
+• Breaking through obstacles or stuck situations
+• Creating action plans for projects or changes
+• Improving skills or performance in a specific area
+
+I'll ask you questions to help you think deeply, and together we'll build a clear plan. You'll leave with specific actions you can take right away.
+
+Does this framework feel right for what you want to work on today?`;
+    let skipSteps: Record<string, number> = { introduction: 0, goal: 0, reality: 0, options: 0, will: 0, review: 0 };
 
     if (args.framework === "COMPASS") {
-      firstStep = "clarity";
-      greeting = "Welcome! I'm here to help you navigate workplace change with confidence using the COMPASS framework. What specific change are you dealing with right now?";
-      // NEW COMPASS: 4 stages (Clarity, Ownership, Mapping, Practice)
-      // Set skipSteps for 4-stage model (feature flag controlled in coach.ts)
-      skipSteps = { clarity: 0, ownership: 0, mapping: 0, practice: 0 };
+      firstStep = "introduction";
+      greeting = `Welcome! I'm here to help you navigate change with confidence.
+
+We'll be using the COMPASS method - a coaching approach specifically designed for workplace change. COMPASS helps you transform from feeling uncertain or resistant about a change to feeling confident and in control.
+
+Here's our journey together:
+• Clarity: Understand exactly what's changing and what you can control
+• Ownership: Build confidence by recognizing your strengths and potential benefits
+• Mapping: Create one specific action you'll take this week
+• Practice: Commit to your action with a clear plan
+
+This takes about 15-20 minutes.
+
+COMPASS is specifically for workplace change situations like:
+• Company reorganizations or restructuring
+• New processes, tools, or ways of working
+• Leadership changes or team transitions
+• Role changes or new responsibilities
+• Adapting to industry shifts or market changes
+
+We'll help you move from feeling uncertain to confident. You'll identify one specific action you can take this week to build momentum. Most people see their confidence increase significantly by the end of our session.
+
+Note: COMPASS is designed for workplace change. If you're working on a personal goal, decision-making, or project planning (not change-related), the GROW method might be a better fit.
+
+Does this framework feel right for what you're facing today?`;
+      // NEW COMPASS: 4 stages (Clarity, Ownership, Mapping, Practice) + Introduction
+      skipSteps = { introduction: 0, clarity: 0, ownership: 0, mapping: 0, practice: 0 };
     }
 
     const sessionId = await ctx.db.insert("sessions", {
