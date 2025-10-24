@@ -9,14 +9,15 @@ import type { ReflectionPayload } from "../types";
 export class GROWCoach implements FrameworkCoach {
   /**
    * Required fields for each GROW step (for agent state tracking)
+   * Enhanced with success criteria alignment validation
    */
   getRequiredFields(): Record<string, string[]> {
     return {
       introduction: ["user_consent_given"],
       goal: ["goal", "why_now", "success_criteria", "timeframe"],
       reality: ["current_state", "constraints", "resources", "risks"],
-      options: ["options"],
-      will: ["chosen_option", "actions"],
+      options: ["options"], // Each option should have successCriteriaContribution
+      will: ["chosen_option", "actions"], // Each action should contribute to success criteria
       review: ["key_takeaways", "immediate_step"],
     };
   }
@@ -130,6 +131,7 @@ export class GROWCoach implements FrameworkCoach {
   /**
    * Options step completion logic
    * UPDATED: Requires 3 options (up from 2) and 2 explored (up from 1) for better decision quality
+   * ENHANCED: Validates success criteria alignment for AI-generated options
    */
   private checkOptionsCompletion(
     payload: ReflectionPayload,
@@ -148,6 +150,29 @@ export class GROWCoach implements FrameworkCoach {
              Array.isArray(option.cons) && option.cons.length > 0;
     });
 
+    // NEW: Check for success criteria alignment in AI-generated options
+    const successCriteriaAlignedOptions = options.filter((opt: unknown) => {
+      const option = opt as { 
+        label?: string; 
+        pros?: unknown[]; 
+        cons?: unknown[]; 
+        successCriteriaContribution?: string;
+        alignmentReason?: string;
+      };
+      
+      // For AI-generated options, check if they have success criteria contribution
+      const hasSuccessCriteriaContribution = 
+        typeof option.successCriteriaContribution === "string" && 
+        option.successCriteriaContribution.length > 0;
+      
+      // For user-provided options, check if they have alignment reason
+      const hasAlignmentReason = 
+        typeof option.alignmentReason === "string" && 
+        option.alignmentReason.length > 0;
+      
+      return hasSuccessCriteriaContribution || hasAlignmentReason;
+    });
+
     // Progressive relaxation based on skip count and loop detection
     if (loopDetected) {
       // System stuck: require 2 options, 1 explored
@@ -160,13 +185,21 @@ export class GROWCoach implements FrameworkCoach {
       return { shouldAdvance: options.length >= 3 }; 
     } else {
       // DEFAULT (no skips): Require 3+ options with 2+ explored for quality decision-making
-      return { shouldAdvance: options.length >= 3 && exploredOptions.length >= 2 };
+      // ENHANCED: Also require at least 1 option with success criteria alignment
+      const hasMinimumOptions = options.length >= 3;
+      const hasExploredOptions = exploredOptions.length >= 2;
+      const hasSuccessCriteriaAlignment = successCriteriaAlignedOptions.length >= 1;
+      
+      return { 
+        shouldAdvance: hasMinimumOptions && hasExploredOptions && hasSuccessCriteriaAlignment 
+      };
     }
   }
 
   /**
    * Will step completion logic
    * UPDATED: Now checks for enhanced action fields for better action quality
+   * ENHANCED: Validates that actions contribute to success criteria achievement
    */
   private checkWillCompletion(
     payload: ReflectionPayload,
@@ -227,6 +260,36 @@ export class GROWCoach implements FrameworkCoach {
       return hasCoreFields && hasEnhancedFields;
     });
 
+    // NEW: Check for success criteria alignment in actions
+    const successCriteriaAlignedActions = actions.filter((a: unknown) => {
+      const action = a as {
+        title?: string;
+        specificOutcome?: string;
+        firstStep?: string;
+      };
+
+      // Check if action title, outcome, or first step references success criteria
+      const titleReferencesSuccess = 
+        typeof action.title === "string" && 
+        (action.title.toLowerCase().includes("success") || 
+         action.title.toLowerCase().includes("goal") ||
+         action.title.toLowerCase().includes("achieve"));
+      
+      const outcomeReferencesSuccess = 
+        typeof action.specificOutcome === "string" && 
+        (action.specificOutcome.toLowerCase().includes("success") || 
+         action.specificOutcome.toLowerCase().includes("goal") ||
+         action.specificOutcome.toLowerCase().includes("achieve"));
+      
+      const firstStepReferencesSuccess = 
+        typeof action.firstStep === "string" && 
+        (action.firstStep.toLowerCase().includes("success") || 
+         action.firstStep.toLowerCase().includes("goal") ||
+         action.firstStep.toLowerCase().includes("achieve"));
+
+      return titleReferencesSuccess || outcomeReferencesSuccess || firstStepReferencesSuccess;
+    });
+
     // Progressive relaxation based on skip count and loop detection
     if (loopDetected) {
       // System stuck: Just need 1 action with core fields
@@ -239,28 +302,35 @@ export class GROWCoach implements FrameworkCoach {
       return { shouldAdvance: coreCompleteActions.length >= 1 };
     } else {
       // DEFAULT (no skips): Need 2+ actions with ALL enhanced fields
-      return { shouldAdvance: enhancedCompleteActions.length >= 2 };
+      // ENHANCED: Also require at least 1 action with success criteria alignment
+      const hasMinimumActions = enhancedCompleteActions.length >= 2;
+      const hasSuccessCriteriaAlignment = successCriteriaAlignedActions.length >= 1;
+      
+      return { 
+        shouldAdvance: hasMinimumActions && hasSuccessCriteriaAlignment 
+      };
     }
   }
 
   /**
    * Get GROW step transitions and openers
+   * Enhanced with success criteria reinforcement
    */
   getStepTransitions(): StepTransitions {
     return {
       transitions: {
         introduction: "Great! Let's begin.",
-        goal: "Excellent! You've got a clear goal. Now let's explore your current reality.",
-        reality: "Great work exploring the situation. Now let's brainstorm your options.",
-        options: "You've identified some solid options. Let's now turn one into action.",
-        will: "Perfect! You've committed to specific actions. Let's review everything together.",
+        goal: "Excellent! You've got a clear goal and success criteria. Now let's explore your current reality.",
+        reality: "Great work exploring the situation. Now let's brainstorm your options that will help you achieve your success criteria.",
+        options: "You've identified some solid options aligned with your success criteria. Let's now turn one into action.",
+        will: "Perfect! You've committed to specific actions that contribute to your success criteria. Let's review everything together.",
       },
       openers: {
         goal: "What goal or challenge would you like to work on today?",
-        reality: "We clarified your goal. Now let's map the current reality — facts, constraints, resources and risks — so your options are grounded. After this we'll explore options together. What's the current situation you're facing?",
-        options: "With your reality on the table, let's generate possibilities. First share one option, then we'll explore pros and cons. When you're ready we'll commit to action in Will. What's one option you're considering?",
-        will: "You've considered options. Now let's commit to action: choose the approach and define specific steps with owner and timeline. Next we'll review takeaways. Which option feels right for you?",
-        review: "Time to consolidate. Summarise key takeaways and your next immediate step; I'll add concise insights to close the session. What stands out most for you?",
+        reality: "We clarified your goal and success criteria. Now let's map the current reality — facts, constraints, resources and risks — so your options are grounded and aligned with your success criteria. After this we'll explore options together. What's the current situation you're facing?",
+        options: "With your reality on the table, let's generate possibilities that directly contribute to your success criteria. First share one option, then we'll explore pros and cons. When you're ready we'll commit to action in Will. What's one option you're considering for achieving your success criteria?",
+        will: "You've considered options aligned with your success criteria. Now let's commit to action: choose the approach and define specific steps with owner and timeline that will help you achieve your success criteria. Next we'll review takeaways. Which option feels right for you for achieving your success criteria?",
+        review: "Time to consolidate. Summarise key takeaways and your next immediate step; I'll add concise insights to close the session. What stands out most for you in terms of achieving your success criteria?",
       }
     };
   }

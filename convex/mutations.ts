@@ -330,3 +330,26 @@ export const acceptLegalTerms = mutation({
     });
   },
 });
+
+export const submitSessionRating = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    rating: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Validate rating is between 1 and 5
+    if (args.rating < 1 || args.rating > 5) {
+      throw new Error("Rating must be between 1 and 5");
+    }
+    
+    const session = await ctx.db.get(args.sessionId);
+    if (session === null) {
+      throw new Error("Session not found");
+    }
+    
+    await ctx.db.patch(args.sessionId, {
+      rating: args.rating,
+      ratingSubmittedAt: Date.now(),
+    });
+  },
+});

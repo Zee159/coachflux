@@ -6,6 +6,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { SessionReport } from "./SessionReport";
 import { ThemeToggle } from "./ThemeToggle";
 import { FeedbackWidget } from "./FeedbackWidget";
+import { StarRating } from "./StarRating";
 import { useVoiceRecognition, useVoiceSynthesis } from "../hooks";
 import { VoiceButton } from "./VoiceButton";
 import { LiveTranscriptDisplay } from "./LiveTranscriptDisplay";
@@ -355,6 +356,7 @@ export function SessionView() {
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [autoPlayVoice, setAutoPlayVoice] = useState(true);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const lastReflectionRef = useRef<string | null>(null);
 
@@ -448,6 +450,7 @@ export function SessionView() {
   const generateReviewAnalysisAction = useAction(api.coach.generateReviewAnalysis);
   const closeSession = useMutation(api.mutations.closeSession);
   const incrementSkip = useMutation(api.mutations.incrementSkipCount);
+  const submitRating = useMutation(api.mutations.submitSessionRating);
 
   // Keep mutation references stable for effects to avoid dependency array size changes
   const closeSessionRef = useRef(closeSession);
@@ -766,6 +769,23 @@ export function SessionView() {
   const handleVoiceSelect = (voice: SpeechSynthesisVoice) => {
     setSelectedVoice(voice);
     localStorage.setItem('coachflux_voice', voice.name);
+  };
+
+  const handleRatingSubmit = (rating: number): void => {
+    if (session === null || session === undefined) {
+      return;
+    }
+
+    void (async () => {
+      try {
+        await submitRating({ sessionId: session._id, rating });
+        setRatingSubmitted(true);
+        setNotification({ type: "success", message: "Thank you for your feedback!" });
+      } catch (error: unknown) {
+        console.error("Rating submission error:", error);
+        setNotification({ type: "error", message: "Failed to submit rating. Please try again." });
+      }
+    })();
   };
 
   const toggleAutoPlay = () => {
@@ -1159,6 +1179,13 @@ export function SessionView() {
                               </div>
                             </div>
                           </div>
+                          
+                          {/* Star Rating */}
+                          <StarRating 
+                            onRatingSubmit={handleRatingSubmit}
+                            isSubmitted={ratingSubmitted}
+                            submittedRating={session.rating ?? 0}
+                          />
                           
                           {/* Action buttons */}
                           <div className="flex flex-col sm:flex-row gap-3">
