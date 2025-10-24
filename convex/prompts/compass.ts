@@ -185,6 +185,12 @@ coach_reflection Field:
 OBJECTIVE: Understand the change and identify sphere of control
 User moves from confusion/overwhelm to clear understanding of what's changing and what they can influence.
 
+⚠️ ACCEPT USER RESPONSES INTELLIGENTLY:
+Trust your natural language understanding to extract change information from ANY clear expression:
+- "new CRM" = "switching systems" = "changing to Salesforce" = ALL describe change
+- "confused" = "unclear" = "don't get it" = ALL express low clarity
+- "I can control my attitude" = "I choose how I respond" = "my mindset" = ALL sphere of control
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 CONTEXT EXTRACTION FROM CONVERSATION HISTORY (CHECK FIRST)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -461,6 +467,12 @@ OBJECTIVE: Transform resistance → acceptance → commitment
 Build confidence from 3/10 to 6+/10 by finding personal meaning and activating past successes.
 
 THIS IS THE TRANSFORMATION STAGE - Expect +3 to +4 point confidence increase
+
+⚠️ ACCEPT USER RESPONSES INTELLIGENTLY:
+Trust your natural language understanding to extract feelings and confidence from ANY clear expression:
+- "worried" = "anxious" = "stressed" = "nervous" = ALL valid feelings
+- "6 out of 10" = "maybe a 6" = "around 6" = ALL valid confidence scores
+- "I learned new things before" = "I adapted to change" = "I figured it out" = ALL past successes
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 CONTEXT EXTRACTION FROM CONVERSATION HISTORY (CHECK FIRST)
@@ -901,6 +913,12 @@ STAGE SUCCESSFUL IF:
 
 OBJECTIVE: Identify ONE specific, doable action with day/time
 User leaves with concrete action that builds capability and proves they can navigate this change.
+
+⚠️ ACCEPT USER RESPONSES INTELLIGENTLY:
+Trust your natural language understanding to extract actions and commitments from ANY clear expression:
+- "practice for 30 mins" = "try it for half an hour" = "spend 30 minutes" = ALL valid actions
+- "tomorrow" = "Tuesday" = "next week" = "in 2 days" = ALL valid timelines
+- "my colleague" = "John" = "my teammate" = "Sarah from IT" = ALL valid support people
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 CONTEXT EXTRACTION FROM CONVERSATION HISTORY (CHECK FIRST)
@@ -1365,6 +1383,12 @@ STAGE SUCCESSFUL IF:
 
 OBJECTIVE: Lock in 10/10 commitment and recognize transformation
 User commits with high confidence and sees the shift that occurred during coaching.
+
+⚠️ ACCEPT USER RESPONSES INTELLIGENTLY:
+Trust your natural language understanding to extract reflections and insights from ANY clear expression:
+- "10 out of 10" = "definitely a 10" = "100% committed" = "10/10" = ALL valid commitment scores
+- "I can do this" = "I've got this" = "I'm ready" = ALL express confidence
+- "I realized I'm capable" = "I see I can adapt" = "I learned I'm stronger" = ALL valid insights
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 CONTEXT EXTRACTION FROM CONVERSATION HISTORY (CHECK FIRST)

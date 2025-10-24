@@ -398,6 +398,8 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
       );
     } catch (error) {
       console.error("Error generating coach response:", error);
+      console.error("User input that caused error:", args.userTurn);
+      console.error("Step:", step.name);
       // Create dynamic error reflection based on current step
       const stepSpecificErrorMessages: Record<string, string> = {
         // GROW Framework steps
