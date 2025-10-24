@@ -72,7 +72,7 @@ interface UseVoiceRecognitionReturn {
 export function useVoiceRecognition({
   onTranscript,
   language = 'en-GB',
-  silenceThresholdMs = 1500,
+  silenceThresholdMs = 3000,
   autoSendOnSilence = true,
 }: UseVoiceRecognitionOptions = {}): UseVoiceRecognitionReturn {
   const [isListening, setIsListening] = useState(false);

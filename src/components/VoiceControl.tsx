@@ -65,7 +65,7 @@ export function VoiceControl({
   onTranscript, 
   selectedVoice,
   autoSendOnSilence = true,
-  silenceThresholdMs = 1500
+  silenceThresholdMs = 3000
 }: VoiceControlProps) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);

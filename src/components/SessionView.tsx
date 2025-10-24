@@ -371,7 +371,7 @@ export function SessionView() {
       }, 100);
     },
     language: 'en-GB',
-    silenceThresholdMs: 1500,
+    silenceThresholdMs: 3000,
     autoSendOnSilence: true,
   });
 
