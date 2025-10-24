@@ -14,7 +14,7 @@ import { CompactConfidenceDisplay } from "./ConfidenceMeter";
 import { NudgeIndicator } from "./NudgeDisplay";
 import { ConfidenceTracker } from "./ConfidenceTracker";
 
-type StepName = "goal" | "reality" | "options" | "will" | "review" | "clarity" | "ownership" | "mapping" | "practice" | "anchoring";
+type StepName = "introduction" | "goal" | "reality" | "options" | "will" | "review" | "clarity" | "ownership" | "mapping" | "practice" | "anchoring";
 
 function formatReflectionDisplay(step: string, payload: Record<string, unknown>): JSX.Element {
   const entries = Object.entries(payload);
@@ -192,6 +192,7 @@ function formatReflectionDisplay(step: string, payload: Record<string, unknown>)
 }
 
 const STEP_DESCRIPTIONS: Record<StepName, string> = {
+  introduction: "Welcome to the session. Learn about the framework and give your consent to begin.",
   goal: "Clarify your desired outcome and timeframe.",
   reality: "Assess your current situation, constraints, resources, and risks.",
   options: "Explore at least two viable options (you can ask for AI suggestions).",
@@ -205,6 +206,7 @@ const STEP_DESCRIPTIONS: Record<StepName, string> = {
 };
 
 const STEP_LABELS: Record<StepName, string> = {
+  introduction: "👋 WELCOME: Understanding the Framework",
   goal: "🎯 GOAL: What do you want to achieve?",
   reality: "📍 REALITY: What's your current situation?",
   options: "🤔 OPTIONS: What are your possibilities?",
@@ -218,6 +220,7 @@ const STEP_LABELS: Record<StepName, string> = {
 };
 
 const STEP_TIPS: Record<StepName, string> = {
+  introduction: "Take a moment to understand what this session will be like. This sets you up for success.",
   goal: "Be specific. Instead of 'do better,' say 'finish my certification by March.'",
   reality: "Describe what's true NOW, not what you wish were true.",
   options: "Let yourself brainstorm. Even wild ideas can spark practical solutions.",
@@ -231,6 +234,13 @@ const STEP_TIPS: Record<StepName, string> = {
 };
 
 const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }> = {
+  introduction: {
+    title: "Welcome",
+    questions: [
+      "Does this framework feel right for what you want to work on today?",
+      "Are you ready to begin?"
+    ]
+  },
   goal: {
     title: "Clarify the Topic and Goal",
     questions: [
@@ -592,8 +602,8 @@ export function SessionView() {
   const currentStep = session.step as StepName;
   
   // Framework-specific step sequences
-  const GROW_STEPS = ["goal", "reality", "options", "will", "review"];
-  const COMPASS_STEPS = ["clarity", "ownership", "mapping", "practice"]; // New 4-stage COMPASS model
+  const GROW_STEPS = ["introduction", "goal", "reality", "options", "will", "review"];
+  const COMPASS_STEPS = ["introduction", "clarity", "ownership", "mapping", "practice"]; // New 4-stage COMPASS model
   const frameworkSteps = session.framework === "COMPASS" ? COMPASS_STEPS : GROW_STEPS;
   const totalSteps = frameworkSteps.length;
   const currentStepIndex = Math.max(0, frameworkSteps.indexOf(currentStep)); // Fallback to 0 if step not found
@@ -601,7 +611,7 @@ export function SessionView() {
   // Get skip count for current step
   const sessionState = session.state as { skips?: Record<string, number> } | undefined;
   const skipCount = sessionState?.skips?.[currentStep] ?? 0;
-  const canSkip = skipCount < 2 && currentStep !== "review"; // No skip on review step
+  const canSkip = skipCount < 2 && currentStep !== "review" && currentStep !== "introduction"; // No skip on introduction or review step
   
   // Check if session is complete (review step done OR session closed)
   // Find the LAST review reflection (in case there are multiple after analysis generation)
