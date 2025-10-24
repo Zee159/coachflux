@@ -26,6 +26,69 @@ export interface ReflectionPayload {
 }
 
 // ============================================================================
+// GROW Framework Enhanced Types
+// ============================================================================
+
+/**
+ * Enhanced Option type for OPTIONS step
+ * Includes feasibility assessment and effort estimation
+ */
+export interface GrowOption {
+  label: string;                           // Option name/description
+  pros: string[];                          // Advantages (2-3 items)
+  cons: string[];                          // Challenges (2-3 items)
+  feasibilityScore?: number;               // 1-10 scale (based on constraints)
+  effortRequired?: 'low' | 'medium' | 'high'; // Effort assessment
+  alignmentReason?: string;                // Why this fits their situation
+}
+
+/**
+ * Enhanced Action type for WILL step
+ * Includes granular breakdown and accountability
+ */
+export interface GrowAction {
+  title: string;                           // Action description
+  owner: string;                           // Who's responsible
+  due_days: number;                        // Days until due
+  firstStep?: string;                      // The very first 5-min action
+  specificOutcome?: string;                // What "done" looks like
+  accountabilityMechanism?: string;        // How to track progress
+  reviewDate?: number;                     // When to check progress (days)
+  potentialBarriers?: string[];            // What might get in the way
+  supportNeeded?: string;                  // Help/resources needed
+}
+
+/**
+ * Type guard for GrowOption
+ */
+export function isGrowOption(obj: unknown): obj is GrowOption {
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+  const option = obj as Record<string, unknown>;
+  return (
+    typeof option['label'] === 'string' &&
+    Array.isArray(option['pros']) &&
+    Array.isArray(option['cons'])
+  );
+}
+
+/**
+ * Type guard for GrowAction
+ */
+export function isGrowAction(obj: unknown): obj is GrowAction {
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+  const action = obj as Record<string, unknown>;
+  return (
+    typeof action['title'] === 'string' &&
+    typeof action['owner'] === 'string' &&
+    typeof action['due_days'] === 'number'
+  );
+}
+
+// ============================================================================
 // NEW COMPASS Model Types - 4 Stages (Clarity, Ownership, Mapping, Practice)
 // ============================================================================
 

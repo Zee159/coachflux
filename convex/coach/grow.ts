@@ -12,6 +12,7 @@ export class GROWCoach implements FrameworkCoach {
    */
   getRequiredFields(): Record<string, string[]> {
     return {
+      introduction: ["user_consent_given"],
       goal: ["goal", "why_now", "success_criteria", "timeframe"],
       reality: ["current_state", "constraints", "resources", "risks"],
       options: ["options"],
@@ -30,7 +31,9 @@ export class GROWCoach implements FrameworkCoach {
     skipCount: number,
     loopDetected: boolean
   ): StepCompletionResult {
-    if (stepName === "goal") {
+    if (stepName === "introduction") {
+      return this.checkIntroductionCompletion(payload);
+    } else if (stepName === "goal") {
       return this.checkGoalCompletion(payload, skipCount, loopDetected);
     } else if (stepName === "reality") {
       return this.checkRealityCompletion(payload, skipCount, loopDetected);
@@ -46,6 +49,22 @@ export class GROWCoach implements FrameworkCoach {
     // Default: advance if coach_reflection exists
     const hasCoachReflection = typeof payload["coach_reflection"] === "string" && payload["coach_reflection"].length > 0;
     return { shouldAdvance: hasCoachReflection };
+  }
+
+  /**
+   * Introduction step completion logic
+   * Advances when user gives consent (user_consent_given = true)
+   */
+  private checkIntroductionCompletion(payload: ReflectionPayload): StepCompletionResult {
+    const userConsentGiven = payload["user_consent_given"];
+    
+    // Check if user has explicitly consented
+    if (typeof userConsentGiven === "boolean" && userConsentGiven === true) {
+      return { shouldAdvance: true };
+    }
+    
+    // Don't advance without explicit consent
+    return { shouldAdvance: false };
   }
 
   /**
@@ -110,6 +129,7 @@ export class GROWCoach implements FrameworkCoach {
 
   /**
    * Options step completion logic
+   * UPDATED: Requires 3 options (up from 2) and 2 explored (up from 1) for better decision quality
    */
   private checkOptionsCompletion(
     payload: ReflectionPayload,
@@ -128,20 +148,25 @@ export class GROWCoach implements FrameworkCoach {
              Array.isArray(option.cons) && option.cons.length > 0;
     });
 
-    // Progressive relaxation based on skip count
+    // Progressive relaxation based on skip count and loop detection
     if (loopDetected) {
+      // System stuck: require 2 options, 1 explored
       return { shouldAdvance: options.length >= 2 && exploredOptions.length >= 1 };
     } else if (skipCount >= 2) {
-      return { shouldAdvance: options.length >= 1 }; // Just need ANY option
+      // User exhausted skips: require 2 options (exploration optional)
+      return { shouldAdvance: options.length >= 2 }; 
     } else if (skipCount === 1) {
-      return { shouldAdvance: options.length >= 2 }; // Just need 2 options, exploration optional
+      // User used one skip: require 3 options (exploration optional)
+      return { shouldAdvance: options.length >= 3 }; 
     } else {
-      return { shouldAdvance: options.length >= 2 && exploredOptions.length >= 1 };
+      // DEFAULT (no skips): Require 3+ options with 2+ explored for quality decision-making
+      return { shouldAdvance: options.length >= 3 && exploredOptions.length >= 2 };
     }
   }
 
   /**
    * Will step completion logic
+   * UPDATED: Now checks for enhanced action fields for better action quality
    */
   private checkWillCompletion(
     payload: ReflectionPayload,
@@ -155,8 +180,8 @@ export class GROWCoach implements FrameworkCoach {
       return { shouldAdvance: false };
     }
 
-    // Check that actions have complete details
-    const completeActions = actions.filter((a: unknown) => {
+    // Check for CORE fields (required)
+    const coreCompleteActions = actions.filter((a: unknown) => {
       const action = a as { title?: string; owner?: string; due_days?: number };
       const hasTitle = typeof action.title === "string" && action.title.length > 0;
       const hasOwner = typeof action.owner === "string" && action.owner.length > 0;
@@ -166,15 +191,55 @@ export class GROWCoach implements FrameworkCoach {
       return hasTitle && hasOwner && (hasDueDate || isOngoing);
     });
 
-    // Progressive relaxation based on skip count
+    // Check for ENHANCED fields (for quality actions)
+    const enhancedCompleteActions = actions.filter((a: unknown) => {
+      const action = a as {
+        title?: string;
+        owner?: string;
+        due_days?: number;
+        firstStep?: string;
+        specificOutcome?: string;
+        accountabilityMechanism?: string;
+        reviewDate?: number;
+        potentialBarriers?: unknown[];
+      };
+
+      // Must have core fields
+      const hasCoreFields =
+        typeof action.title === "string" &&
+        action.title.length > 0 &&
+        typeof action.owner === "string" &&
+        action.owner.length > 0 &&
+        (typeof action.due_days === "number" || action.due_days === undefined);
+
+      // Must have enhanced fields
+      const hasEnhancedFields =
+        typeof action.firstStep === "string" &&
+        action.firstStep.length > 0 &&
+        typeof action.specificOutcome === "string" &&
+        action.specificOutcome.length > 0 &&
+        typeof action.accountabilityMechanism === "string" &&
+        action.accountabilityMechanism.length > 0 &&
+        typeof action.reviewDate === "number" &&
+        Array.isArray(action.potentialBarriers) &&
+        action.potentialBarriers.length > 0;
+
+      return hasCoreFields && hasEnhancedFields;
+    });
+
+    // Progressive relaxation based on skip count and loop detection
     if (loopDetected) {
-      return { shouldAdvance: completeActions.length >= 1 };
+      // System stuck: Just need 1 action with core fields
+      return { shouldAdvance: coreCompleteActions.length >= 1 };
     } else if (skipCount >= 2) {
-      return { shouldAdvance: actions.length >= 1 }; // Just need ANY action
+      // User exhausted skips: Just need ANY action
+      return { shouldAdvance: actions.length >= 1 };
     } else if (skipCount === 1) {
-      return { shouldAdvance: completeActions.length >= 1 };
+      // User used one skip: Need 1 action with core fields
+      return { shouldAdvance: coreCompleteActions.length >= 1 };
     } else {
-      return { shouldAdvance: completeActions.length >= 2 };
+      // DEFAULT (no skips): Need 2+ actions with ALL enhanced fields
+      return { shouldAdvance: enhancedCompleteActions.length >= 2 };
     }
   }
 
@@ -184,12 +249,14 @@ export class GROWCoach implements FrameworkCoach {
   getStepTransitions(): StepTransitions {
     return {
       transitions: {
+        introduction: "Great! Let's begin.",
         goal: "Excellent! You've got a clear goal. Now let's explore your current reality.",
         reality: "Great work exploring the situation. Now let's brainstorm your options.",
         options: "You've identified some solid options. Let's now turn one into action.",
         will: "Perfect! You've committed to specific actions. Let's review everything together.",
       },
       openers: {
+        goal: "What goal or challenge would you like to work on today?",
         reality: "We clarified your goal. Now let's map the current reality — facts, constraints, resources and risks — so your options are grounded. After this we'll explore options together. What's the current situation you're facing?",
         options: "With your reality on the table, let's generate possibilities. First share one option, then we'll explore pros and cons. When you're ready we'll commit to action in Will. What's one option you're considering?",
         will: "You've considered options. Now let's commit to action: choose the approach and define specific steps with owner and timeline. Next we'll review takeaways. Which option feels right for you?",

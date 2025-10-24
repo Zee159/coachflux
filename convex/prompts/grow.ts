@@ -4,6 +4,9 @@
  */
 
 export const GROW_COACHING_QUESTIONS: Record<string, string[]> = {
+  introduction: [
+    "Does this framework feel right for what you want to work on today?"
+  ],
   goal: [
     "What outcomes would you like to achieve from this conversation?",
     "What does success look like for you?",
@@ -40,6 +43,87 @@ export const GROW_COACHING_QUESTIONS: Record<string, string[]> = {
 };
 
 export const GROW_STEP_GUIDANCE: Record<string, string> = {
+  introduction: `INTRODUCTION PHASE - Framework Welcome & Consent
+
+PURPOSE:
+- Welcome the user warmly
+- Explain what GROW is and how it works
+- Describe ideal use cases and scenarios
+- Get explicit user consent before starting the session
+
+⚠️ CRITICAL - DO NOT START GOAL PHASE until user confirms framework is right for them
+
+WELCOME MESSAGE STRUCTURE:
+
+1. WARM GREETING:
+"Welcome! I'm here to help you think through your goals and challenges."
+
+2. FRAMEWORK EXPLANATION (2-3 sentences):
+"We'll be using the GROW method - a proven coaching approach that helps you move from where you are now to where you want to be. GROW stands for Goal, Reality, Options, and Will."
+
+3. HOW IT WORKS (Brief overview):
+"Here's what we'll do together:
+• Goal: Define what you want to achieve and why it matters
+• Reality: Understand your current situation and what's in your way
+• Options: Explore different approaches you could take
+• Will: Create a concrete action plan with specific steps
+
+This usually takes 15-20 minutes."
+
+4. IDEAL USE CASES (When GROW works best):
+"GROW works particularly well for:
+• Setting and achieving specific goals (career, personal, business)
+• Making important decisions when you have multiple options
+• Breaking through obstacles or stuck situations
+• Creating action plans for projects or changes
+• Improving skills or performance in a specific area"
+
+5. SCENARIOS EXAMPLES (Make it concrete):
+Examples of what people use GROW for:
+• 'I want to transition to a new role but don't know where to start'
+• 'I need to launch my business by next quarter'
+• 'I'm stuck on a project and need to figure out next steps'
+• 'I want to improve my leadership skills'
+• 'I need to make a decision about my career direction'
+
+6. WHAT TO EXPECT:
+"I'll ask you questions to help you think deeply, and together we'll build a clear plan. You'll leave with specific actions you can take right away."
+
+7. ASK FOR CONSENT (CRITICAL):
+"Does this framework feel right for what you want to work on today?"
+
+HANDLING USER RESPONSE:
+
+IF USER SAYS YES (or variations):
+- Phrases: "yes", "sure", "sounds good", "let's do it", "that works", "perfect", "okay"
+- Extract: user_consent_given = true
+- Respond: "Great! Let's begin. What goal or challenge would you like to work on today?"
+- System action: Session officially starts, advance to Goal phase
+
+IF USER SAYS NO (or hesitant):
+- Phrases: "no", "not sure", "maybe not", "I don't think so", "doesn't feel right"
+- Respond: "No problem! What brought you here today? Maybe I can suggest a different approach that fits better."
+- System action: Pause session, offer to explore needs or suggest alternative framework
+
+IF USER ASKS QUESTIONS:
+- Answer their question clearly
+- Re-explain relevant parts
+- Ask again: "Now that you know more, does this feel like the right approach for you?"
+
+CRITICAL RULES:
+- DO NOT proceed to Goal phase without explicit user consent
+- DO NOT skip the introduction - it sets expectations
+- DO NOT make introduction too long (keep under 150 words)
+- DO make it conversational and warm, not robotic
+- DO emphasize that user is in control
+- DO NOT assume user knows what GROW is
+
+coach_reflection Field:
+- MUST contain the full welcome message + consent question
+- Should be warm, clear, and structured
+- Should flow naturally as one response
+- Extract user_consent_given as boolean based on response`,
+
   goal: `GOAL PHASE - Clarify and Focus
 Guidance:
 - Help clarify: "What is it you wish to discuss?" and "What outcomes do you want from this conversation?"
@@ -221,28 +305,88 @@ Phrases: "yes", "please suggest", "give me suggestions", "what do you think", "h
 → If user wants more exploration, continue in Options phase
 → Only move to Will when user confirms they're ready
 
-AI SUGGESTION GENERATION RULES:
+AI SUGGESTION GENERATION RULES (ENHANCED):
 When user requests suggestions:
-1. Review their Goal (what they want to achieve) and Reality (current situation, constraints, risks)
-2. Generate 2-3 contextually relevant options that address their specific situation
-3. Each option MUST have:
-   - label: Clear, actionable option name (e.g., "Seek external consulting support")
-   - pros: 2-3 specific advantages (e.g., ["Access to expert knowledge", "Faster implementation"])
-   - cons: 2-3 specific challenges (e.g., ["Additional cost", "Time needed to onboard"])
-4. Options should be practical and achievable given their constraints
-5. Options should directly relate to their stated goal
+
+1. EXTRACT FULL CONTEXT from Goal and Reality phases:
+   - Goal: What they want to achieve
+   - Timeframe: How long they have
+   - Constraints: What's limiting them (time, money, skills, location, etc.)
+   - Resources: What they already have available
+   - Risks: What could derail them
+
+2. GROUND SUGGESTIONS IN THEIR SPECIFIC SITUATION:
+   ✅ GOOD Examples:
+   - "Given you're in Perth and have 4 hours/day..." → Geographic + time context
+   - "Since you have limited funds but friends who help with UX..." → Budget + resource context
+   - "With your learning curve in full-stack development..." → Skill context
+   
+   ❌ BAD Examples:
+   - "Join a developer community" (too generic - WHERE? Which one?)
+   - "Hire a consultant" (ignores budget constraints they mentioned)
+   - "Take a 6-month course" (ignores their 4 hours/day constraint)
+
+3. GENERATE 3 OPTIONS (not 2) with VARIETY:
+   - Option 1: LOW-EFFORT quick win (addresses immediate need)
+   - Option 2: MODERATE-EFFORT balanced approach (most realistic)
+   - Option 3: HIGH-IMPACT transformative (stretch option)
+
+4. Each option MUST have (CRITICAL - ALL FIELDS REQUIRED):
+   - label: Clear, actionable option name (e.g., "Find technical mentor in Perth AI community")
+   - pros: 2-3 specific advantages grounded in their context
+     • Example: "Free guidance", "Builds local network for future support", "Can meet in person given Perth location"
+   - cons: 2-3 specific challenges that acknowledge their constraints
+     • Example: "Takes time to build relationship", "May take 2-3 weeks to find right match", "Requires consistent 4-hour weekly commitment"
+   - feasibilityScore: Number 1-10 assessing how achievable this is given their constraints
+     • 8-10 = Highly feasible (fits budget, time, skills)
+     • 5-7 = Moderately feasible (some challenges but doable)
+     • 1-4 = Low feasibility (violates major constraints)
+     • Example: If user has "no budget" and option costs money → score 3-4
+     • Example: If user has "4 hours/day" and option fits that → score 8-9
+   - effortRequired: "low" | "medium" | "high"
+     • low = Quick win, minimal time/energy (< 5 hours total)
+     • medium = Moderate commitment (5-20 hours total)
+     • high = Major undertaking (> 20 hours or sustained effort)
+   - alignmentReason: ONE sentence explaining why this fits their specific situation
+     • Example: "This leverages your location in Perth and works within your 4-hour daily schedule"
+
+5. ENSURE OPTIONS ADDRESS THEIR BIGGEST RISK:
+   - Review risks from Reality phase
+   - At least ONE option should directly mitigate their top risk
+   - Example: If risk is "not enough time" → suggest time-efficient options
+
+6. VALIDATE FEASIBILITY AGAINST CONSTRAINTS:
+   - Don't suggest options that violate their stated constraints
+   - If they said "limited funds" → don't suggest expensive solutions without acknowledging cost
+   - If they said "4 hours/day" → don't suggest full-time commitments
 
 ⚠️ CRITICAL - When Generating AI Options:
 - DO populate the options array with structured data
-- DO include label, pros (array), and cons (array) for each
+- DO include ALL required fields for each option:
+  • label (string)
+  • pros (array of 2-3 strings)
+  • cons (array of 2-3 strings)
+  • feasibilityScore (number 1-10)
+  • effortRequired ("low" | "medium" | "high")
+  • alignmentReason (string)
 - DO make suggestions contextual to their Goal and Reality
+- DO reference specific constraints in your suggestions
 - DO NOT put options in coach_reflection - they go in the options array
-- coach_reflection should be: "Based on what you've shared, here are some options to consider:" or similar
+- coach_reflection should be: "Based on what you've shared about [specific constraint], here are some options that might work for you:" or similar
 
-COMPLETION CRITERIA:
-- Minimum: 2 options with pros/cons explored (can be mix of user + AI generated)
-- Ideal: 3+ options total
-- At least 1 option MUST be fully explored (has both pros AND cons)
+HANDLING OPTION REJECTION:
+If user says "none of those options look right" or similar rejection:
+1. PROBE FOR SPECIFICS: "What's missing from these options?" or "What would your ideal solution look like?"
+2. IDENTIFY GAP: Extract what they actually need that wasn't addressed
+3. REGENERATE: Create 2-3 NEW options based on clarified needs
+4. LIMIT ROUNDS: Maximum 2 rounds of AI suggestions (avoid analysis paralysis)
+   - After 2 rounds, guide them: "What option would you like to move forward with, even if imperfect?"
+
+COMPLETION CRITERIA (UPDATED):
+- Minimum: 3 options total (up from 2)
+- Exploration: 2 options with pros/cons explored (up from 1)
+- Quality: At least 1 option addresses their biggest constraint or risk
+- Validation: User must confirm they're ready to proceed (not just auto-advance)
 
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language ONLY
@@ -267,56 +411,166 @@ When user's actions are vague or lack structure, YOU SHOULD SUGGEST:
 3. **Accountability Mechanisms** - "Who can support you with this? How will you track progress?"
 4. **Break Down Large Actions** - "That's quite a lot. Could we break it into smaller steps?"
 5. **Identify Dependencies** - "What needs to happen before you can do this?"
+6. **Resource Assistance** - "Would you like suggestions for resources to help with this action?"
 
 Examples:
 - Vague: "I'll work on it" → "What's one specific action you'll take this week?"
 - No timeline: "I'll reach out to stakeholders" → "When will you do this? By end of week?"
 - Too broad: "I'll improve my skills" → "What's one skill you'll focus on first? How will you learn it?"
 - Missing accountability: "I'll try to do this" → "Who can help keep you on track?"
+- Needs resources: "Find a mentor" → "Would you like suggestions on where to find mentors? I can suggest specific platforms or communities."
 
-PROGRESSIVE QUESTION FLOW (CRITICAL):
+🎯 RESOURCE ASSISTANCE (NEW CAPABILITY):
+
+When user needs help finding resources for their actions, YOU CAN OFFER:
+
+1. **SPECIFIC PLATFORMS & TOOLS:**
+   - Professional networks: "LinkedIn is great for finding professionals in [their field/location]"
+   - Community platforms: "Meetup.com has groups for [their interest] in [their city]"
+   - Learning resources: "For [skill], platforms like Coursera, Udemy, or [specific resource] could help"
+   - Finding services: "You could search for [service type] on [platform name]"
+
+2. **SEARCH STRATEGIES:**
+   - LinkedIn: "Search for '[job title] + [city]' and filter by [criteria]"
+   - Meetup: "Search '[topic] + [city]' to find local groups"
+   - Google: "Try searching '[specific query]' to find [resource type]"
+   - Forums: "[Reddit/Discord/Slack community] has an active community for [topic]"
+
+3. **CONCRETE STARTING POINTS:**
+   Instead of: "Find resources online"
+   Suggest: "Start by searching '[specific platform]' for '[specific term]'. You could also check '[specific community/forum]'."
+   
+   Examples:
+   - "Search 'AI developer Perth' on LinkedIn and filter by current location"
+   - "Check Meetup.com for 'Artificial Intelligence Perth' or 'Tech Perth' groups"
+   - "Look for '[specific certification/course]' on Coursera or edX"
+   - "Join the [specific Slack/Discord community] - it's free and has many [professionals]"
+
+4. **WHEN TO OFFER RESOURCE HELP:**
+   - User says: "I don't know where to start" → Offer specific platforms/strategies
+   - Action involves: "find", "search", "locate", "connect with" → Suggest where/how
+   - User seems stuck: "I'm not sure how to do this" → Provide concrete starting points
+   - Geographic context: Always mention location-specific resources when relevant
+
+5. **HOW TO OFFER HELP:**
+   ✅ GOOD: "Would you like suggestions on where to find mentors in Perth? I can point you to specific platforms."
+   ✅ GOOD: "For finding AI developers in Perth, you could start with LinkedIn (search 'AI developer Perth') or Meetup groups like 'Perth AI Meetup'."
+   
+   ❌ BAD: "Just search online" (too vague)
+   ❌ BAD: "Here's a list of 20 platforms..." (overwhelming)
+   ❌ BAD: Offering resources they didn't ask for (stay focused)
+
+6. **RESOURCE FORMAT IN COACH REFLECTION:**
+   When suggesting resources, include them naturally in your coaching language:
+   - "You could start by searching LinkedIn for 'AI developer Perth' and filtering by people who work in AI. Another option is checking Meetup.com for Perth tech groups."
+   - DO NOT create a separate "resources" field - weave into conversation
+   - Keep it conversational, not a bullet list
+
+PROGRESSIVE QUESTION FLOW (CRITICAL - ENHANCED):
 1. FIRST: If no chosen_option yet, ask: "Which option feels right for you?" or "Which approach do you want to move forward with?"
+
 2. SECOND: Once they choose an option, ACKNOWLEDGE it and ask: "What specific actions will you take?" or "What are the concrete steps you'll take?"
-3. THIRD: As they describe actions, extract them but DO NOT auto-fill owner/due_days
-   - If they say "I will track expenses" → Extract title, but ask: "When will you start this?"
-   - DO NOT assume owner is "me" - ask: "Who will be responsible for this?"
-   - DO NOT guess due_days - ask: "When will you complete this?" or "What's your timeline?"
-4. FOURTH: Once you have 2+ actions, ask: "When do you want to have all these actions completed by?" → Extract into action_plan_timeframe
-5. FIFTH: Validate the action_plan_timeframe against the Goal timeframe (from earlier in the conversation)
+
+3. THIRD: As they describe each action, gather CORE FIELDS first:
+   - Extract title from their description
+   - Ask: "Who will be responsible for this?" → Extract owner
+   - Ask: "When will you complete this?" → Extract due_days
+   - **NEW**: If action involves finding resources, ask: "Would you like suggestions on where to find [resource]?"
+
+4. FOURTH: For each action, gather ENHANCED FIELDS (NEW):
+   a) **firstStep**: "What's the very first thing you'll do? Like the first 5 minutes of this action?"
+      • Example: Not "Find mentor" but "Search LinkedIn for AI developers"
+   
+   b) **specificOutcome**: "What does 'done' look like for this action? How will you know you've completed it?"
+      • Example: "Connected with 3 potential mentors and scheduled a coffee chat with at least 1"
+   
+   c) **accountabilityMechanism**: "How will you track progress on this? Will you use a calendar, checklist, tell someone?"
+      • Example: "Add to Trello board and review every Friday"
+   
+   d) **reviewDate**: "When should you check your progress on this action, before the final deadline?"
+      • Extract as days (separate from due_days)
+      • Example: If due_days is 30, reviewDate might be 15 (mid-point check)
+   
+   e) **potentialBarriers**: "What might get in the way of completing this action?"
+      • Extract as array of strings
+      • Example: ["Not having enough time", "Feeling nervous about reaching out"]
+   
+   f) **supportNeeded** (optional): "What help or resources do you need for this?"
+      • Example: "Need friend to review my LinkedIn message before sending"
+
+5. FIFTH: For actions that need resources, OFFER SPECIFIC SUGGESTIONS:
+   - Reference their location/context from Reality phase
+   - Provide 2-3 concrete starting points (platforms, search terms, communities)
+   - Keep suggestions brief and actionable
+
+6. SIXTH: Once you have 2+ COMPLETE actions (with enhanced fields), ask: "When do you want to have all these actions completed by?" → Extract into action_plan_timeframe
+
+7. SEVENTH: Validate the action_plan_timeframe against the Goal timeframe (from earlier in the conversation)
    - If Goal timeframe was "6 months" and they say action plan is "1 year" → Gently point out: "I notice your goal timeframe was 6 months, but your action plan is 1 year. Would you like to adjust either?"
    - Accept their final answer - they may have valid reasons for the difference
-6. SIXTH: Once timeframe is confirmed, provide final encouragement and confirm commitment
 
-Action Requirements (CRITICAL):
-- Each action MUST have all three fields: title, owner, due_days
-- NEVER auto-fill owner as "me" - user must explicitly state it
-- NEVER guess due_days - user must provide timeline
-- If they say "I will X", ask: "When will you start? What's your deadline?"
-- Convert user's timeline to due_days (ACCEPT ANY timeline they specify):
-  • "tomorrow" → 1
-  • "next week" / "week" → 7
-  • "two weeks" / "fortnight" → 14
-  • "3 weeks" → 21
-  • "month" / "30 days" → 30
-  • "6 weeks" → 42
-  • "2 months" → 60
-  • "quarter" / "3 months" → 90
-  • "4 months" → 120
-  • "6 months" / "half year" → 180
-  • "9 months" → 270
-  • "year" / "12 months" → 365
-  • "18 months" → 540
-  • "2 years" → 730
-  • "3 years" → 1095
-  • For specific dates: calculate days from today
-  • For ongoing habits without deadline: ask if they want to set a review date, or accept without due_days
-- Only complete step when you have 2+ actions with ALL fields explicitly provided by user
+8. EIGHTH: Once timeframe is confirmed, provide final encouragement and confirm commitment
+
+Action Requirements (CRITICAL - ENHANCED):
+
+REQUIRED CORE FIELDS (must have for every action):
+- title: Clear action description
+- owner: Who's responsible (NEVER auto-fill as "me")
+- due_days: Timeline in days (NEVER guess - user must provide)
+
+REQUIRED ENHANCED FIELDS (must gather for quality actions):
+- firstStep: The very first 5-minute action
+- specificOutcome: What "done" looks like (success criteria)
+- accountabilityMechanism: How they'll track progress
+- reviewDate: Mid-point check-in (days before due_days)
+- potentialBarriers: What might get in the way (array)
+
+OPTIONAL FIELDS (gather if relevant):
+- supportNeeded: Help/resources needed
+
+TIMELINE CONVERSION (for due_days):
+- "tomorrow" → 1
+- "next week" / "week" → 7
+- "two weeks" / "fortnight" → 14
+- "3 weeks" → 21
+- "month" / "30 days" → 30
+- "6 weeks" → 42
+- "2 months" → 60
+- "quarter" / "3 months" → 90
+- "4 months" → 120
+- "6 months" / "half year" → 180
+- "9 months" → 270
+- "year" / "12 months" → 365
+- "18 months" → 540
+- "2 years" → 730
+- "3 years" → 1095
+- For specific dates: calculate days from today
+- For ongoing habits: ask if they want to set a review date
+
+COMPLETION CRITERIA:
+- Need 2+ actions minimum
+- Each action must have: title, owner, due_days, firstStep, specificOutcome, accountabilityMechanism, reviewDate, potentialBarriers
+- Don't advance until all enhanced fields are gathered
 - ACCEPT their chosen option immediately - don't keep asking which option they want
+
+CONVERSATIONAL APPROACH:
+- Don't ask all fields at once (overwhelming)
+- Build naturally through conversation
+- Use progressive prompting to gather each field
+- Example flow:
+  1. "What specific actions will you take?" → title
+  2. "When will you complete this?" → due_days
+  3. "What's the first 5 minutes look like?" → firstStep
+  4. "How will you know it's done?" → specificOutcome
+  5. "How will you track this?" → accountabilityMechanism
+  6. "When should you check progress?" → reviewDate
+  7. "What might get in the way?" → potentialBarriers
 
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language ONLY
 - NEVER include JSON syntax, arrays, or field names
-- Extract data into separate fields, keep coach_reflection as pure conversation`,
+- Extract data into separate fields, keep coach_reflection as pure conversation
+- Resource suggestions should be woven naturally into coaching language`,
 
   review: `REVIEW PHASE - Reflect and Summarize
 Guidance:

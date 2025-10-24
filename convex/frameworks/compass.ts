@@ -19,6 +19,19 @@ export const compassFrameworkLegacy: LegacyFramework = {
   id: "COMPASS",
   steps: [
     {
+      name: "introduction",
+      system_objective: "Welcome user, explain COMPASS framework for workplace change, and get consent before starting session.",
+      required_fields_schema: {
+        type: "object",
+        properties: {
+          user_consent_given: { type: "boolean" },
+          coach_reflection: { type: "string", minLength: 120, maxLength: 600 }
+        },
+        required: ["coach_reflection"],
+        additionalProperties: false
+      }
+    },
+    {
       name: "clarity",
       system_objective: "Help identify what's changing, why it matters, and what forces support or resist it.",
       required_fields_schema: { type: "object", properties: {}, required: ["coach_reflection"] }
@@ -63,6 +76,47 @@ export const compassFramework: FrameworkDefinition = {
   challenge_types: ['change_leadership', 'complex_situation'], // Simplified to match existing types
   
   steps: [
+    // ========================================================================
+    // INTRODUCTION - Framework Welcome & Consent (2 minutes)
+    // ========================================================================
+    {
+      name: 'introduction',
+      order: 0,
+      duration_minutes: 2,
+      objective: 'Welcome user, explain COMPASS framework for workplace change, and get consent before starting session.',
+      
+      system_prompt: `You are a COMPASS change coach. Welcome the user and explain the framework specifically for workplace change.`,
+      
+      required_fields_schema: {
+        type: 'object',
+        properties: {
+          user_consent_given: { type: 'boolean' },
+          coach_reflection: { type: 'string', minLength: 120, maxLength: 600 }
+        },
+        required: ['coach_reflection'],
+        additionalProperties: false
+      },
+      
+      coaching_questions: [
+        'Does this framework feel right for what you\'re facing today?'
+      ],
+      
+      guardrails: [
+        'DO NOT start Clarity phase without user consent',
+        'Emphasize this is for workplace change specifically',
+        'Offer GROW as alternative if not change-related',
+        'Keep under 180 words',
+        'Be warm and empathetic'
+      ],
+      
+      transition_rules: [
+        { 
+          condition: 'user_consent_given_true', 
+          nextStep: 'clarity', 
+          action: 'Advance to Clarity stage' 
+        }
+      ]
+    },
     // ========================================================================
     // CLARITY - Understand Change and Sphere of Control (5 minutes)
     // ========================================================================

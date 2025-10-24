@@ -15,6 +15,19 @@ export const growFrameworkLegacy: LegacyFramework = {
   id: "GROW",
   steps: [
     {
+      name: "introduction",
+      system_objective: "Welcome user, explain GROW framework, and get consent before starting session.",
+      required_fields_schema: {
+        type: "object",
+        properties: {
+          user_consent_given: { type: "boolean" },
+          coach_reflection: { type: "string", minLength: 100, maxLength: 500 }
+        },
+        required: ["coach_reflection"],
+        additionalProperties: false
+      }
+    },
+    {
       name: "goal",
       system_objective: "Clarify the desired outcome and timeframe.",
       required_fields_schema: {
@@ -135,6 +148,37 @@ export const growFramework: FrameworkDefinition = {
   duration_minutes: 20,
   challenge_types: ['goal_achievement'],
   steps: [
+    {
+      name: 'introduction',
+      order: 0,
+      duration_minutes: 2,
+      objective: 'Welcome user, explain GROW framework, and get consent before starting session.',
+      required_fields_schema: {
+        type: 'object',
+        properties: {
+          user_consent_given: { type: 'boolean' },
+          coach_reflection: { type: 'string', minLength: 100, maxLength: 500 }
+        },
+        required: ['coach_reflection'],
+        additionalProperties: false
+      },
+      system_prompt: 'You are a GROW coach. Welcome the user and explain the framework.',
+      coaching_questions: [
+        'Does this framework feel right for what you want to work on today?'
+      ],
+      guardrails: [
+        'DO NOT start Goal phase without user consent',
+        'Keep introduction under 150 words',
+        'Make it conversational and warm'
+      ],
+      transition_rules: [
+        { 
+          condition: 'user_consent_given_true', 
+          nextStep: 'goal', 
+          action: 'Advance to Goal step' 
+        }
+      ]
+    },
     {
       name: 'goal',
       order: 1,

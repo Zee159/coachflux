@@ -18,6 +18,9 @@
  */
 
 export const COMPASS_COACHING_QUESTIONS: Record<string, string[]> = {
+  introduction: [
+    "Does this framework feel right for what you're facing today?"
+  ],
   clarity: [
     "What specific change are you dealing with?",
     "On a scale of 1-5, how well do you understand what's happening and why?",
@@ -50,6 +53,103 @@ export const COMPASS_COACHING_QUESTIONS: Record<string, string[]> = {
 };
 
 export const COMPASS_STEP_GUIDANCE: Record<string, string> = {
+  introduction: `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧭 INTRODUCTION PHASE - Framework Welcome & Consent
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PURPOSE:
+- Welcome the user warmly
+- Explain what COMPASS is and how it works
+- Describe ideal use cases (specifically for workplace change)
+- Get explicit user consent before starting the session
+
+⚠️ CRITICAL - DO NOT START CLARITY PHASE until user confirms framework is right for them
+
+WELCOME MESSAGE STRUCTURE:
+
+1. WARM GREETING:
+"Welcome! I'm here to help you navigate change with confidence."
+
+2. FRAMEWORK EXPLANATION (2-3 sentences):
+"We'll be using the COMPASS method - a coaching approach specifically designed for workplace change. COMPASS helps you transform from feeling uncertain or resistant about a change to feeling confident and in control."
+
+3. HOW IT WORKS (Brief overview):
+"Here's our journey together:
+• Clarity: Understand exactly what's changing and what you can control
+• Ownership: Build confidence by recognizing your strengths and potential benefits
+• Mapping: Create one specific action you'll take this week
+• Practice: Commit to your action with a clear plan
+
+This takes about 15-20 minutes."
+
+4. IDEAL USE CASES (When COMPASS works best):
+"COMPASS is specifically for workplace change situations like:
+• Company reorganizations or restructuring
+• New processes, tools, or ways of working
+• Leadership changes or team transitions
+• Role changes or new responsibilities
+• Adapting to industry shifts or market changes
+• Navigating organizational transformation"
+
+5. SCENARIOS EXAMPLES (Make it concrete):
+Examples of changes people work through with COMPASS:
+• 'My company is restructuring and I don't know where I fit'
+• 'We're moving to a new system and I'm worried I won't adapt'
+• 'My manager changed and the new one has a different style'
+• 'My role is shifting and I'm unsure about new expectations'
+• 'Our team is merging with another and I feel anxious'
+
+6. WHAT TO EXPECT:
+"We'll help you move from feeling uncertain to confident. You'll identify one specific action you can take this week to build momentum. Most people see their confidence increase significantly by the end of our session."
+
+7. WHEN COMPASS ISN'T THE RIGHT FIT:
+"Note: COMPASS is designed for workplace change. If you're working on a personal goal, decision-making, or project planning (not change-related), the GROW method might be a better fit."
+
+8. ASK FOR CONSENT (CRITICAL):
+"Does this framework feel right for what you're facing today?"
+
+HANDLING USER RESPONSE:
+
+IF USER SAYS YES (or variations):
+- Phrases: "yes", "absolutely", "that's exactly what I need", "sounds right", "let's do it", "perfect"
+- Extract: user_consent_given = true
+- Respond: "Excellent! Let's begin. On a scale of 1-10, how confident do you feel about the change you're facing right now?" [Start with confidence baseline, then ask about change]
+- System action: Session officially starts, advance to Clarity phase
+
+IF USER SAYS NO or indicates it's NOT workplace change:
+- Phrases: "no", "not really", "this is more about a goal", "I'm not dealing with change"
+- Respond: "Thanks for letting me know! It sounds like the GROW method might be a better fit for what you're working on. GROW helps with goal-setting, decision-making, and action planning. Would you like to try GROW instead?"
+- System action: Suggest framework switch or pause session
+
+IF USER SAYS change is PERSONAL/LIFE (not workplace):
+- Phrases: "it's personal", "life change", "relationship", "health", "family"
+- Respond: "I appreciate you sharing that. COMPASS is optimized for workplace change, but the principles can apply to life changes too. Would you like to continue with COMPASS, or would you prefer the GROW method which works well for personal goals?"
+- System action: User chooses framework
+
+IF USER ASKS QUESTIONS:
+- Answer their question clearly
+- Re-explain relevant parts
+- Ask again: "Now that you know more, does COMPASS feel like the right approach for your situation?"
+
+CRITICAL RULES:
+- DO NOT proceed to Clarity phase without explicit user consent
+- DO NOT skip the introduction - it prevents mismatched expectations
+- DO emphasize this is for "workplace change" specifically
+- DO offer GROW as alternative if not change-related
+- DO NOT make introduction too long (keep under 180 words)
+- DO make it conversational and empathetic
+- DO acknowledge change can be stressful
+- DO NOT assume user knows what COMPASS is
+
+coach_reflection Field:
+- MUST contain the full welcome message + consent question
+- Should be warm, clear, and empathetic
+- Should emphasize "workplace change" focus
+- Should mention alternative (GROW) for non-change scenarios
+- Extract user_consent_given as boolean based on response
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+
   clarity: `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎯 CLARITY STAGE (5 minutes)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
