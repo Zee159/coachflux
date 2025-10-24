@@ -3,6 +3,15 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { useEffect, useRef } from "react";
 import { hasCoachReflection } from "../../convex/types";
+import { ConfidenceMeter } from "./ConfidenceMeter";
+import { NudgeUsageSummary } from "./NudgeDisplay";
+
+interface ReportSection {
+  heading: string;
+  content: string;
+  type: string;
+  data?: Record<string, unknown>;
+}
 
 interface SessionReportProps {
   sessionId: Id<"sessions">;
@@ -15,25 +24,137 @@ interface ReflectionData {
   step: string;
 }
 
-// Helper: Check if payload has meaningful structured data for a step
-function hasStructuredData(payload: Record<string, unknown> | undefined, stepName: string): boolean {
-  if (payload === undefined || payload === null) {
-    return false;
+// Generate COMPASS-specific report sections
+function generateCOMPASSReportSections(reflections: ReflectionData[]): ReportSection[] {
+  const sections: ReportSection[] = [];
+  
+  // Extract confidence tracking data
+  const confidenceData = reflections
+    .map(r => r.payload['confidence_tracking'])
+    .filter(Boolean)
+    .map(ct => ct as {
+      initial_confidence?: number;
+      post_clarity_confidence?: number;
+      post_ownership_confidence?: number;
+      final_confidence?: number;
+      confidence_change?: number;
+      confidence_percent_increase?: number;
+    });
+  
+  // Extract nudge usage data
+  const nudgeData = reflections
+    .map(r => r.payload['nudge_used'])
+    .filter(Boolean)
+    .map(nu => nu as {
+      nudge_type?: string;
+      nudge_category?: string;
+      nudge_name?: string;
+      triggered_at?: string;
+      user_input?: string;
+    });
+  
+  // Confidence Progression Section
+  if (confidenceData.length > 0) {
+    const latestConfidence = confidenceData[confidenceData.length - 1];
+    if (latestConfidence !== undefined && latestConfidence.initial_confidence !== undefined && latestConfidence.initial_confidence !== null && latestConfidence.final_confidence !== undefined && latestConfidence.final_confidence !== null) {
+      sections.push({
+        heading: "Confidence Progression",
+        content: `Your confidence increased from ${latestConfidence.initial_confidence}/5 to ${latestConfidence.final_confidence}/5, representing a ${latestConfidence.confidence_percent_increase}% improvement.`,
+        type: "scores",
+        data: latestConfidence
+      });
+    }
   }
   
-  switch (stepName) {
-    case "goal":
-      return typeof payload['goal'] === 'string' && payload['goal'].length > 0;
-    case "reality":
-      return typeof payload['current_state'] === 'string' && payload['current_state'].length > 0;
-    case "options":
-      return Array.isArray(payload['options']) && payload['options'].length > 0;
-    case "will":
-      return (Array.isArray(payload['actions']) && payload['actions'].length > 0) ||
-             (typeof payload['chosen_option'] === 'string' && payload['chosen_option'].length > 0);
-    default:
-      return false;
+  // Nudge Usage Section
+  if (nudgeData.length > 0) {
+    sections.push({
+      heading: "AI Nudge Usage",
+      content: `The AI provided ${nudgeData.length} targeted nudges to help you progress through the session.`,
+      type: "insights",
+      data: { nudgesUsed: nudgeData }
+    });
   }
+  
+  // Change Navigation Summary
+  const clarityReflection = reflections.find(r => r.step === 'clarity');
+  const ownershipReflection = reflections.find(r => r.step === 'ownership');
+  const mappingReflection = reflections.find(r => r.step === 'mapping');
+  const practiceReflection = reflections.find(r => r.step === 'practice');
+  
+  if (clarityReflection !== undefined && clarityReflection !== null && ownershipReflection !== undefined && ownershipReflection !== null && mappingReflection !== undefined && mappingReflection !== null && practiceReflection !== undefined && practiceReflection !== null) {
+    const changeDescription = clarityReflection.payload['change_description'] as string;
+    const personalBenefit = ownershipReflection.payload['personal_benefit'] as string;
+    const committedAction = mappingReflection.payload['committed_action'] as string;
+    const keyTakeaway = practiceReflection.payload['key_takeaway'] as string;
+    
+    sections.push({
+      heading: "Change Navigation Summary",
+      content: `You navigated the change "${changeDescription}" by identifying personal benefits (${personalBenefit}), committing to action (${committedAction}), and learning key insights (${keyTakeaway}).`,
+      type: "transformation"
+    });
+  }
+  
+  return sections;
+}
+
+// Component: Render a dynamic report section
+function ReportSectionComponent({ section }: { section: ReportSection }) {
+  const { heading, content, type } = section;
+  
+  // Different styling based on section type
+  const sectionStyles: Record<string, string> = {
+    transformation: 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-l-4 border-green-500',
+    scores: 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-l-4 border-blue-500',
+    insights: 'bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-l-4 border-purple-500',
+    actions: 'bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 border-l-4 border-orange-500',
+    text: 'bg-gray-50 dark:bg-gray-700 border-l-4 border-gray-300 dark:border-gray-600'
+  };
+  
+  const sectionClass = sectionStyles[type] ?? sectionStyles['text'];
+  
+  return (
+    <section className={`${sectionClass} rounded-r-lg p-6 print:p-3 print:break-inside-avoid`}>
+      <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+        {heading}
+      </h2>
+      <div className="text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
+        {content}
+      </div>
+      
+      {/* COMPASS-specific data rendering */}
+      {section.data !== undefined && section.data !== null && (
+        <div className="mt-4">
+          {/* Confidence Meter */}
+          {'initial_confidence' in section.data && 'final_confidence' in section.data && 
+           section.data['initial_confidence'] !== undefined && section.data['initial_confidence'] !== null &&
+           section.data['final_confidence'] !== undefined && section.data['final_confidence'] !== null && (
+            <div className="mt-4">
+              <ConfidenceMeter
+                initialConfidence={section.data['initial_confidence'] as number}
+                finalConfidence={section.data['final_confidence'] as number}
+                showProgress={true}
+                size="md"
+              />
+            </div>
+          )}
+          
+          {/* Nudge Usage Summary */}
+          {'nudgesUsed' in section.data && section.data['nudgesUsed'] !== undefined && section.data['nudgesUsed'] !== null && (
+            <div className="mt-4">
+              <NudgeUsageSummary nudgesUsed={section.data['nudgesUsed'] as Array<{
+                nudge_type: string;
+                nudge_category: string;
+                nudge_name: string;
+                triggered_at: string;
+                user_input: string;
+              }>} />
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
 }
 
 // Component: Display conversation transcript for a step
@@ -160,10 +281,16 @@ function ConversationTranscript({ reflections }: { reflections: ReflectionData[]
 export function SessionReport({ sessionId, onClose }: SessionReportProps) {
   const session = useQuery(api.queries.getSession, { sessionId });
   const reflections = useQuery(api.queries.getSessionReflections, { sessionId });
+  const dynamicReport = useQuery(api.queries.generateReport, { sessionId });
   const user = useQuery(api.queries.getUser, session !== null && session !== undefined ? { userId: session.userId } : "skip");
   const org = useQuery(api.queries.getOrg, session !== null && session !== undefined ? { orgId: session.orgId } : "skip");
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  
+  // Determine if we should use dynamic report (COMPASS with completed session)
+  const useDynamicReport = dynamicReport !== null && dynamicReport !== undefined && 
+    session?.framework === 'COMPASS' && 
+    session?.closedAt !== undefined;
 
   // Focus trap and ESC key handler
   useEffect(() => {
@@ -195,27 +322,34 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
     );
   }
 
-  // Extract data from reflections - Get LAST reflection for each step (in case there are multiple)
-  const goalReflections = reflections.filter((r) => r.step === "goal");
-  const goalReflection = goalReflections[goalReflections.length - 1];
+  // Get unique steps from reflections (framework-agnostic)
+  const uniqueSteps = Array.from(new Set(reflections.map(r => r.step)));
   
-  const realityReflections = reflections.filter((r) => r.step === "reality");
-  const realityReflection = realityReflections[realityReflections.length - 1];
+  // Group reflections by step
+  const stepReflectionGroups: Record<string, typeof reflections> = {};
+  uniqueSteps.forEach(step => {
+    stepReflectionGroups[step] = reflections.filter(r => r.step === step);
+  });
   
-  const optionsReflections = reflections.filter((r) => r.step === "options");
-  const optionsReflection = optionsReflections[optionsReflections.length - 1];
-  
-  const willReflections = reflections.filter((r) => r.step === "will");
-  const willReflection = willReflections[willReflections.length - 1];
-  
+  // Get review reflection for summary/insights
   const reviewReflections = reflections.filter((r) => r.step === "review");
   const reviewReflection = reviewReflections[reviewReflections.length - 1];
-
-  const goalPayload = goalReflection?.payload as Record<string, unknown> | undefined;
-  const realityPayload = realityReflection?.payload as Record<string, unknown> | undefined;
-  const optionsPayload = optionsReflection?.payload as Record<string, unknown> | undefined;
-  const willPayload = willReflection?.payload as Record<string, unknown> | undefined;
   const reviewPayload = reviewReflection?.payload as Record<string, unknown> | undefined;
+  
+  // Step display info
+  const stepInfo: Record<string, { label: string; icon: string }> = {
+    goal: { label: "Goal", icon: "G" },
+    reality: { label: "Reality", icon: "R" },
+    options: { label: "Options", icon: "O" },
+    will: { label: "Will (Action Plan)", icon: "W" },
+    clarity: { label: "Clarity", icon: "🧭" },
+    ownership: { label: "Ownership", icon: "💪" },
+    mapping: { label: "Mapping", icon: "🗺️" },
+    practice: { label: "Practice", icon: "🎯" },
+    anchoring: { label: "Anchoring", icon: "⚓" },
+    review: { label: "Review", icon: "✓" }
+  };
+  
 
   const handlePrint = () => {
     window.print();
@@ -273,8 +407,71 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
 
         {/* Content */}
         <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-h-[70vh] overflow-y-auto print:max-h-none print:p-3 print:space-y-3">
-          {/* Session Summary & AI Insights - Top Section */}
-          {reviewPayload !== undefined && reviewPayload !== null && (
+          {/* Dynamic Report (COMPASS) */}
+          {useDynamicReport && dynamicReport !== null && dynamicReport !== undefined ? (
+            <>
+              {/* Report Summary */}
+              <section className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg p-6 border-l-4 border-indigo-500 print:p-3 print:break-inside-avoid">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                  {dynamicReport.title}
+                </h2>
+                <p className="text-gray-800 dark:text-gray-200 leading-relaxed text-lg">
+                  {dynamicReport.summary}
+                </p>
+              </section>
+              
+              {/* Dynamic Report Sections */}
+              {dynamicReport.sections.map((section, idx) => (
+                <ReportSectionComponent key={idx} section={section} />
+              ))}
+              
+              {/* COMPASS-specific sections */}
+              {session.framework === 'COMPASS' && (
+                <>
+                  {generateCOMPASSReportSections(reflections.map(r => ({
+                    userInput: r.userInput,
+                    payload: r.payload as Record<string, unknown>,
+                    step: r.step
+                  }))).map((section, idx) => (
+                    <ReportSectionComponent key={`compass-${idx}`} section={section} />
+                  ))}
+                </>
+              )}
+              
+              {/* Show transcript toggle for details */}
+              <details className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 print:hidden">
+                <summary className="cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">
+                  📋 View Full Session Transcript
+                </summary>
+                <div className="mt-4 space-y-6">
+                  {uniqueSteps.filter(step => step !== 'review').map((step) => {
+                    const info = stepInfo[step] ?? { label: step.charAt(0).toUpperCase() + step.slice(1), icon: step.charAt(0).toUpperCase() };
+                    const stepReflections = stepReflectionGroups[step] ?? [];
+                    
+                    return (
+                      <section key={step}>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                          <span className="w-6 h-6 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-xs font-bold">
+                            {info.icon}
+                          </span>
+                          {info.label}
+                        </h3>
+                        <ConversationTranscript reflections={stepReflections.map(r => ({
+                          userInput: r.userInput,
+                          payload: r.payload as Record<string, unknown>,
+                          step: r.step
+                        }))} />
+                      </section>
+                    );
+                  })}
+                </div>
+              </details>
+            </>
+          ) : (
+            /* Traditional Report (GROW or legacy sessions) */
+            <>
+              {/* Session Summary & AI Insights - Top Section */}
+              {reviewPayload !== undefined && reviewPayload !== null && (
             <>
               {/* Session Summary */}
               {typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 && (
@@ -359,213 +556,28 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
             </>
           )}
 
-          {/* Goal Section */}
-          <section className="print:break-inside-avoid">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-              <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
-                G
-              </span>
-              Goal
-            </h2>
-            {(() => {
-              const hasData = goalPayload !== undefined && goalPayload !== null && hasStructuredData(goalPayload, "goal");
-              return hasData ? (
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-                {typeof goalPayload['goal'] === 'string' && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Your Goal</p>
-                    <p className="text-gray-900 dark:text-white">{goalPayload['goal']}</p>
-                  </div>
-                )}
-                {typeof goalPayload['why_now'] === 'string' && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Why Now</p>
-                    <p className="text-gray-900 dark:text-white">{goalPayload['why_now']}</p>
-                  </div>
-                )}
-                {Array.isArray(goalPayload['success_criteria']) && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Success Criteria</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      {(goalPayload['success_criteria'] as string[]).map((criterion, idx) => (
-                        <li key={idx} className="text-gray-900 dark:text-white">{criterion}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {typeof goalPayload['timeframe'] === 'string' && goalPayload['timeframe'].length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Timeframe</p>
-                    <p className="text-gray-900 dark:text-white">{goalPayload['timeframe']}</p>
-                  </div>
-                )}
-              </div>
-              ) : (
-                <ConversationTranscript reflections={goalReflections.map(r => ({ userInput: r.userInput, payload: r.payload as Record<string, unknown>, step: r.step }))} />
-              );
-            })()}
-          </section>
+          {/* Dynamic Step Sections - Show only steps that exist in this session */}
+          {uniqueSteps.filter(step => step !== 'review').map((step) => {
+            const info = stepInfo[step] ?? { label: step.charAt(0).toUpperCase() + step.slice(1), icon: step.charAt(0).toUpperCase() };
+            const stepReflections = stepReflectionGroups[step] ?? [];
+            
+            return (
+              <section key={step} className="print:break-inside-avoid">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
+                    {info.icon}
+                  </span>
+                  {info.label}
+                </h2>
+                <ConversationTranscript reflections={stepReflections.map(r => ({
+                  userInput: r.userInput,
+                  payload: r.payload as Record<string, unknown>,
+                  step: r.step
+                }))} />
+              </section>
+            );
+          })}
 
-          {/* Reality Section */}
-          <section className="print:break-inside-avoid">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-              <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
-                R
-              </span>
-              Reality
-            </h2>
-            {(() => {
-              const hasData = realityPayload !== undefined && realityPayload !== null && hasStructuredData(realityPayload, "reality");
-              return hasData ? (
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-                {typeof realityPayload['current_state'] === 'string' && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Current State</p>
-                    <p className="text-gray-900 dark:text-white">{realityPayload['current_state']}</p>
-                  </div>
-                )}
-                {Array.isArray(realityPayload['constraints']) && (realityPayload['constraints'] as unknown[]).length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Constraints</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      {(realityPayload['constraints'] as string[]).map((constraint, idx) => (
-                        <li key={idx} className="text-gray-900 dark:text-white">{constraint}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {Array.isArray(realityPayload['resources']) && (realityPayload['resources'] as unknown[]).length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Resources</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      {(realityPayload['resources'] as string[]).map((resource, idx) => (
-                        <li key={idx} className="text-gray-900 dark:text-white">{resource}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {Array.isArray(realityPayload['risks']) && (realityPayload['risks'] as unknown[]).length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Risks</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      {(realityPayload['risks'] as string[]).map((risk, idx) => (
-                        <li key={idx} className="text-gray-900 dark:text-white">{risk}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-              ) : (
-                <ConversationTranscript reflections={realityReflections.map(r => ({ userInput: r.userInput, payload: r.payload as Record<string, unknown>, step: r.step }))} />
-              );
-            })()}
-          </section>
-
-          {/* Options Section */}
-          <section className="print:break-inside-avoid">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-              <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
-                O
-              </span>
-              Options
-            </h2>
-            {(() => {
-              const hasData = optionsPayload !== undefined && optionsPayload !== null && hasStructuredData(optionsPayload, "options");
-              return hasData ? (
-              <div className="space-y-3">
-                {(optionsPayload['options'] as Array<{ label: string; pros?: string[]; cons?: string[] }>).map((option, idx) => (
-                  <div key={idx} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                    <p className="font-semibold text-gray-900 dark:text-white mb-2">{option.label}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
-                      {option.pros !== undefined && option.pros !== null && option.pros.length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase mb-1">
-                            <span aria-hidden="true">✓</span> Pros
-                          </p>
-                          <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
-                            {option.pros.map((pro, pIdx) => (
-                              <li key={pIdx}>{pro}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {option.cons !== undefined && option.cons !== null && option.cons.length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase mb-1">
-                            <span aria-hidden="true">✗</span> Cons
-                          </p>
-                          <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
-                            {option.cons.map((con, cIdx) => (
-                              <li key={cIdx}>{con}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              ) : (
-                <ConversationTranscript reflections={optionsReflections.map(r => ({ userInput: r.userInput, payload: r.payload as Record<string, unknown>, step: r.step }))} />
-              );
-            })()}
-          </section>
-
-          {/* Will Section */}
-          <section className="print:break-inside-avoid">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-              <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center text-sm font-bold">
-                W
-              </span>
-              Will (Action Plan)
-            </h2>
-            {(() => {
-              const hasData = willPayload !== undefined && willPayload !== null && hasStructuredData(willPayload, "will");
-              return hasData ? (
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-                {typeof willPayload['chosen_option'] === 'string' && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Chosen Option</p>
-                    <p className="text-gray-900 dark:text-white font-medium">{willPayload['chosen_option']}</p>
-                  </div>
-                )}
-                {Array.isArray(willPayload['actions']) && (willPayload['actions'] as unknown[]).length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">Action Items</p>
-                    <div className="space-y-2">
-                      {(willPayload['actions'] as Array<{ title: string; owner: string; due_days: number }>).map((action, idx) => {
-                        const dueDate = new Date();
-                        dueDate.setDate(dueDate.getDate() + action.due_days);
-                        return (
-                          <div key={idx} className="bg-white dark:bg-gray-800 border-2 border-indigo-200 dark:border-indigo-800 rounded-lg p-3">
-                            <div className="flex items-start gap-2">
-                              <span className="text-indigo-600 dark:text-indigo-400 text-lg mt-0.5">✓</span>
-                              <div className="flex-1">
-                                <p className="font-medium text-gray-900 dark:text-white">{action.title}</p>
-                                <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                  <span className="flex items-center gap-1">
-                                    <span>👤</span>
-                                    <span>{action.owner}</span>
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <span>📅</span>
-                                    <span>Due: {dueDate.toLocaleDateString()} ({action.due_days} days)</span>
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-              ) : (
-                <ConversationTranscript reflections={willReflections.map(r => ({ userInput: r.userInput, payload: r.payload as Record<string, unknown>, step: r.step }))} />
-              );
-            })()}
-          </section>
 
           {/* User Reflections - Bottom Section */}
           {reviewPayload !== undefined && reviewPayload !== null && (
@@ -640,6 +652,8 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
                 )}
               </div>
             </section>
+          )}
+            </>
           )}
         </div>
 

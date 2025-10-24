@@ -30,6 +30,8 @@ export default defineSchema({
     startedAt: v.number(),
     closedAt: v.optional(v.number()),
     escalated: v.optional(v.boolean()), // Session flagged for escalation to HR/specialist
+    safetyPaused: v.optional(v.boolean()), // ⚠️ FIX P0-4: Session paused due to safety concern
+    safetyPauseReason: v.optional(v.string()), // Reason for safety pause
   }).index("byUser", ["userId"]),
 
   reflections: defineTable({

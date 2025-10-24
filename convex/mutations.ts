@@ -79,12 +79,25 @@ export const createSession = mutation({
       throw new Error("User already has an active session. Please close it first.");
     }
 
+    // Determine first step and greeting based on framework
+    let firstStep = "goal";
+    let greeting = "Welcome! I'm delighted to be your thinking partner today. What goal is on your mind that you'd like to work through?";
+    let skipSteps: Record<string, number> = { goal: 0, reality: 0, options: 0, will: 0, review: 0 };
+
+    if (args.framework === "COMPASS") {
+      firstStep = "clarity";
+      greeting = "Welcome! I'm here to help you navigate workplace change with confidence using the COMPASS framework. What specific change are you dealing with right now?";
+      // NEW COMPASS: 4 stages (Clarity, Ownership, Mapping, Practice)
+      // Set skipSteps for 4-stage model (feature flag controlled in coach.ts)
+      skipSteps = { clarity: 0, ownership: 0, mapping: 0, practice: 0 };
+    }
+
     const sessionId = await ctx.db.insert("sessions", {
       orgId: args.orgId,
       userId: args.userId,
       framework: args.framework,
-      step: "goal",
-      state: { skips: { goal: 0, reality: 0, options: 0, will: 0, review: 0 } },
+      step: firstStep,
+      state: { skips: skipSteps },
       startedAt: Date.now(),
     });
 
@@ -93,10 +106,10 @@ export const createSession = mutation({
       orgId: args.orgId,
       userId: args.userId,
       sessionId: sessionId,
-      step: "goal",
+      step: firstStep,
       userInput: undefined,
       payload: {
-        coach_reflection: "Welcome! I'm delighted to be your thinking partner today. What goal is on your mind that you'd like to work through?"
+        coach_reflection: greeting
       },
       createdAt: Date.now(),
     });
@@ -231,6 +244,27 @@ export const incrementSkipCount = mutation({
     
     await ctx.db.patch(args.sessionId, { 
       state: { ...state, skips } 
+    });
+  },
+});
+
+/**
+ * ⚠️ FIX P0-4: Pause session due to safety concern (e.g., suicidal ideation)
+ */
+export const pauseSession = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    reason: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (session === null) {
+      throw new Error("Session not found");
+    }
+    
+    await ctx.db.patch(args.sessionId, {
+      safetyPaused: true,
+      safetyPauseReason: args.reason,
     });
   },
 });

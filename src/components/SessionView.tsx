@@ -6,16 +6,41 @@ import { Id } from "../../convex/_generated/dataModel";
 import { SessionReport } from "./SessionReport";
 import { ThemeToggle } from "./ThemeToggle";
 import { FeedbackWidget } from "./FeedbackWidget";
-import { VoiceControl, VoiceButtons, VoiceSettingsModal, LiveTranscript } from "./VoiceControl";
+import { useVoiceRecognition, useVoiceSynthesis } from "../hooks";
+import { VoiceButton } from "./VoiceButton";
+import { LiveTranscriptDisplay } from "./LiveTranscriptDisplay";
+import { VoiceSettingsModal } from "./VoiceSettingsModal";
+import { CompactConfidenceDisplay } from "./ConfidenceMeter";
+import { NudgeIndicator } from "./NudgeDisplay";
+import { ConfidenceTracker } from "./ConfidenceTracker";
 
-type StepName = "goal" | "reality" | "options" | "will" | "review";
+type StepName = "goal" | "reality" | "options" | "will" | "review" | "clarity" | "ownership" | "mapping" | "practice" | "anchoring";
 
-function formatReflectionDisplay(_step: string, payload: Record<string, unknown>): JSX.Element {
+function formatReflectionDisplay(step: string, payload: Record<string, unknown>): JSX.Element {
   const entries = Object.entries(payload);
   
   // Separate coach_reflection from other fields
   const coachReflection = entries.find(([key]) => key === 'coach_reflection');
   const otherEntries = entries.filter(([key]) => key !== 'coach_reflection');
+  
+  // Extract confidence tracking for COMPASS framework
+  const confidenceTracking = payload['confidence_tracking'] as {
+    initial_confidence?: number;
+    post_clarity_confidence?: number;
+    post_ownership_confidence?: number;
+    final_confidence?: number;
+    confidence_change?: number;
+    confidence_percent_increase?: number;
+  } | undefined;
+  
+  // Extract nudge usage for COMPASS framework
+  const nudgeUsed = payload['nudge_used'] as {
+    nudge_type?: string;
+    nudge_category?: string;
+    nudge_name?: string;
+    triggered_at?: string;
+    user_input?: string;
+  } | undefined;
   
   return (
     <div className="space-y-4">
@@ -25,6 +50,49 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
           <p className="text-sm text-gray-800 dark:text-gray-200 italic leading-relaxed">
             💬 {String(coachReflection[1])}
           </p>
+        </div>
+      )}
+      
+      {/* COMPASS Framework: Confidence and Nudge Indicators */}
+      {(step === 'ownership' || step === 'mapping' || step === 'practice') && (
+        <div className="flex items-center space-x-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          {/* Confidence Display */}
+          {confidenceTracking !== undefined && confidenceTracking !== null && (
+            <div className="flex items-center space-x-2">
+              {step === 'ownership' && confidenceTracking.initial_confidence !== undefined && confidenceTracking.initial_confidence !== null && (
+                <CompactConfidenceDisplay 
+                  confidence={confidenceTracking.initial_confidence} 
+                  label="Initial" 
+                />
+              )}
+              {step === 'ownership' && confidenceTracking.post_clarity_confidence !== undefined && confidenceTracking.post_clarity_confidence !== null && (
+                <CompactConfidenceDisplay 
+                  confidence={confidenceTracking.post_clarity_confidence} 
+                  label="Current" 
+                />
+              )}
+              {step === 'mapping' && confidenceTracking.post_ownership_confidence !== undefined && confidenceTracking.post_ownership_confidence !== null && (
+                <CompactConfidenceDisplay 
+                  confidence={confidenceTracking.post_ownership_confidence} 
+                  label="Current" 
+                />
+              )}
+              {step === 'practice' && confidenceTracking.final_confidence !== undefined && confidenceTracking.final_confidence !== null && (
+                <CompactConfidenceDisplay 
+                  confidence={confidenceTracking.final_confidence} 
+                  label="Final" 
+                />
+              )}
+            </div>
+          )}
+          
+          {/* Nudge Indicator */}
+          {nudgeUsed !== undefined && nudgeUsed !== null && (
+            <NudgeIndicator 
+              nudgeType={nudgeUsed.nudge_type ?? ''} 
+              nudgeCategory={nudgeUsed.nudge_category ?? ''} 
+            />
+          )}
         </div>
       )}
       
@@ -60,14 +128,23 @@ function formatReflectionDisplay(_step: string, payload: Record<string, unknown>
                         </li>
                       );
                     }
-                    // Handle actions array specially
-                    if (typeof item === 'object' && item !== null && 'title' in item) {
-                      const action = item as { title: string; owner?: string; due_days?: number };
+                    // Handle actions array specially (GROW format with 'title' or COMPASS format with 'action')
+                    if (typeof item === 'object' && item !== null && ('title' in item || 'action' in item)) {
+                      const growAction = item as { title?: string; owner?: string; due_days?: number };
+                      const compassAction = item as { action?: string; timeline?: string; resources_needed?: string };
+                      const actionText = growAction.title ?? compassAction.action ?? '';
+                      const timeline = compassAction.timeline;
+                      const resources = compassAction.resources_needed;
+                      const owner = growAction.owner;
+                      const dueDays = growAction.due_days;
+                      
                       return (
                         <li key={idx} className="text-sm text-gray-700 dark:text-gray-300">
-                          <span className="font-medium">{action.title}</span>
-                          {(action.owner !== null && action.owner !== undefined && action.owner.length > 0) && <span className="text-xs text-gray-600 dark:text-gray-400"> (Owner: {action.owner})</span>}
-                          {(action.due_days !== null && action.due_days !== undefined && action.due_days > 0) && <span className="text-xs text-gray-600 dark:text-gray-400"> • Due in {action.due_days} days</span>}
+                          <span className="font-medium">{actionText}</span>
+                          {(timeline !== null && timeline !== undefined && timeline.length > 0) && <span className="text-xs text-gray-600 dark:text-gray-400"> • {timeline}</span>}
+                          {(resources !== null && resources !== undefined && resources.length > 0) && <span className="text-xs text-gray-600 dark:text-gray-400"> • Resources: {resources}</span>}
+                          {(owner !== null && owner !== undefined && owner.length > 0) && <span className="text-xs text-gray-600 dark:text-gray-400"> • Owner: {owner}</span>}
+                          {(dueDays !== null && dueDays !== undefined && dueDays > 0) && <span className="text-xs text-gray-600 dark:text-gray-400"> • Due in {dueDays} days</span>}
                         </li>
                       );
                     }
@@ -120,6 +197,11 @@ const STEP_DESCRIPTIONS: Record<StepName, string> = {
   options: "Explore at least two viable options (you can ask for AI suggestions).",
   will: "Choose an option and define specific actions.",
   review: "Review key takeaways and define your next immediate step.",
+  clarity: "Understand the change and identify what you can control.",
+  ownership: "Transform resistance into commitment. Build confidence.",
+  mapping: "Identify ONE specific action with day, time, and backup plan.",
+  practice: "Lock in 10/10 commitment and recognize your transformation.",
+  anchoring: "Make it stick - design your environment and lead by example.",
 };
 
 const STEP_LABELS: Record<StepName, string> = {
@@ -127,7 +209,12 @@ const STEP_LABELS: Record<StepName, string> = {
   reality: "📍 REALITY: What's your current situation?",
   options: "🤔 OPTIONS: What are your possibilities?",
   will: "✅ WILL: What will you actually do?",
-  review: "🔍 REVIEW: What have you learned?"
+  review: "🔍 REVIEW: What have you learned?",
+  clarity: "🧭 CLARITY: What's changing? What can you control?",
+  ownership: "💪 OWNERSHIP: Building your confidence and commitment",
+  mapping: "🗺️ MAPPING: Your specific action plan",
+  practice: "🎯 PRACTICE: Locking in your commitment",
+  anchoring: "⚓ ANCHORING: How will you make it stick and lead?",
 };
 
 const STEP_TIPS: Record<StepName, string> = {
@@ -135,7 +222,12 @@ const STEP_TIPS: Record<StepName, string> = {
   reality: "Describe what's true NOW, not what you wish were true.",
   options: "Let yourself brainstorm. Even wild ideas can spark practical solutions.",
   will: "Pick ONE option. You can always revisit others later.",
-  review: "Reflect on what surprised you. That's where learning happens."
+  review: "Reflect on what surprised you. That's where learning happens.",
+  clarity: "You can't control the change, but you CAN control your response and attitude.",
+  ownership: "Your confidence can increase 3-4 points in this stage. Let it happen.",
+  mapping: "Be specific: 'Thursday 2-4pm' not 'soon'. Small action beats big plan.",
+  practice: "You've had a transformation. Recognize it. Celebrate it.",
+  anchoring: "Your team watches what you do, not what you say. Design your environment and lead visibly.",
 };
 
 const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }> = {
@@ -187,6 +279,57 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
       "What are the key takeaways from this conversation?",
       "What's your next immediate step?"
     ]
+  },
+  clarity: {
+    title: "Understand the Change",
+    questions: [
+      "What specific change are you dealing with?",
+      "On a scale of 1-5, how well do you understand what's happening and why?",
+      "What's most confusing or unclear about this change?",
+      "What parts of this can you control vs. what's beyond your control?"
+    ]
+  },
+  ownership: {
+    title: "Build Confidence & Commitment",
+    questions: [
+      "On a scale of 1-10, how confident do you feel about navigating this successfully?",
+      "What's making you feel unconfident or worried?",
+      "What's the cost if you stay stuck in resistance?",
+      "What could you gain personally if you adapt well to this?",
+      "Tell me about a time you successfully handled change before.",
+      "What strengths from that experience can you use now?",
+      "Where's your confidence now, 1-10?"
+    ]
+  },
+  mapping: {
+    title: "Create Specific Action Plan",
+    questions: [
+      "Given what you've realized, what's ONE small action you could take this week?",
+      "What's the smallest possible step? What feels doable?",
+      "What specifically will you do, and when? (day, time, duration)",
+      "What might get in your way, and how will you handle that?",
+      "Who could support you with this?"
+    ]
+  },
+  practice: {
+    title: "Lock In Commitment",
+    questions: [
+      "On a scale of 1-10, how confident are you that you'll do this?",
+      "What would make it a 10?",
+      "After you complete this action, what will you have proven to yourself?",
+      "When we started, confidence was [X]/10. Where is it now?",
+      "What's the one thing you're taking away from today?"
+    ]
+  },
+  anchoring: {
+    title: "Make It Stick (Personal + Team)",
+    questions: [
+      "What's the ONE thing in your environment that makes the old way easier?",
+      "What could you change to make the new way easier?",
+      "What habits do you need to build?",
+      "How will you lead by example?",
+      "Who can hold you accountable?"
+    ]
   }
 };
 
@@ -204,6 +347,28 @@ export function SessionView() {
   const [autoPlayVoice, setAutoPlayVoice] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const lastReflectionRef = useRef<string | null>(null);
+
+  // Voice recognition and synthesis hooks
+  const { isListening, transcript, interimTranscript, startListening, stopListening } = useVoiceRecognition({
+    onTranscript: (text) => {
+      // Update text state first so user sees the transcript
+      setText(text);
+      // Then submit after a brief delay to ensure state is updated
+      setTimeout(() => {
+        void handleSubmit(text);
+      }, 100);
+    },
+    language: 'en-GB',
+    silenceThresholdMs: 1500,
+    autoSendOnSilence: true,
+  });
+
+  const { isSpeaking, speak } = useVoiceSynthesis({
+    rate: 0.95,
+    pitch: 1.0,
+    volume: 1.0,
+    voice: selectedVoice,
+  });
 
   const session = useQuery(
     api.queries.getSession,
@@ -224,18 +389,11 @@ export function SessionView() {
   const closeSession = useMutation(api.mutations.closeSession);
   const incrementSkip = useMutation(api.mutations.incrementSkipCount);
 
-  // Voice control hook
-  const voiceControl = VoiceControl({
-    onTranscript: (transcript) => {
-      setText(transcript);
-      // Auto-submit when voice input completes
-      setTimeout(() => {
-        void handleSubmit(transcript);
-      }, 100);
-    },
-    disabled: submitting,
-    selectedVoice,
-  });
+  // Keep mutation references stable for effects to avoid dependency array size changes
+  const closeSessionRef = useRef(closeSession);
+  useEffect(() => {
+    closeSessionRef.current = closeSession;
+  }, [closeSession]);
 
   useEffect(() => {
     // Auto-scroll to latest message when new reflection appears
@@ -251,22 +409,71 @@ export function SessionView() {
     return () => clearTimeout(timer);
   }, [reflections?.length]); // Trigger only when count changes
 
+  // Load voice preferences from localStorage
+  useEffect(() => {
+    const savedVoiceName = localStorage.getItem('coachflux_voice');
+    const savedAutoPlay = localStorage.getItem('coachflux_autoplay');
+
+    if (savedAutoPlay !== null) {
+      setAutoPlayVoice(savedAutoPlay === 'true');
+    }
+
+    const loadVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      
+      // Try to load saved voice first
+      if (savedVoiceName !== null && savedVoiceName.length > 0) {
+        const savedVoice = voices.find((v) => v.name === savedVoiceName);
+        if (savedVoice !== null && savedVoice !== undefined) {
+          setSelectedVoice(savedVoice);
+          return;
+        }
+      }
+      
+      // Default to Microsoft Steffan Online (Natural)
+      const defaultVoice = voices.find((v) => v.name.includes('Steffan') && v.name.includes('Natural'));
+      if (defaultVoice !== null && defaultVoice !== undefined) {
+        setSelectedVoice(defaultVoice);
+        localStorage.setItem('coachflux_voice', defaultVoice.name);
+      }
+    };
+
+    loadVoice();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoice;
+    }
+  }, []);
+
   // Auto-play coach responses with voice
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+
     if (!autoPlayVoice || reflections === null || reflections === undefined || reflections.length === 0) {
-      return;
+      return () => {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+        }
+      };
     }
 
     const latestReflection = reflections[reflections.length - 1];
     if (latestReflection === undefined) {
-      return;
+      return () => {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+        }
+      };
     }
 
     const reflectionId = latestReflection._id;
 
     // Only play if this is a new reflection
     if (lastReflectionRef.current === reflectionId) {
-      return;
+      return () => {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+        }
+      };
     }
 
     lastReflectionRef.current = reflectionId;
@@ -277,13 +484,20 @@ export function SessionView() {
 
     if (typeof coachReflection === 'string' && coachReflection.length > 0) {
       // Small delay to let the UI update first
-      setTimeout(() => {
-        voiceControl.speak(coachReflection);
+      timeoutId = setTimeout(() => {
+        speak(coachReflection);
       }, 500);
     }
-  }, [reflections, autoPlayVoice, voiceControl]);
 
-  // Detect Phase 1 completion in review step and trigger report generation
+    // Cleanup: clear timeout if component unmounts before it fires
+    return () => {
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [reflections, autoPlayVoice, speak]);
+
+  // Detect review step completion and trigger report generation (framework-aware)
   useEffect(() => {
     if (session?.step !== 'review' || session === null || session === undefined || reflections === null || reflections === undefined) {
       return;
@@ -307,131 +521,65 @@ export function SessionView() {
     }
 
     const reviewPayload = reviewReflection.payload as Record<string, unknown>;
-    const hasKeyTakeaways = typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length > 0;
-    const hasImmediateStep = typeof reviewPayload['immediate_step'] === 'string' && reviewPayload['immediate_step'].length > 0;
-    const hasSummary = typeof reviewPayload['summary'] === 'string';
     
     // Check if analysis is already complete (to prevent duplicate generation)
+    const hasSummary = typeof reviewPayload['summary'] === 'string';
     const hasAnalysis = typeof reviewPayload['ai_insights'] === 'string' && reviewPayload['ai_insights'].length > 0;
+    
+    // Framework-specific completion detection
+    let isReviewComplete = false;
+    
+    if (session.framework === 'GROW') {
+      // GROW: key_takeaways + immediate_step
+      const hasKeyTakeaways = typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length > 0;
+      const hasImmediateStep = typeof reviewPayload['immediate_step'] === 'string' && reviewPayload['immediate_step'].length > 0;
+      isReviewComplete = hasKeyTakeaways && hasImmediateStep;
+    } else if (session.framework === 'COMPASS') {
+      // COMPASS: primary_barrier + next_actions + confidence_level
+      const hasPrimaryBarrier = typeof reviewPayload['primary_barrier'] === 'string' && reviewPayload['primary_barrier'].length > 0;
+      const hasNextActions = Array.isArray(reviewPayload['next_actions']) && reviewPayload['next_actions'].length > 0;
+      const hasConfidenceLevel = typeof reviewPayload['confidence_level'] === 'number';
+      isReviewComplete = hasPrimaryBarrier && hasNextActions && hasConfidenceLevel;
+    }
 
-    // If both questions answered but no summary/analysis yet, trigger report generation
-    if (hasKeyTakeaways && hasImmediateStep && !hasSummary && !hasAnalysis) {
-      const generateReport = async () => {
+    // If review complete but no summary/analysis yet, trigger completion
+    if (isReviewComplete && !hasSummary && !hasAnalysis) {
+      const closeSessionMutation = closeSessionRef.current;
+      const completeSession = async () => {
         setGeneratingReport(true);
 
         try {
-          const analysisResult = await generateReviewAnalysisAction({
-            sessionId: session._id,
-            orgId: session.orgId,
-            userId: session.userId
-          });
+          if (session.framework === 'GROW') {
+            // GROW: Generate full AI analysis
+            const analysisResult = await generateReviewAnalysisAction({
+              sessionId: session._id,
+              orgId: session.orgId,
+              userId: session.userId
+            });
 
-          if (analysisResult.ok) {
-            setNotification({ type: "success", message: "🎉 Coaching session complete! Your report is now ready." });
-          } else {
-            setNotification({ type: "error", message: `Report generation failed: ${analysisResult.message ?? 'Unknown error'}` });
+            if (analysisResult.ok) {
+              setNotification({ type: "success", message: "🎉 Coaching session complete! Your report is now ready." });
+            } else {
+              setNotification({ type: "error", message: `Report generation failed: ${analysisResult.message ?? 'Unknown error'}` });
+            }
+          } else if (session.framework === 'COMPASS' && closeSessionMutation !== undefined) {
+            // COMPASS: Just close the session (no AI analysis needed)
+            await closeSessionMutation({ sessionId: session._id });
+            setNotification({ type: "success", message: "🎉 COMPASS session complete! Your report is now ready." });
           }
         } catch (error: unknown) {
-          console.error("Report generation error:", error);
-          setNotification({ type: "error", message: "Failed to generate report. Please try again." });
+          console.error("Session completion error:", error);
+          setNotification({ type: "error", message: "Failed to complete session. Please try again." });
         } finally {
           setGeneratingReport(false);
         }
       };
 
-      void generateReport();
+      void completeSession();
     }
   }, [session, reflections, generatingReport, generateReviewAnalysisAction]);
 
-  // Load saved voice preference or set default
-  useEffect(() => {
-    const savedVoiceName = localStorage.getItem('coachflux_voice');
-    const savedAutoPlay = localStorage.getItem('coachflux_autoplay');
 
-    if (savedAutoPlay !== null) {
-      setAutoPlayVoice(savedAutoPlay === 'true');
-    }
-
-    if (savedVoiceName !== null && savedVoiceName.length > 0) {
-      const loadVoice = () => {
-        const voices = window.speechSynthesis.getVoices();
-        const voice = voices.find(v => v.name === savedVoiceName);
-        if (voice !== null && voice !== undefined) {
-          setSelectedVoice(voice);
-        }
-      };
-
-      loadVoice();
-      if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = loadVoice;
-      }
-    } else {
-      // Set default voice if none saved
-      const setDefaultVoice = () => {
-        const voices = window.speechSynthesis.getVoices();
-        // Filter for English voices and prefer female voices, then local voices
-        const englishVoices = voices.filter(voice =>
-          voice.lang.startsWith('en')
-        );
-
-        // Sort by preference: female > male > local > online
-        englishVoices.sort((a, b) => {
-          // Prefer female voices
-          const aIsFemale = a.name.toLowerCase().includes('female') ||
-                           a.name.toLowerCase().includes('woman') ||
-                           a.name.toLowerCase().includes('zira') ||
-                           a.name.toLowerCase().includes('samantha') ||
-                           a.name.toLowerCase().includes('victoria');
-          const bIsFemale = b.name.toLowerCase().includes('female') ||
-                           b.name.toLowerCase().includes('woman') ||
-                           b.name.toLowerCase().includes('zira') ||
-                           b.name.toLowerCase().includes('samantha') ||
-                           b.name.toLowerCase().includes('victoria');
-
-          if (aIsFemale && !bIsFemale) {
-            return -1;
-          }
-          if (!aIsFemale && bIsFemale) {
-            return 1;
-          }
-
-          // Then prefer local over online
-          if (a.localService && !b.localService) {
-            return -1;
-          }
-          if (!a.localService && b.localService) {
-            return 1;
-          }
-
-          return 0;
-        });
-
-        if (englishVoices.length > 0) {
-          const defaultVoice = englishVoices[0];
-          if (defaultVoice !== null && defaultVoice !== undefined) {
-            setSelectedVoice(defaultVoice);
-            localStorage.setItem('coachflux_voice', defaultVoice.name);
-          }
-        }
-      };
-
-      setDefaultVoice();
-      if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = setDefaultVoice;
-      }
-    }
-  }, []);
-
-  const handleVoiceSelect = (voice: SpeechSynthesisVoice) => {
-    setSelectedVoice(voice);
-    localStorage.setItem('coachflux_voice', voice.name);
-  };
-
-  const toggleAutoPlay = () => {
-    const newValue = !autoPlayVoice;
-    setAutoPlayVoice(newValue);
-    localStorage.setItem('coachflux_autoplay', String(newValue));
-  };
 
   if (session === null || session === undefined) {
     return (
@@ -442,6 +590,13 @@ export function SessionView() {
   }
 
   const currentStep = session.step as StepName;
+  
+  // Framework-specific step sequences
+  const GROW_STEPS = ["goal", "reality", "options", "will", "review"];
+  const COMPASS_STEPS = ["clarity", "ownership", "mapping", "practice"]; // New 4-stage COMPASS model
+  const frameworkSteps = session.framework === "COMPASS" ? COMPASS_STEPS : GROW_STEPS;
+  const totalSteps = frameworkSteps.length;
+  const currentStepIndex = Math.max(0, frameworkSteps.indexOf(currentStep)); // Fallback to 0 if step not found
   
   // Get skip count for current step
   const sessionState = session.state as { skips?: Record<string, number> } | undefined;
@@ -547,6 +702,17 @@ export function SessionView() {
       setNotification({ type: "error", message: "Failed to skip question. Please try again." });
     }
   }
+
+  const handleVoiceSelect = (voice: SpeechSynthesisVoice) => {
+    setSelectedVoice(voice);
+    localStorage.setItem('coachflux_voice', voice.name);
+  };
+
+  const toggleAutoPlay = () => {
+    const newValue = !autoPlayVoice;
+    setAutoPlayVoice(newValue);
+    localStorage.setItem('coachflux_autoplay', String(newValue));
+  };
 
   async function handleContinueToNextStep(): Promise<void> {
     if (session === null || session === undefined || submitting || currentStep === 'review') {
@@ -722,17 +888,17 @@ export function SessionView() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
-                Step {["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1} of 5:{" "}
+                Step {currentStepIndex + 1} of {totalSteps}:{" "}
                 <span className="text-indigo-600 dark:text-indigo-400 capitalize">{currentStep}</span>
               </h2>
               <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                {Math.round(((["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1) / 5) * 100)}% complete
+                {Math.round(((currentStepIndex + 1) / totalSteps) * 100)}% complete
               </span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div 
                 className="bg-indigo-600 dark:bg-indigo-500 h-2 rounded-full transition-all duration-300 progress-bar-dynamic"
-                style={{['--progress-width' as string]: `${((["goal", "reality", "options", "will", "review"].indexOf(currentStep) + 1) / 5) * 100}%`} as React.CSSProperties}
+                style={{['--progress-width' as string]: `${((currentStepIndex + 1) / totalSteps) * 100}%`} as React.CSSProperties}
               />
             </div>
           </div>
@@ -766,8 +932,8 @@ export function SessionView() {
                   {reflections.map((reflection, index) => {
                     // Check if this is the first reflection of a new step
                     const isFirstOfStep = index === 0 || reflections[index - 1]?.step !== reflection.step;
-                    const stepTip = isFirstOfStep ? STEP_TIPS[reflection.step as StepName] : null;
-                    const stepLabel = isFirstOfStep ? STEP_LABELS[reflection.step as StepName] : null;
+                    const stepTip = isFirstOfStep ? (STEP_TIPS[reflection.step as StepName] ?? null) : null;
+                    const stepLabel = isFirstOfStep ? (STEP_LABELS[reflection.step as StepName] ?? null) : null;
                     
                     // Check if this is the last reflection and session is complete
                     const isLastReflection = index === reflections.length - 1;
@@ -839,6 +1005,80 @@ export function SessionView() {
                           <div className="bg-gray-100 dark:bg-gray-700 rounded-lg rounded-tl-sm p-3 sm:p-4">
                             {formatReflectionDisplay(reflection.step, reflection.payload as Record<string, unknown>)}
                           </div>
+                          
+                          {/* ⚠️ FIX P1-1: Display nudges used in this reflection */}
+                          {(() => {
+                            const payload = reflection.payload as Record<string, unknown> | undefined;
+                            if (payload === null || payload === undefined || typeof payload !== 'object') {
+                              return null;
+                            }
+                            
+                            const nudgesUsed = payload['nudges_used'];
+                            if (!Array.isArray(nudgesUsed) || nudgesUsed.length === 0) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {nudgesUsed.map((nudge: unknown, idx: number) => {
+                                  const nudgeObj = nudge as Record<string, string>;
+                                  return (
+                                    <NudgeIndicator
+                                      key={idx}
+                                      nudgeType={nudgeObj['nudge_type'] ?? ''}
+                                      nudgeCategory={nudgeObj['nudge_category'] ?? ''}
+                                      className="text-xs"
+                                    />
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+                          
+                          {/* ⚠️ FIX P1-2: Display confidence tracker when confidence captured */}
+                          {(() => {
+                            const payload = reflection.payload as Record<string, unknown> | undefined;
+                            if (payload === null || payload === undefined || typeof payload !== 'object') {
+                              return null;
+                            }
+                            
+                            const initialConf = payload['initial_confidence'];
+                            const currentConf = payload['current_confidence'];
+                            const finalConf = payload['final_confidence'];
+                            
+                            // Ownership stage: Show current confidence vs initial
+                            if (reflection.step === 'ownership' && 
+                                typeof initialConf === 'number' &&
+                                typeof currentConf === 'number' &&
+                                currentConf > initialConf) {
+                              return (
+                                <div className="mt-3">
+                                  <ConfidenceTracker
+                                    initialConfidence={initialConf}
+                                    currentConfidence={currentConf}
+                                    stage="ownership"
+                                  />
+                                </div>
+                              );
+                            }
+                            
+                            // Practice stage: Show final confidence transformation
+                            if (reflection.step === 'practice' && 
+                                typeof initialConf === 'number' &&
+                                typeof finalConf === 'number') {
+                              return (
+                                <div className="mt-3">
+                                  <ConfidenceTracker
+                                    initialConfidence={initialConf}
+                                    currentConfidence={finalConf}
+                                    stage="practice"
+                                  />
+                                </div>
+                              );
+                            }
+                            
+                            return null;
+                          })()}
                         </div>
                       </div>
                       
@@ -868,6 +1108,13 @@ export function SessionView() {
                             >
                               <span>📊</span>
                               <span>View Full Report</span>
+                            </button>
+                            <button
+                              onClick={() => navigate("/dashboard")}
+                              className="flex-1 px-4 py-3 bg-gray-800 dark:bg-gray-600 text-white rounded-lg hover:bg-gray-900 dark:hover:bg-gray-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                            >
+                              <span>📋</span>
+                              <span>Dashboard</span>
                             </button>
                             <button
                               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -1044,13 +1291,13 @@ export function SessionView() {
               )}
             </div>
 
-            {/* GROW Progress */}
+            {/* Framework Progress */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                GROW Progress
+                {session.framework} Progress
               </h3>
               <div className="space-y-2">
-                {(["goal", "reality", "options", "will", "review"] as StepName[]).map(
+                {(frameworkSteps as StepName[]).map(
                   (step) => (
                     <div
                       key={step}
@@ -1093,42 +1340,31 @@ export function SessionView() {
         </div>
       </main>
 
-      {/* Fixed Input Box at Bottom */}
+      {/* Fixed Input Box at Bottom - HIDE IF SESSION IS CLOSED */}
+      {/* ⚠️ FIX P0-2: Show input during all active coaching stages, not just when !isSessionComplete */}
+      {(currentStep === 'clarity' || currentStep === 'ownership' || currentStep === 'mapping' || currentStep === 'practice' || currentStep === 'goal' || currentStep === 'reality' || currentStep === 'options' || currentStep === 'will' || currentStep === 'anchoring') && !isSessionComplete && (
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-40 safe-area-bottom">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="py-2 sm:py-3">
+          <div className="py-3 sm:py-4">
             <div className="max-w-4xl">
-              <div className="flex flex-col gap-1">
-                {/* Top labels row */}
-                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
-                  <span>{text.length}/800</span>
-                  {canSkip && (
-                    <span>
-                      {2 - skipCount} skip{2 - skipCount === 1 ? '' : 's'} left
-                    </span>
-                  )}
-                </div>
-                
+              <div className="flex flex-col gap-0">
                 {/* Input controls row */}
                 <div className="flex gap-2 items-stretch">
-                  {/* Voice Control Buttons */}
-                  <VoiceButtons
-                    onStartListening={voiceControl.startListening}
-                    onStopListening={voiceControl.stopListening}
-                    onStopSpeaking={voiceControl.stopSpeaking}
-                    isListening={voiceControl.isListening}
-                    isSpeaking={voiceControl.isSpeaking}
-                    disabled={submitting}
-                    error={voiceControl.error}
+                  {/* Voice Button */}
+                  <VoiceButton
+                    isListening={isListening}
+                    disabled={submitting || isSpeaking}
+                    onStart={startListening}
+                    onStop={stopListening}
                   />
-                  
+
                   {/* Input with inline send button and live transcript overlay */}
                   <div className="flex-1 relative">
                     {/* Live transcript overlay */}
-                    <LiveTranscript
-                      transcript={voiceControl.transcript}
-                      interimTranscript={voiceControl.interimTranscript}
-                      isListening={voiceControl.isListening}
+                    <LiveTranscriptDisplay
+                      transcript={transcript}
+                      interimTranscript={interimTranscript}
+                      isListening={isListening}
                     />
                     <textarea
                       value={text}
@@ -1182,7 +1418,7 @@ export function SessionView() {
                     <button
                       onClick={() => void handleSkip()}
                       disabled={submitting}
-                      className="px-2 sm:px-3 text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-md hover:bg-orange-100 dark:hover:bg-orange-800/30 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed transition-colors border border-orange-200 dark:border-orange-800 whitespace-nowrap"
+                      className="h-full px-4 py-2 text-sm font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-800/30 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed transition-colors border border-orange-200 dark:border-orange-800 whitespace-nowrap flex items-center justify-center"
                       title={`Skip this question (${2 - skipCount} skips left)`}
                     >
                       Skip
@@ -1190,8 +1426,18 @@ export function SessionView() {
                   )}
                 </div>
                 
+                {/* Bottom labels row */}
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 px-1 -mt-5">
+                  <span>{text.length}/800</span>
+                  {canSkip && (
+                    <span>
+                      {2 - skipCount} skip{2 - skipCount === 1 ? '' : 's'} left
+                    </span>
+                  )}
+                </div>
+                
                 {/* Continue to next step button - subtle text link */}
-                {currentStep !== 'review' && !submitting && (
+                {!submitting && (
                   <button
                     onClick={() => void handleContinueToNextStep()}
                     disabled={submitting}
@@ -1206,6 +1452,7 @@ export function SessionView() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Generating Report Loading Modal */}
       {generatingReport && (

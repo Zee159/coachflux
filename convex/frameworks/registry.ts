@@ -13,6 +13,7 @@ import {
   isValidFrameworkId 
 } from './types';
 import { growFramework, growFrameworkLegacy } from './grow';
+import { compassFramework, compassFrameworkLegacy } from './compass';
 
 // ============================================================================
 // Legacy Registry (Phase 1 - Migration Mode)
@@ -24,16 +25,19 @@ import { growFramework, growFrameworkLegacy } from './grow';
  */
 const legacyFrameworkRegistry: Record<string, LegacyFramework> = {
   'GROW': growFrameworkLegacy,
+  'COMPASS': compassFrameworkLegacy,
 };
 
 /**
  * Get framework using legacy format (for backward compatibility)
  * This is a drop-in replacement for the hardcoded getFramework() in coach.ts
+ * 
+ * @param frameworkId - The framework identifier (defaults to GROW for backward compatibility)
  */
-export function getFrameworkLegacy(): LegacyFramework {
-  const framework = legacyFrameworkRegistry['GROW'];
+export function getFrameworkLegacy(frameworkId: string = 'GROW'): LegacyFramework {
+  const framework = legacyFrameworkRegistry[frameworkId];
   if (framework === null || framework === undefined) {
-    throw new Error('GROW framework not found in legacy registry');
+    throw new Error(`${frameworkId} framework not found in legacy registry`);
   }
   return framework;
 }
@@ -48,10 +52,9 @@ export function getFrameworkLegacy(): LegacyFramework {
  */
 const frameworkRegistry: Partial<Record<FrameworkId, FrameworkDefinition>> = {
   GROW: growFramework,
+  COMPASS: compassFramework,
   // Phase 2: Add CLEAR framework
   // CLEAR: clearFramework,
-  // Phase 3: Add COMPASS framework
-  // COMPASS: compassFramework,
   // Future: Additional frameworks
   // POWER_INTEREST_GRID: powerInterestGridFramework,
   // PSYCHOLOGICAL_SAFETY: psychologicalSafetyFramework,

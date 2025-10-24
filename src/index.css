@@ -175,6 +175,24 @@ body {
   animation: bounce-subtle 2s ease-in-out infinite;
 }
 
+/* Horizontal scrolling animation for feature ticker */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 20s linear infinite;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
 /* Dynamic progress bar - supports CSS custom properties */
 .progress-bar-dynamic {
   width: var(--progress-width, 0%);

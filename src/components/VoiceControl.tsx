@@ -81,11 +81,19 @@ export function VoiceControl({
   const hasSubmittedRef = useRef(false);
   const lastProcessedIndexRef = useRef(0);
   const isProcessingRef = useRef(false);
+  const autoSendOnSilenceRef = useRef(autoSendOnSilence);
+  const silenceThresholdMsRef = useRef(silenceThresholdMs);
   
-  // Update callback ref when it changes
+  // Update callback ref when it changes - but don't depend on onTranscript in main useEffect
   useEffect(() => {
     onTranscriptRef.current = onTranscript;
   }, [onTranscript]);
+
+  // Update config refs without triggering recognition recreation
+  useEffect(() => {
+    autoSendOnSilenceRef.current = autoSendOnSilence;
+    silenceThresholdMsRef.current = silenceThresholdMs;
+  }, [autoSendOnSilence, silenceThresholdMs]);
 
   useEffect(() => {
     // Check if browser supports Web Speech API
@@ -99,7 +107,7 @@ export function VoiceControl({
     const recognition = new SpeechRecognitionConstructor();
     
     recognition.continuous = true;
-    recognition.interimResults = false; // KEY FIX: Disable interim results to prevent mobile duplication
+    recognition.interimResults = true; // Enable interim results for better UX
     recognition.lang = 'en-GB'; // UK English
     
     // Mobile optimization: limit alternatives to reduce processing
@@ -118,7 +126,7 @@ export function VoiceControl({
       if (isProcessingRef.current) {
         return;
       }
-      
+
       let interim = '';
       let final = '';
 
@@ -149,7 +157,7 @@ export function VoiceControl({
       setInterimTranscript(interim);
 
       // Only start timer when we have meaningful final results and not already waiting
-      if (final.trim().length > 0 && autoSendOnSilence && finalTranscriptRef.current.trim().length > 0 && !waitingForSilenceRef.current) {
+      if (final.trim().length > 0 && autoSendOnSilenceRef.current && finalTranscriptRef.current.trim().length > 0 && !waitingForSilenceRef.current) {
         // Clear existing timer
         if (silenceTimerRef.current !== null) {
           clearTimeout(silenceTimerRef.current);
@@ -157,61 +165,108 @@ export function VoiceControl({
 
         // Set flag to ignore further results
         waitingForSilenceRef.current = true;
-        
+
         // Start new silence timer
         silenceTimerRef.current = setTimeout(() => {
           if (recognitionRef.current !== null) {
             recognitionRef.current.stop();
           }
-        }, silenceThresholdMs);
+        }, silenceThresholdMsRef.current);
+      } else if (autoSendOnSilenceRef.current && !waitingForSilenceRef.current) {
+        // For testing: also trigger silence detection after any speech activity (even empty)
+        if (silenceTimerRef.current !== null) {
+          clearTimeout(silenceTimerRef.current);
+        }
+
+        waitingForSilenceRef.current = true;
+
+        silenceTimerRef.current = setTimeout(() => {
+          if (recognitionRef.current !== null) {
+            recognitionRef.current.stop();
+          }
+        }, silenceThresholdMsRef.current);
       }
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error === 'no-speech') {
+      // Clear all timers
+      if (silenceTimerRef.current !== null) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+
+      // Reset all flags to prevent stuck state
+      isProcessingRef.current = false;
+      hasSubmittedRef.current = false;
+      waitingForSilenceRef.current = false;
+      lastProcessedIndexRef.current = 0;
+
+      // Clear transcripts
+      finalTranscriptRef.current = '';
+      setTranscript('');
+      setInterimTranscript('');
+
+      // Set appropriate error message
+      if (event.error === 'network') {
+        setError('Network error. Please check your internet connection.');
+      } else if (event.error === 'no-speech') {
         setError('No speech detected. Please try again.');
       } else if (event.error === 'not-allowed') {
         setError('Microphone access denied. Please allow microphone access.');
+      } else if (event.error === 'aborted') {
+        // Aborted is normal when user stops, don't show error
+        setError(null);
       } else {
-        setError('Voice recognition error. Please try again.');
+        setError(`Voice recognition error: ${event.error}. Please try again.`);
       }
+
       setIsListening(false);
+      isListeningRef.current = false;
     };
 
     recognition.onend = () => {
       setIsListening(false);
       isListeningRef.current = false;
-      
-      // If we were waiting for silence timer and recognition ended naturally,
-      // treat this as the silence we were waiting for and send immediately
-      if (silenceTimerRef.current !== null && waitingForSilenceRef.current) {
+
+      // Always clear silence timer
+      if (silenceTimerRef.current !== null) {
         clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = null;
+      }
+
+      // If we were waiting for silence timer and recognition ended naturally,
+      // treat this as the silence we were waiting for and send immediately
+      if (waitingForSilenceRef.current) {
         waitingForSilenceRef.current = false;
-        
+
         const textToSend = finalTranscriptRef.current.trim();
         // Only submit if we haven't already submitted this transcript
         if (textToSend.length > 0 && !hasSubmittedRef.current && !isProcessingRef.current) {
           isProcessingRef.current = true;
           hasSubmittedRef.current = true;
           onTranscriptRef.current(textToSend);
+
+          // Clear transcripts after submission
           finalTranscriptRef.current = '';
           setTranscript('');
           setInterimTranscript('');
-          
-          // Reset processing flag after a short delay
+
+          // Reset processing flags after a short delay
           setTimeout(() => {
             isProcessingRef.current = false;
+            hasSubmittedRef.current = false;
           }, 500);
         }
-      } else if (silenceTimerRef.current !== null) {
-        clearTimeout(silenceTimerRef.current);
-        silenceTimerRef.current = null;
       }
-      
+
+      // Always reset these flags on end
       waitingForSilenceRef.current = false;
-      lastProcessedIndexRef.current = 0; // Reset for next session
+      lastProcessedIndexRef.current = 0;
+
+      // If we didn't submit, ensure processing flags are reset
+      if (!hasSubmittedRef.current) {
+        isProcessingRef.current = false;
+      }
     };
 
     recognitionRef.current = recognition;
@@ -224,10 +279,23 @@ export function VoiceControl({
         clearTimeout(silenceTimerRef.current);
       }
     };
-  }, [autoSendOnSilence, silenceThresholdMs]);
+  }, []);
 
   const startListening = () => {
     if (recognitionRef.current !== null && !isListening) {
+      // Mobile Safari detection and compatibility check
+      const isMobileSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                            /Safari/.test(navigator.userAgent) && 
+                            !/Chrome/.test(navigator.userAgent);
+      
+      if (isMobileSafari) {
+        // Check if user has activated the page (required for iOS Safari)
+        if (!('userActivation' in navigator) || !navigator.userActivation?.isActive) {
+          setError("Tap the microphone button to enable voice input on iOS Safari.");
+          return;
+        }
+      }
+
       setTranscript("");
       setInterimTranscript("");
       finalTranscriptRef.current = "";
@@ -256,7 +324,7 @@ export function VoiceControl({
         isProcessingRef.current = true;
         hasSubmittedRef.current = true;
         onTranscriptRef.current(textToSend);
-        
+
         // Reset processing flag after a short delay
         setTimeout(() => {
           isProcessingRef.current = false;
@@ -275,36 +343,47 @@ export function VoiceControl({
       return;
     }
 
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    if (selectedVoice !== null) {
-      utterance.voice = selectedVoice;
-    }
-    
-    utterance.rate = 0.95; // Slightly slower for clarity
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-    };
-
-    utterance.onend = () => {
-      setIsSpeaking(false);
-    };
-
-    utterance.onerror = (event) => {
-      setIsSpeaking(false);
-      // Don't show error for common issues like interruption
-      if (event.error !== 'interrupted' && event.error !== 'canceled') {
-        setError('Voice playback error. Please try again.');
+    // Gracefully handle speech synthesis queue
+    const speakText = () => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      if (selectedVoice !== null) {
+        utterance.voice = selectedVoice;
       }
+      
+      utterance.rate = 0.95; // Slightly slower for clarity
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+      };
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+      };
+
+      utterance.onerror = (event) => {
+        setIsSpeaking(false);
+        // Don't show error for common issues like interruption
+        if (event.error !== 'interrupted' && event.error !== 'canceled') {
+          setError('Voice playback error. Please try again.');
+        }
+      };
+
+      window.speechSynthesis.speak(utterance);
     };
 
-    window.speechSynthesis.speak(utterance);
+    // If currently speaking, pause, cancel, then speak new text
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.pause();
+      setTimeout(() => {
+        window.speechSynthesis.cancel();
+        speakText();
+      }, 100);
+    } else {
+      speakText();
+    }
   };
 
   const stopSpeaking = () => {
@@ -457,9 +536,20 @@ export function VoiceSettingsModal({
     loadVoices();
     
     // Chrome loads voices asynchronously
+    const handleVoicesChanged = () => {
+      loadVoices();
+    };
+
     if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
+      window.speechSynthesis.onvoiceschanged = handleVoicesChanged;
     }
+
+    // Cleanup: remove event listener on unmount
+    return () => {
+      if (window.speechSynthesis.onvoiceschanged === handleVoicesChanged) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
   }, []);
 
   const testVoice = (voice: SpeechSynthesisVoice) => {

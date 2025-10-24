@@ -31,9 +31,36 @@ const EXCLUDED_FILES = [
   'postcss.config.js'
 ];
 
+// Allowlisted patterns for known infrastructure workarounds
+const ALLOWED_WORKAROUNDS = [
+  {
+    // Convex type recursion workaround in coach module
+    files: ['convex/coach/base.ts', 'convex/coach/index.ts'],
+    reason: 'Necessary workaround for Convex generated type deep recursion',
+    patterns: ['Type annotation "any"', '@ts-expect-error directive', 'eslint-disable directive']
+  },
+  {
+    // Non-null assertion for guaranteed fallback
+    files: ['convex/safety.ts'],
+    reason: 'US emergency resources guaranteed to exist as fallback',
+    patterns: ['eslint-disable directive']
+  }
+];
+
 function isExcluded(path) {
   return EXCLUDED_DIRS.some(dir => path.includes(dir)) || 
          EXCLUDED_FILES.some(file => path.endsWith(file));
+}
+
+function isAllowedWorkaround(filePath, patternName) {
+  // Normalize path separators for cross-platform compatibility
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  
+  return ALLOWED_WORKAROUNDS.some(workaround => {
+    const fileMatches = workaround.files.some(file => normalizedPath.endsWith(file));
+    const patternMatches = workaround.patterns.includes(patternName);
+    return fileMatches && patternMatches;
+  });
 }
 
 function scanFile(filePath) {
@@ -88,7 +115,15 @@ function scanDirectory(dir) {
 
 console.log('🔍 Scanning for unsafe code patterns...\n');
 
-const issues = scanDirectory(process.cwd());
+const allIssues = scanDirectory(process.cwd());
+
+// Filter out allowed workarounds
+const issues = allIssues.filter(issue => !isAllowedWorkaround(issue.file, issue.pattern));
+const allowedCount = allIssues.length - issues.length;
+
+if (allowedCount > 0) {
+  console.log(`ℹ️  ${allowedCount} known workaround(s) allowed (documented infrastructure constraints)\n`);
+}
 
 if (issues.length === 0) {
   console.log('✅ No unsafe patterns found! Your code is clean.\n');

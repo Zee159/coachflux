@@ -20,19 +20,25 @@ interface SessionCardProps {
 function SessionCard({ sessionId, framework, step, startedAt, isCompleted, onClick }: SessionCardProps) {
   const reflections = useQuery(api.queries.getSessionReflections, { sessionId });
   
-  // Get review summary if session is completed - use LAST review reflection
+  // Get review data if session is completed - use LAST review reflection
   const reviewReflections = reflections?.filter((r) => r.step === "review") ?? [];
   const reviewReflection = reviewReflections[reviewReflections.length - 1];
   const reviewPayload = reviewReflection?.payload as Record<string, unknown> | undefined;
-  const summary = reviewPayload !== undefined && typeof reviewPayload['summary'] === 'string' 
-    ? reviewPayload['summary'] 
+  
+  // Extract key insights as the summary preview
+  const summary = reviewPayload !== undefined && typeof reviewPayload['key_insights'] === 'string' 
+    ? reviewPayload['key_insights'] 
     : undefined;
   
-  // Check if incomplete (Phase 1 only - has coach_reflection but no summary)
-  const isIncomplete = isCompleted && 
-    reviewPayload !== undefined && 
-    typeof reviewPayload['summary'] !== 'string' && 
-    typeof reviewPayload['coach_reflection'] === 'string';
+  // Check if incomplete - session was closed but review step wasn't properly finished
+  // Incomplete = closed but EITHER no review step reached OR review has no key_insights/next_actions
+  const isIncomplete = isCompleted && (
+    // Case 1: No review step reached at all
+    reviewPayload === undefined ||
+    // Case 2: Review started but didn't capture essential data
+    (typeof reviewPayload['key_insights'] !== 'string' && 
+     !Array.isArray(reviewPayload['next_actions']))
+  );
   
   return (
     <div
@@ -52,12 +58,14 @@ function SessionCard({ sessionId, framework, step, startedAt, isCompleted, onCli
         </div>
         <span
           className={`px-2 py-1 text-xs font-medium rounded ${
-            isCompleted
+            isIncomplete
+              ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
+              : isCompleted
               ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
               : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
           }`}
         >
-          {isCompleted ? "Completed" : "Active"}
+          {isIncomplete ? "Incomplete" : isCompleted ? "Completed" : "Active"}
         </span>
       </div>
       
@@ -95,6 +103,7 @@ export function Dashboard() {
   const [showContinueModal, setShowContinueModal] = useState(false);
   const [notification, setNotification] = useState<{ type: "info" | "success" | "error"; message: string } | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<Id<"sessions"> | null>(null);
+  const [selectedFramework, setSelectedFramework] = useState<'GROW' | 'COMPASS'>('GROW');
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("coachflux_demo_user");
@@ -144,7 +153,7 @@ export function Dashboard() {
       const sessionId = await createSession({
         orgId,
         userId,
-        framework: "GROW",
+        framework: selectedFramework,
       });
       navigate(`/session/${sessionId}`);
     } catch (error: unknown) {
@@ -260,6 +269,16 @@ export function Dashboard() {
             </div>
             <div className="flex items-center gap-3">
               <ThemeToggle />
+              {/* Framework Selector */}
+              <select
+                value={selectedFramework}
+                onChange={(e) => setSelectedFramework(e.target.value as 'GROW' | 'COMPASS')}
+                className="px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                aria-label="Select coaching framework"
+              >
+                <option value="GROW">GROW - Goal Achievement</option>
+                <option value="COMPASS">COMPASS - Change Leadership</option>
+              </select>
               <div className="relative">
                 <button
                   onClick={() => void handleStartSession()}
