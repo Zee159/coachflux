@@ -84,22 +84,21 @@ export const createSession = mutation({
     let firstStep = "introduction";
     let greeting = `Welcome! I'm here to help you think through your goals and challenges.
 
-We'll be using the GROW method - a proven coaching approach that helps you move from where you are now to where you want to be. GROW stands for Goal, Reality, Options, and Will.
+We'll use the GROW method - a proven coaching approach that helps you move from where you are now to where you want to be.
 
 Here's what we'll do together:
 • Goal: Define what you want to achieve and why it matters
-• Reality: Understand your current situation and what's in your way
+• Reality: Understand your current situation and what's in your way  
 • Options: Explore different approaches you could take
 • Will: Create a concrete action plan with specific steps
 
-This usually takes 15-20 minutes.
+This takes about 15-20 minutes.
 
-GROW works particularly well for:
+GROW works well for:
 • Setting and achieving specific goals (career, personal, business)
 • Making important decisions when you have multiple options
 • Breaking through obstacles or stuck situations
 • Creating action plans for projects or changes
-• Improving skills or performance in a specific area
 
 I'll ask you questions to help you think deeply, and together we'll build a clear plan. You'll leave with specific actions you can take right away.
 
@@ -110,7 +109,7 @@ Does this framework feel right for what you want to work on today?`;
       firstStep = "introduction";
       greeting = `Welcome! I'm here to help you navigate change with confidence.
 
-We'll be using the COMPASS method - a coaching approach specifically designed for workplace change. COMPASS helps you transform from feeling uncertain or resistant about a change to feeling confident and in control.
+We'll use the COMPASS method - a coaching approach specifically designed for workplace change. COMPASS helps you transform from feeling uncertain about a change to feeling confident and in control.
 
 Here's our journey together:
 • Clarity: Understand exactly what's changing and what you can control

@@ -47,9 +47,9 @@ function formatReflectionDisplay(step: string, payload: Record<string, unknown>)
       {/* Coach Reflection - displayed first with special styling */}
       {coachReflection !== undefined && (
         <div className="bg-white dark:bg-gray-700 border-l-4 border-indigo-600 dark:border-indigo-400 p-3 rounded-r-lg">
-          <p className="text-sm text-gray-800 dark:text-gray-200 italic leading-relaxed">
+          <div className="text-sm text-gray-800 dark:text-gray-200 italic leading-relaxed whitespace-pre-line">
             💬 {String(coachReflection[1])}
-          </p>
+          </div>
         </div>
       )}
       
@@ -373,12 +373,62 @@ export function SessionView() {
     autoSendOnSilence: true,
   });
 
-  const { isSpeaking, speak } = useVoiceSynthesis({
+  const { isSpeaking, speak, stop: stopSpeaking } = useVoiceSynthesis({
     rate: 0.95,
     pitch: 1.0,
     volume: 1.0,
     voice: selectedVoice,
   });
+
+  // Cleanup voice when component unmounts (user navigates away)
+  useEffect(() => {
+    return () => {
+      // Stop voice recognition if active
+      if (isListening) {
+        stopListening();
+      }
+      // Stop voice synthesis if speaking
+      if (isSpeaking) {
+        stopSpeaking();
+      }
+    };
+  }, [isListening, isSpeaking, stopListening, stopSpeaking]);
+
+  // Cleanup voice when user navigates away or closes tab
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Stop voice recognition if active
+      if (isListening) {
+        stopListening();
+      }
+      // Stop voice synthesis if speaking
+      if (isSpeaking) {
+        stopSpeaking();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      // Stop voice when tab becomes hidden (user switches tabs)
+      if (document.hidden) {
+        if (isListening) {
+          stopListening();
+        }
+        if (isSpeaking) {
+          stopSpeaking();
+        }
+      }
+    };
+
+    // Add event listeners
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isListening, isSpeaking, stopListening, stopSpeaking]);
 
   const session = useQuery(
     api.queries.getSession,

@@ -187,7 +187,7 @@ function ConversationTranscript({ reflections }: { reflections: ReflectionData[]
             {hasCoachReflection(reflection.payload) && (
               <div className="border-l-4 border-indigo-500 pl-3">
                 <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">🤖 Coach</p>
-                <p className="text-sm text-gray-800 dark:text-gray-200 italic">{reflection.payload.coach_reflection}</p>
+                <div className="text-sm text-gray-800 dark:text-gray-200 italic whitespace-pre-line">{reflection.payload.coach_reflection}</div>
               </div>
             )}
             
