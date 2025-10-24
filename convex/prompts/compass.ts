@@ -174,6 +174,7 @@ coach_reflection Field:
 - Should emphasize "workplace change" focus
 - Should mention alternative (GROW) for non-change scenarios
 - Extract user_consent_given as boolean based on response
+- ⚠️ CRITICAL: Ask ONLY ONE QUESTION at a time - do not ask multiple questions in the same response
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
 
@@ -448,6 +449,7 @@ STAGE SUCCESSFUL IF:
 - User identifies sphere of control (not "nothing")
 - User ready to explore confidence (OWNERSHIP stage)
 - Duration: ~5 minutes
+- ⚠️ CRITICAL: Ask ONLY ONE QUESTION at a time - do not ask multiple questions in the same response
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
 
@@ -889,6 +891,7 @@ STAGE SUCCESSFUL IF:
 - User has evidence of past capability (past success)
 - Limiting beliefs challenged (if present)
 - User feels empowered and ready to act
+- ⚠️ CRITICAL: Ask ONLY ONE QUESTION at a time - do not ask multiple questions in the same response
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
 
@@ -1352,6 +1355,7 @@ STAGE SUCCESSFUL IF:
 - User feels 8+/10 confident about doing it
 - Action is appropriately sized (doable in one session)
 - Duration: ~4 minutes
+- ⚠️ CRITICAL: Ask ONLY ONE QUESTION at a time - do not ask multiple questions in the same response
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
 
@@ -1752,6 +1756,7 @@ TARGET ACHIEVED IF:
 - User has specific day/time/backup/support
 - User recognizes transformation
 - Duration: ~20 minutes total session
+- ⚠️ CRITICAL: Ask ONLY ONE QUESTION at a time - do not ask multiple questions in the same response
 
 🎉 SESSION SUCCESSFUL IF ALL TARGETS MET
 
