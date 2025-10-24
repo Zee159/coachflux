@@ -180,7 +180,7 @@ export function NudgeUsageSummary({
 
   const categoryCounts = nudgesUsed.reduce((acc, nudge) => {
     const currentCount = acc[nudge.nudge_category];
-    acc[nudge.nudge_category] = (currentCount !== undefined && currentCount !== null ? currentCount : 0) + 1;
+    acc[nudge.nudge_category] = (currentCount ?? 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 

@@ -56,7 +56,8 @@ function generateCOMPASSReportSections(reflections: ReflectionData[]): ReportSec
   // Confidence Progression Section
   if (confidenceData.length > 0) {
     const latestConfidence = confidenceData[confidenceData.length - 1];
-    if (latestConfidence !== undefined && latestConfidence.initial_confidence !== undefined && latestConfidence.initial_confidence !== null && latestConfidence.final_confidence !== undefined && latestConfidence.final_confidence !== null) {
+    if (latestConfidence?.initial_confidence !== null && latestConfidence?.initial_confidence !== undefined && 
+        latestConfidence?.final_confidence !== null && latestConfidence?.final_confidence !== undefined) {
       sections.push({
         heading: "Confidence Progression",
         content: `Your confidence increased from ${latestConfidence.initial_confidence}/5 to ${latestConfidence.final_confidence}/5, representing a ${latestConfidence.confidence_percent_increase}% improvement.`,

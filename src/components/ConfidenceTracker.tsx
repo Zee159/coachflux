@@ -22,9 +22,15 @@ export function ConfidenceTracker({
   
   // Determine color based on confidence level
   const getConfidenceColor = (confidence: number): string => {
-    if (confidence <= 3) return 'bg-red-500 dark:bg-red-600';
-    if (confidence <= 5) return 'bg-orange-500 dark:bg-orange-600';
-    if (confidence <= 7) return 'bg-yellow-500 dark:bg-yellow-600';
+    if (confidence <= 3) {
+      return 'bg-red-500 dark:bg-red-600';
+    }
+    if (confidence <= 5) {
+      return 'bg-orange-500 dark:bg-orange-600';
+    }
+    if (confidence <= 7) {
+      return 'bg-yellow-500 dark:bg-yellow-600';
+    }
     return 'bg-green-500 dark:bg-green-600';
   };
   

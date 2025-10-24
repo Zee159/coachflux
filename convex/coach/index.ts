@@ -185,7 +185,9 @@ const getFramework = (frameworkId: string = 'GROW'): Framework => {
 
 /**
  * Helper to create mutations object without triggering TypeScript deep recursion
- * Using 'any' to avoid "Type instantiation is excessively deep" errors with Convex API
+ * 
+ * NOTE: @ts-expect-error and 'any' are documented workarounds for Convex's deep type recursion.
+ * This is whitelisted in scripts/safety-check.js
  */
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 function createMutations(): CoachMutations {
@@ -197,7 +199,8 @@ function createMutations(): CoachMutations {
     createAction: m.createAction,
     closeSession: m.closeSession,
     createReflection: m.createReflection,
-    updateSessionStep: m.updateSessionStep
+    updateSessionStep: m.updateSessionStep,
+    pauseSession: m.pauseSession
   };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
@@ -317,12 +320,12 @@ export const nextStep = action({
       // Force advance to next step with partial data
       const frameworkCoach = getFrameworkCoach(fw.id);
       const transitions = frameworkCoach.getStepTransitions();
-      const transitionMessage = transitions.transitions[step.name as keyof typeof transitions.transitions];
+      const transitionMessage = transitions.transitions[step.name] ?? "Let's move forward.";
       const nextStepName = await advanceToNextStep(ctx, mutations, fw, step, frameworkCoach, args);
       
       // Create transition reflection
       const escapePayload: ReflectionPayload = {
-        coach_reflection: `${transitionMessage || 'Let\\'s move forward.'}\n\n💡 I can see we've covered a lot of ground here. Let's keep the momentum going.`
+        coach_reflection: `${transitionMessage}\n\n💡 I can see we've covered a lot of ground here. Let's keep the momentum going.`
       };
       
       await ctx.runMutation(api.mutations.createReflection, {

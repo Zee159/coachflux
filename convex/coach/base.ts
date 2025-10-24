@@ -15,19 +15,22 @@ import type { Id } from "../_generated/dataModel";
  * Minimal context interface for coaching functions
  * Avoids TypeScript "excessively deep" errors with full ActionCtx
  * Note: We don't import api here to avoid type resolution issues
+ * 
+ * NOTE: Using 'any' here is a documented workaround for Convex's deep type recursion.
+ * This is whitelisted in scripts/safety-check.js
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface CoachContext {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   runMutation: (mutation: any, args: any) => Promise<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   runQuery: (query: any, args: any) => Promise<any>;
 }
 
 /**
  * Mutations interface - passed by caller to avoid importing api in base.ts
- * Using 'any' to avoid deep type instantiation with Convex generated types
+ * 
+ * NOTE: Using 'any' here is a documented workaround for Convex's deep type recursion.
+ * This is whitelisted in scripts/safety-check.js
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface CoachMutations {
   markSessionEscalated: any;
   createSafetyIncident: any;
@@ -35,6 +38,7 @@ export interface CoachMutations {
   closeSession: any;
   createReflection: any;
   updateSessionStep: any;
+  pauseSession: any;
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
@@ -245,7 +249,6 @@ export async function performSafetyChecks(
     
     // ⚠️ FIX P0-4: Pause session on crisis level (suicidal ideation)
     if (safetyCheck.level === 'crisis') {
-      // @ts-expect-error - pauseSession exists in mutations but type may not be updated
       await ctx.runMutation(mutations.pauseSession, {
         sessionId: args.sessionId,
         reason: `Crisis detected: ${Array.isArray(safetyCheck.detected_keywords) ? safetyCheck.detected_keywords.join(', ') : 'self-harm risk'}`
