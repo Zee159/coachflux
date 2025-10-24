@@ -398,8 +398,8 @@ export async function generateCoachResponse(
   
   const primary = await client.messages.create({
     model: "claude-3-7-sonnet-20250219",
-    max_tokens: 600,
-    temperature: 0,
+    max_tokens: 800, // Increased from 600 to give more room for JSON generation
+    temperature: 0.3, // Slightly increased from 0 to allow more flexibility
     system: system + safetyAlerts + aiContext + "\n\nYou MUST respond with valid JSON only. No other text.",
     messages: [
       { 

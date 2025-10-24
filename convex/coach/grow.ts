@@ -84,14 +84,14 @@ export class GROWCoach implements FrameworkCoach {
     const completedFields = [hasGoal, hasWhyNow, hasSuccessCriteria, hasTimeframe].filter(Boolean).length;
 
     // Progressive relaxation based on skip count and loop detection
-    let requiredFields = 3; // Default: 3/4 fields required
+    let requiredFields = 4; // Default: ALL 4 fields required (goal, why_now, success_criteria, timeframe)
 
     if (loopDetected) {
       requiredFields = 2; // System is stuck, be lenient
     } else if (skipCount >= 2) {
       requiredFields = 1; // User exhausted skips, force advance with minimal info
     } else if (skipCount === 1) {
-      requiredFields = 2; // User used one skip, be more lenient
+      requiredFields = 3; // User used one skip, require 3/4 fields
     }
 
     return { shouldAdvance: completedFields >= requiredFields };

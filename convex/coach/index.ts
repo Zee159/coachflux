@@ -397,9 +397,17 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
         aiContext
       );
     } catch (error) {
-      console.error("Error generating coach response:", error);
-      console.error("User input that caused error:", args.userTurn);
+      console.error("=== ERROR GENERATING COACH RESPONSE ===");
+      console.error("Error:", error);
+      console.error("User input:", args.userTurn);
       console.error("Step:", step.name);
+      console.error("Error type:", error instanceof Error ? error.name : typeof error);
+      console.error("Error message:", error instanceof Error ? error.message : String(error));
+      
+      // CRITICAL: This error often happens when AI fails to generate valid JSON
+      // But the user's response is usually perfectly clear!
+      // We should try to be more forgiving here.
+      
       // Create dynamic error reflection based on current step
       const stepSpecificErrorMessages: Record<string, string> = {
         // GROW Framework steps

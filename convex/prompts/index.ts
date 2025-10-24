@@ -258,8 +258,11 @@ VALIDATION RULES:
 1. Check if JSON is valid and parseable
 2. Check if all required fields from schema are present
 3. Check if field types match (string, number, array, object)
-4. Ignore validation constraints like minLength, maxLength, minItems, etc.
-5. Allow extra fields not in schema (graceful degradation)
+4. Ignore ALL validation constraints: minLength, maxLength, minItems, additionalProperties, etc.
+5. Focus ONLY on structure: Does the JSON have the required fields with correct types?
+6. IGNORE any "additionalProperties: false" in the schema - extra fields are acceptable
+
+If the JSON has all required fields with correct types, it is VALID. Period.
 
 Respond with ONLY valid JSON in this format:
 {
