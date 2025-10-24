@@ -400,12 +400,18 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
       console.error("Error generating coach response:", error);
       // Create dynamic error reflection based on current step
       const stepSpecificErrorMessages: Record<string, string> = {
+        // GROW Framework steps
         introduction: "I'm having trouble understanding your response. Could you tell me more simply - are you interested in trying GROW coaching today?",
         goal: "I'm having trouble processing that. Could you share one clear goal you'd like to work on? For example: 'I want to save money' or 'I need to improve my leadership skills'.",
         reality: "I'm having trouble understanding your situation. Could you describe what's happening right now in simpler terms? For example: 'I'm struggling with time management' or 'My team isn't communicating well'.",
         options: "I'm having trouble processing your options. Could you share one specific approach you're considering? For example: 'I could take an online course' or 'I could ask my manager for help'.",
         will: "I'm having trouble understanding your action plan. Could you tell me one specific thing you'll do? For example: 'I'll call my manager tomorrow' or 'I'll start the course next week'.",
-        review: "I'm having trouble processing your reflection. Could you share one key takeaway from our conversation? For example: 'I learned that I need to ask for help more often'."
+        review: "I'm having trouble processing your reflection. Could you share one key takeaway from our conversation? For example: 'I learned that I need to ask for help more often'.",
+        // COMPASS Framework steps
+        clarity: "I'm having trouble understanding your situation. Could you describe the change you're dealing with in simpler terms? For example: 'We're switching to a new system' or 'My role is changing'.",
+        ownership: "I'm having trouble processing your response. Could you share how you're feeling about this change? For example: 'I'm worried about learning new skills' or 'I'm excited about new opportunities'.",
+        mapping: "I'm having trouble understanding your plan. Could you tell me one specific thing you'll do? For example: 'I'll practice the new system for 30 minutes' or 'I'll ask my colleague for help'.",
+        practice: "I'm having trouble processing your reflection. Could you share one key insight from our conversation? For example: 'I realized I can learn new things' or 'I have more control than I thought'."
       };
       
       const errorMessage = stepSpecificErrorMessages[step.name] ?? 
