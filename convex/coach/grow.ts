@@ -130,8 +130,8 @@ export class GROWCoach implements FrameworkCoach {
 
   /**
    * Options step completion logic
-   * UPDATED: Requires 3 options (up from 2) and 2 explored (up from 1) for better decision quality
-   * ENHANCED: Validates success criteria alignment for AI-generated options
+   * REQUIREMENTS: 3+ options and 2+ explored (with pros/cons) for quality decision-making
+   * NOTE: Success criteria alignment is encouraged through conversational prompts, not validated structurally
    */
   private checkOptionsCompletion(
     payload: ReflectionPayload,
@@ -150,28 +150,9 @@ export class GROWCoach implements FrameworkCoach {
              Array.isArray(option.cons) && option.cons.length > 0;
     });
 
-    // NEW: Check for success criteria alignment in AI-generated options
-    const successCriteriaAlignedOptions = options.filter((opt: unknown) => {
-      const option = opt as { 
-        label?: string; 
-        pros?: unknown[]; 
-        cons?: unknown[]; 
-        successCriteriaContribution?: string;
-        alignmentReason?: string;
-      };
-      
-      // For AI-generated options, check if they have success criteria contribution
-      const hasSuccessCriteriaContribution = 
-        typeof option.successCriteriaContribution === "string" && 
-        option.successCriteriaContribution.length > 0;
-      
-      // For user-provided options, check if they have alignment reason
-      const hasAlignmentReason = 
-        typeof option.alignmentReason === "string" && 
-        option.alignmentReason.length > 0;
-      
-      return hasSuccessCriteriaContribution || hasAlignmentReason;
-    });
+    // NOTE: Success criteria alignment is handled conversationally through prompts
+    // The AI is instructed to reference success criteria in every question
+    // No need for structural field validation - trust the conversational flow
 
     // Progressive relaxation based on skip count and loop detection
     if (loopDetected) {
@@ -185,13 +166,13 @@ export class GROWCoach implements FrameworkCoach {
       return { shouldAdvance: options.length >= 3 }; 
     } else {
       // DEFAULT (no skips): Require 3+ options with 2+ explored for quality decision-making
-      // ENHANCED: Also require at least 1 option with success criteria alignment
+      // Success criteria alignment is handled conversationally - no structural validation needed
       const hasMinimumOptions = options.length >= 3;
       const hasExploredOptions = exploredOptions.length >= 2;
-      const hasSuccessCriteriaAlignment = successCriteriaAlignedOptions.length >= 1;
       
+      // Simple and clear: good options + exploration = ready to advance
       return { 
-        shouldAdvance: hasMinimumOptions && hasExploredOptions && hasSuccessCriteriaAlignment 
+        shouldAdvance: hasMinimumOptions && hasExploredOptions
       };
     }
   }

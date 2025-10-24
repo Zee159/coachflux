@@ -526,6 +526,12 @@ COMPLETION CRITERIA (UPDATED WITH SUCCESS CRITERIA FOCUS):
 - Success Criteria Alignment: ALL options must clearly contribute to success criteria achievement
 - Validation: User must confirm they're ready to proceed (not just auto-advance)
 
+🚨 EXTRACTING USER READINESS:
+When user says they're ready to move forward ("yes", "I'm ready", "let's do it", "yes please", "ready", etc.):
+- Extract: ready_to_proceed = true
+- DO NOT keep asking "Are you ready?" in a loop
+- If they say "yes" to moving forward, respect their choice and the system will advance to Will phase
+
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language ONLY
 - NEVER include JSON syntax, arrays, or field names
