@@ -397,7 +397,7 @@ export async function generateCoachResponse(
   );
   
   const primary = await client.messages.create({
-    model: "claude-3-7-sonnet-20250219",
+    model: "claude-3-5-haiku-20241022",
     max_tokens: 800, // Increased from 600 to give more room for JSON generation
     temperature: 0.3, // Slightly increased from 0 to allow more flexibility
     system: system + safetyAlerts + aiContext + "\n\nYou MUST respond with valid JSON only. No other text.",
@@ -442,7 +442,7 @@ export async function validateResponse(
   const strippedSchema = stripValidationConstraints(schema) as Record<string, unknown>;
   
   const validator = await client.messages.create({
-    model: "claude-3-7-sonnet-20250219",
+    model: "claude-3-5-haiku-20241022",
     max_tokens: 300,
     temperature: 0,
     system: "You validate JSON output for schema conformance and banned terms. Respond with ONLY valid JSON.",
