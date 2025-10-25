@@ -181,17 +181,18 @@ export function extractExistingContext(
 
 /**
  * Aggregate captured state from reflections (AGENT MODE)
+ * FIXED: Now merges ALL reflections for current step, not just the latest one
+ * This prevents fields from disappearing when AI extracts new fields in subsequent turns
  */
 export function aggregateStepState(
   reflections: Array<{ step: string; payload: ReflectionPayload }>,
   currentStep: string,
   requiredFields: string[]
 ): StepState {
-  // Get latest reflection for current step
+  // Get ALL reflections for current step
   const currentStepReflections = reflections.filter(r => r.step === currentStep);
-  const latestReflection = currentStepReflections[currentStepReflections.length - 1];
   
-  if (latestReflection === undefined || latestReflection === null) {
+  if (currentStepReflections.length === 0) {
     return {
       capturedState: {},
       missingFields: requiredFields,
@@ -200,15 +201,56 @@ export function aggregateStepState(
     };
   }
   
-  const payload = latestReflection.payload;
+  // CRITICAL FIX: Merge ALL reflections, not just the latest one
+  // This prevents fields from disappearing across turns
   const capturedState: Record<string, unknown> = {};
-  const capturedFields: string[] = [];
   
-  // Extract captured fields
-  for (const field of requiredFields) {
-    const value = payload[field];
+  // Loop through ALL reflections and merge fields
+  for (const reflection of currentStepReflections) {
+    const payload = reflection.payload;
     
-    // Check if field has meaningful content
+    for (const [key, value] of Object.entries(payload)) {
+      // Skip coach_reflection (not a data field)
+      if (key === 'coach_reflection') {
+        continue;
+      }
+      
+      // Check if field has meaningful content
+      const isMeaningful = 
+        (typeof value === 'string' && value.length > 0) ||
+        (Array.isArray(value) && value.length > 0) ||
+        (typeof value === 'number') ||
+        (typeof value === 'boolean');
+      
+      if (isMeaningful) {
+        // For arrays, merge with existing values (avoid duplicates)
+        if (Array.isArray(value) && Array.isArray(capturedState[key])) {
+          const existing = capturedState[key] as unknown[];
+          // Type-safe array merging: filter out items that already exist
+          const newItems: unknown[] = value.filter((item: unknown) => {
+            return !existing.some((existingItem: unknown) => {
+              // Deep equality check for primitive values
+              return JSON.stringify(existingItem) === JSON.stringify(item);
+            });
+          });
+          capturedState[key] = [...existing, ...newItems];
+        } 
+        // For strings, prefer the most recent non-empty value
+        else if (typeof value === 'string' && value.length > 0) {
+          capturedState[key] = value;
+        }
+        // For other types, use the value if not already set
+        else if (capturedState[key] === undefined) {
+          capturedState[key] = value;
+        }
+      }
+    }
+  }
+  
+  // Determine which required fields are captured
+  const capturedFields: string[] = [];
+  for (const field of requiredFields) {
+    const value = capturedState[field];
     const isCaptured = 
       (typeof value === 'string' && value.length > 0) ||
       (Array.isArray(value) && value.length > 0) ||
@@ -216,7 +258,6 @@ export function aggregateStepState(
       (typeof value === 'boolean');
     
     if (isCaptured) {
-      capturedState[field] = value;
       capturedFields.push(field);
     }
   }
