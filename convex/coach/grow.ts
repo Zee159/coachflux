@@ -16,8 +16,8 @@ export class GROWCoach implements FrameworkCoach {
       introduction: ["user_consent_given"],
       goal: ["goal", "why_now", "success_criteria", "timeframe"],
       reality: ["current_state", "constraints", "resources", "risks"],
-      options: ["options"], // Each option should have successCriteriaContribution
-      will: ["chosen_option", "actions"], // Each action should contribute to success criteria
+      options: ["options"],
+      will: ["chosen_options", "actions"], // Support 1-3 chosen options with streamlined actions
       review: ["key_takeaways", "immediate_step"],
     };
   }
@@ -187,116 +187,78 @@ export class GROWCoach implements FrameworkCoach {
 
   /**
    * Will step completion logic
-   * UPDATED: Now checks for enhanced action fields for better action quality
-   * ENHANCED: Validates that actions contribute to success criteria achievement
+   * STREAMLINED: Supports 1-3 chosen options with simplified action requirements
+   * NEW: Requires accountability_mechanism for each action
    */
   private checkWillCompletion(
     payload: ReflectionPayload,
     skipCount: number,
     loopDetected: boolean
   ): StepCompletionResult {
-    const hasChosenOption = typeof payload["chosen_option"] === "string" && payload["chosen_option"].length > 0;
+    const chosenOptions = payload["chosen_options"];
     const actions = payload["actions"];
 
-    if (!hasChosenOption || !Array.isArray(actions) || actions.length === 0) {
+    // Must have at least 1 chosen option and matching actions
+    if (!Array.isArray(chosenOptions) || chosenOptions.length === 0) {
       return { shouldAdvance: false };
     }
 
-    // Check for CORE fields (required)
-    const coreCompleteActions = actions.filter((a: unknown) => {
-      const action = a as { title?: string; owner?: string; due_days?: number };
+    if (!Array.isArray(actions) || actions.length === 0) {
+      return { shouldAdvance: false };
+    }
+
+    // Check for REQUIRED fields (streamlined: title, owner, due_days, support_needed, accountability_mechanism)
+    const completeActions = actions.filter((a: unknown) => {
+      const action = a as { 
+        title?: string; 
+        owner?: string; 
+        due_days?: number;
+        support_needed?: string;
+        accountability_mechanism?: string;
+      };
+      
       const hasTitle = typeof action.title === "string" && action.title.length > 0;
       const hasOwner = typeof action.owner === "string" && action.owner.length > 0;
       const hasDueDate = typeof action.due_days === "number" && action.due_days > 0;
-      const isOngoing = action.due_days === undefined; // Ongoing commitment
+      const hasSupport = typeof action.support_needed === "string" && action.support_needed.length > 0;
+      const hasAccountability = typeof action.accountability_mechanism === "string" && action.accountability_mechanism.length > 0;
 
-      return hasTitle && hasOwner && (hasDueDate || isOngoing);
-    });
-
-    // Check for ENHANCED fields (for quality actions)
-    const enhancedCompleteActions = actions.filter((a: unknown) => {
-      const action = a as {
-        title?: string;
-        owner?: string;
-        due_days?: number;
-        firstStep?: string;
-        specificOutcome?: string;
-        accountabilityMechanism?: string;
-        reviewDate?: number;
-        potentialBarriers?: unknown[];
-      };
-
-      // Must have core fields
-      const hasCoreFields =
-        typeof action.title === "string" &&
-        action.title.length > 0 &&
-        typeof action.owner === "string" &&
-        action.owner.length > 0 &&
-        (typeof action.due_days === "number" || action.due_days === undefined);
-
-      // Must have enhanced fields
-      const hasEnhancedFields =
-        typeof action.firstStep === "string" &&
-        action.firstStep.length > 0 &&
-        typeof action.specificOutcome === "string" &&
-        action.specificOutcome.length > 0 &&
-        typeof action.accountabilityMechanism === "string" &&
-        action.accountabilityMechanism.length > 0 &&
-        typeof action.reviewDate === "number" &&
-        Array.isArray(action.potentialBarriers) &&
-        action.potentialBarriers.length > 0;
-
-      return hasCoreFields && hasEnhancedFields;
-    });
-
-    // NEW: Check for success criteria alignment in actions
-    const successCriteriaAlignedActions = actions.filter((a: unknown) => {
-      const action = a as {
-        title?: string;
-        specificOutcome?: string;
-        firstStep?: string;
-      };
-
-      // Check if action title, outcome, or first step references success criteria
-      const titleReferencesSuccess = 
-        typeof action.title === "string" && 
-        (action.title.toLowerCase().includes("success") || 
-         action.title.toLowerCase().includes("goal") ||
-         action.title.toLowerCase().includes("achieve"));
-      
-      const outcomeReferencesSuccess = 
-        typeof action.specificOutcome === "string" && 
-        (action.specificOutcome.toLowerCase().includes("success") || 
-         action.specificOutcome.toLowerCase().includes("goal") ||
-         action.specificOutcome.toLowerCase().includes("achieve"));
-      
-      const firstStepReferencesSuccess = 
-        typeof action.firstStep === "string" && 
-        (action.firstStep.toLowerCase().includes("success") || 
-         action.firstStep.toLowerCase().includes("goal") ||
-         action.firstStep.toLowerCase().includes("achieve"));
-
-      return titleReferencesSuccess || outcomeReferencesSuccess || firstStepReferencesSuccess;
+      return hasTitle && hasOwner && hasDueDate && hasSupport && hasAccountability;
     });
 
     // Progressive relaxation based on skip count and loop detection
     if (loopDetected) {
-      // System stuck: Just need 1 action with core fields
-      return { shouldAdvance: coreCompleteActions.length >= 1 };
+      // System stuck: Just need 1 action with basic fields (title + owner + due_days)
+      const basicActions = actions.filter((a: unknown) => {
+        const action = a as { title?: string; owner?: string; due_days?: number };
+        return typeof action.title === "string" && action.title.length > 0 &&
+               typeof action.owner === "string" && action.owner.length > 0 &&
+               typeof action.due_days === "number" && action.due_days > 0;
+      });
+      return { shouldAdvance: basicActions.length >= 1 };
     } else if (skipCount >= 2) {
-      // User exhausted skips: Just need ANY action
-      return { shouldAdvance: actions.length >= 1 };
+      // User exhausted skips: Need 1 action with basic fields
+      const basicActions = actions.filter((a: unknown) => {
+        const action = a as { title?: string; owner?: string; due_days?: number };
+        return typeof action.title === "string" && action.title.length > 0 &&
+               typeof action.owner === "string" && action.owner.length > 0 &&
+               typeof action.due_days === "number" && action.due_days > 0;
+      });
+      return { shouldAdvance: basicActions.length >= 1 };
     } else if (skipCount === 1) {
-      // User used one skip: Need 1 action with core fields
-      return { shouldAdvance: coreCompleteActions.length >= 1 };
+      // User used one skip: Need actions matching number of chosen options (without support/accountability)
+      const basicActions = actions.filter((a: unknown) => {
+        const action = a as { title?: string; owner?: string; due_days?: number };
+        return typeof action.title === "string" && action.title.length > 0 &&
+               typeof action.owner === "string" && action.owner.length > 0 &&
+               typeof action.due_days === "number" && action.due_days > 0;
+      });
+      return { shouldAdvance: basicActions.length >= chosenOptions.length };
     } else {
-      // DEFAULT (no skips): Need 2+ actions with ALL enhanced fields
-      // ENHANCED: Also require at least 1 action with success criteria alignment
-      const hasMinimumActions = enhancedCompleteActions.length >= 2;
-      const hasSuccessCriteriaAlignment = successCriteriaAlignedActions.length >= 1;
-      
+      // DEFAULT (no skips): Need complete actions matching number of chosen options
+      // Each action must have: title, owner, due_days, support_needed, accountability_mechanism
       return { 
-        shouldAdvance: hasMinimumActions && hasSuccessCriteriaAlignment 
+        shouldAdvance: completeActions.length >= chosenOptions.length
       };
     }
   }

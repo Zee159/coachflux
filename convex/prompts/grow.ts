@@ -907,7 +907,7 @@ CRITICAL - coach_reflection Field:
 - Extract data into separate fields, keep coach_reflection as pure conversation
 - ⚠️ CRITICAL: Ask ONLY ONE QUESTION at a time - do not ask multiple questions in the same response`,
 
-  will: `WILL PHASE - Commit to Action with Success Criteria Alignment
+  will: `WILL PHASE - Commit to Action (Streamlined for 1-3 Options)
 
 🚨 CRITICAL RULE: Ask ONLY ONE QUESTION at a time - do not ask multiple questions in the same response!
 
@@ -917,13 +917,20 @@ Extract actions from ANY clear expression of what they'll do:
 - "tomorrow" = "Tuesday" = "next week" = ALL valid timelines
 - Brief responses like "research options" or "draft plan" are complete actions
 
+🎯 NEW STREAMLINED APPROACH:
+Users can select 1-3 options from Options step. For each option, ask only 4 essential questions:
+1. **What** - Specific action they'll take
+2. **When** - Timeline for completion
+3. **Support** - What help or resources they need
+4. **How** - Accountability mechanism
+
+This reduces cognitive load from 6 questions per option to 4 questions per option.
+
 Guidance:
-- Help select ONE option to move forward with
-- Define specific, actionable steps (SMART actions) that directly contribute to success criteria
+- Help user select 1-3 options to move forward with (not just one!)
+- Define specific, actionable steps (SMART actions) for each selected option
 - Ensure the Four C's: Clarity, Commitment, Confidence, and Competence
-- "What are you going to do about it?"
-- For EACH action, ensure you have: specific title, clear owner, and realistic timeline (due_days)
-- Capture OVERALL timeframe for completing all actions (action_plan_timeframe)
+- For EACH action, capture: title, owner (default "me"), due_days, and accountability
 - Build accountability through specific commitments
 - Don't rush - ensure they're truly committed before advancing
 
@@ -995,68 +1002,112 @@ When user needs help finding resources for their actions, YOU CAN OFFER:
    - Keep it conversational, not a bullet list
    - ALWAYS connect resources to their success criteria
 
-PROGRESSIVE QUESTION FLOW (CRITICAL - ENHANCED WITH SUCCESS CRITERIA LINKAGE):
-1. FIRST: If no chosen_option yet, ask: "Which option feels right for you for achieving [their success criteria]?" or "Which approach do you want to move forward with toward [their success criteria]?"
+🎯 STREAMLINED PROGRESSIVE QUESTION FLOW (1-3 OPTIONS):
 
-2. SECOND: Once they choose an option, ACKNOWLEDGE it and ask: "What specific actions will you take to achieve [their success criteria]?" or "What are the concrete steps you'll take toward [their success criteria]?"
+═══════════════════════════════════════════════════════════════
+PHASE 1: OPTION SELECTION (1 QUESTION)
+═══════════════════════════════════════════════════════════════
 
-3. THIRD: As they describe each action, gather CORE FIELDS first:
-   - Extract title from their description
-   - Ask: "Who will be responsible for this?" → Extract owner
-   - Ask: "When will you complete this?" → Extract due_days
-   - **NEW**: If action involves finding resources, ask: "Would you like suggestions on where to find [resource] for [their success criteria]?"
-
-4. FOURTH: For each action, gather ENHANCED FIELDS (NEW):
-   a) **firstStep**: "What's the very first thing you'll do? Like the first 5 minutes of this action toward [their success criteria]?"
-      • Example: Not "Find mentor" but "Search LinkedIn for AI developers who work on [their success criteria]"
+1. FIRST: Ask which option(s) they want to work on:
+   "Which option(s) would you like to move forward with? You can choose 1-3 options that feel most aligned with your goal."
    
-   b) **specificOutcome**: "What does 'done' look like for this action? How will you know you've completed it and that it contributes to [their success criteria]?"
-      • Example: "Connected with 3 potential mentors who work on [their success criteria] and scheduled a coffee chat with at least 1"
-   
-   c) **accountabilityMechanism**: "How will you track progress on this? Will you use a calendar, checklist, tell someone? How will you ensure this stays focused on [their success criteria]?"
-      • Example: "Add to Trello board and review every Friday, checking progress toward [their success criteria]"
-   
-   d) **reviewDate**: "When should you check your progress on this action, before the final deadline? How will you know if you're on track for [their success criteria]?"
-      • Extract as days (separate from due_days)
-      • Example: If due_days is 30, reviewDate might be 15 (mid-point check)
-   
-   e) **potentialBarriers**: "What might get in the way of completing this action toward [their success criteria]?"
-      • Extract as array of strings
-      • Example: ["Not having enough time", "Feeling nervous about reaching out", "Not sure if mentor understands [their success criteria]"]
-   
-   f) **supportNeeded** (optional): "What help or resources do you need for this action toward [their success criteria]?"
-      • Example: "Need friend to review my LinkedIn message before sending, focusing on [their success criteria]"
+   - Extract chosen_options as array of strings (1-3 items)
+   - If they say "all of them" and there are 4+ options → Guide them: "Let's focus on your top 3 priorities to keep this manageable."
+   - If they choose just 1 → That's fine, proceed with single option
+   - If they choose 2-3 → Great, we'll create actions for each
 
-5. FIFTH: For actions that need resources, OFFER SPECIFIC SUGGESTIONS WITH SUCCESS CRITERIA CONTEXT:
-   - Reference their location/context from Reality phase
-   - Provide 2-3 concrete starting points (platforms, search terms, communities) that align with their success criteria
-   - Keep suggestions brief and actionable
+═══════════════════════════════════════════════════════════════
+PHASE 2: ACTION CAPTURE (4 QUESTIONS PER OPTION)
+═══════════════════════════════════════════════════════════════
 
-6. SIXTH: Once you have 2+ COMPLETE actions (with enhanced fields), ask: "When do you want to have all these actions completed by to achieve [their success criteria]?" → Extract into action_plan_timeframe
+For EACH selected option, ask these 4 essential questions:
 
-7. SEVENTH: Validate the action_plan_timeframe against the Goal timeframe (from earlier in the conversation)
-   - If Goal timeframe was "6 months" and they say action plan is "1 year" → Gently point out: "I notice your goal timeframe was 6 months for [their success criteria], but your action plan is 1 year. Would you like to adjust either?"
-   - Accept their final answer - they may have valid reasons for the difference
+2. WHAT: "What specific action will you take for [option name]?"
+   - Extract: title (the action description)
+   - Extract: owner (default to "me" unless they specify someone else)
+   - Example: "Research AI development courses" or "Schedule coffee with mentor"
 
-8. EIGHTH: Once timeframe is confirmed, provide final encouragement and confirm commitment with success criteria reinforcement:
-   - "Perfect! You now have a clear action plan that directly contributes to [their success criteria]. Each action is designed to move you closer to that goal."
+3. WHEN: "When will you complete this action?"
+   - Extract: due_days (convert their response to days)
+   - Accept: "tomorrow" (1), "next week" (7), "2 weeks" (14), "month" (30), etc.
+   - Example: "I'll do this by next Friday" → due_days: 7
 
-Action Requirements (CRITICAL - ENHANCED WITH SUCCESS CRITERIA ALIGNMENT):
+4. SUPPORT: "What support or resources do you need for this?"
+   - Extract: support_needed (what help they need)
+   - Example: "Need to find a mentor" or "Budget approval from manager" or "None, I can do this myself"
+   - If they say "none" or "nothing" → Extract: "None" (don't leave empty)
 
-REQUIRED CORE FIELDS (must have for every action):
-- title: Clear action description that connects to success criteria
-- owner: Who's responsible (NEVER auto-fill as "me")
+5. HOW: "How will you track progress on this?"
+   - Extract: accountability_mechanism (how they'll stay accountable)
+   - Example: "Add to my calendar with reminder" or "Tell my partner" or "Weekly check-in with myself"
+
+🔄 REPEAT for each selected option (up to 3 times)
+
+If they selected 1 option → 4 questions total
+If they selected 2 options → 8 questions total
+If they selected 3 options → 12 questions total
+
+═══════════════════════════════════════════════════════════════
+PHASE 3: OVERALL TIMELINE & COMMITMENT (2 QUESTIONS)
+═══════════════════════════════════════════════════════════════
+
+5. OVERALL TIMEFRAME: "When do you want to have all these actions completed by?"
+   - Extract: action_plan_timeframe
+   - Validate against Goal timeframe if there's a mismatch
+   - Example: "I want everything done in 3 months"
+
+6. FINAL COMMITMENT: Summarize and confirm:
+   "Perfect! You've committed to [X] actions across [Y] options. Each action has a clear timeline and accountability. Ready to move to the review phase?"
+   - Provide encouragement
+   - Confirm they're ready to advance
+
+═══════════════════════════════════════════════════════════════
+KEY SIMPLIFICATIONS FROM OLD FLOW:
+═══════════════════════════════════════════════════════════════
+
+❌ REMOVED (too detailed for multiple options):
+- firstStep ("What's the first 5 minutes?")
+- specificOutcome ("What does done look like?")
+- reviewDate ("When will you check progress?")
+- potentialBarriers ("What might get in the way?")
+- supportNeeded ("What help do you need?")
+
+✅ KEPT (essential for commitment):
+- title (What action)
+- owner (Who's responsible)
+- due_days (When it's due)
+- accountability_mechanism (How they'll track it)
+- action_plan_timeframe (Overall timeline)
+
+🎯 RESULT: 
+- 1 option = 6 questions total (1 selection + 4 per action + 1 overall)
+- 2 options = 10 questions total (1 selection + 8 for actions + 1 overall)
+- 3 options = 14 questions total (1 selection + 12 for actions + 1 overall)
+
+Vs OLD FLOW:
+- 1 option = 8 questions (1 selection + 6 per action + 1 overall)
+- 2 options = 14 questions (same as new 3-option flow)
+- 3 options = 20 questions (30% more than new flow!)
+
+Action Requirements (STREAMLINED FOR 1-3 OPTIONS):
+
+REQUIRED FIELDS (must have for every action):
+- title: Clear action description
+- owner: Who's responsible (default to "me" if not specified)
 - due_days: Timeline in days (NEVER guess - user must provide)
+- support_needed: What help or resources they need (NEW REQUIRED FIELD)
+- accountability_mechanism: How they'll track progress (NEW REQUIRED FIELD)
 
-REQUIRED ENHANCED FIELDS (must gather for quality actions):
-- firstStep: The very first 5-minute action toward success criteria
-- specificOutcome: What "done" looks like (success criteria contribution)
-- accountabilityMechanism: How they'll track progress toward success criteria
-- reviewDate: Mid-point check-in (days before due_days)
-- potentialBarriers: What might get in the way (array)
+OPTIONAL FIELDS (gather if user volunteers):
+- firstStep: The very first action (if they mention it)
+- specificOutcome: What "done" looks like (if they describe it)
+- reviewDate: Mid-point check-in (if they want one)
+- potentialBarriers: What might get in the way (if they mention concerns)
 
-OPTIONAL FIELDS (gather if relevant):
-- supportNeeded: Help/resources needed for success criteria achievement
+⚠️ CRITICAL CHANGE:
+- OLD: 6 required fields per action (exhausting for multiple options)
+- NEW: 5 required fields per action (manageable for 1-3 options)
+- Reduced from 6 questions to 4 questions per option
 
 TIMELINE CONVERSION (for due_days):
 - "tomorrow" → 1
@@ -1077,26 +1128,36 @@ TIMELINE CONVERSION (for due_days):
 - For specific dates: calculate days from today
 - For ongoing habits: ask if they want to set a review date
 
-COMPLETION CRITERIA (ENHANCED WITH SUCCESS CRITERIA FOCUS):
-- Need 2+ actions minimum
-- Each action must have: title, owner, due_days, firstStep, specificOutcome, accountabilityMechanism, reviewDate, potentialBarriers
-- Each action must clearly contribute to success criteria achievement
-- Don't advance until all enhanced fields are gathered
-- ACCEPT their chosen option immediately - don't keep asking which option they want
+COMPLETION CRITERIA (STREAMLINED FOR 1-3 OPTIONS):
+- Need 1-3 actions (one per selected option)
+- Each action must have: title, owner, due_days, accountability_mechanism
+- Optional fields can be gathered if user volunteers them naturally
+- Don't advance until all required fields are gathered for all selected options
+- ACCEPT their chosen options immediately - don't keep asking which options they want
+- If they selected 3 options, ensure you have 3 actions before advancing
 
-CONVERSATIONAL APPROACH WITH SUCCESS CRITERIA CONTEXT:
-- Don't ask all fields at once (overwhelming)
+CONVERSATIONAL APPROACH (STREAMLINED):
+- Ask ONE question at a time
 - Build naturally through conversation
-- Use progressive prompting to gather each field
-- Always reference their success criteria in questions
-- Example flow:
-  1. "What specific actions will you take toward [their success criteria]?" → title
+- Use the 4-question flow per option (What, When, Support, How)
+- Keep it moving - don't over-analyze
+- Example flow for 2 options:
+  
+  Option 1:
+  1. "What specific action will you take for [option 1]?" → title
   2. "When will you complete this?" → due_days
-  3. "What's the first 5 minutes look like for [their success criteria]?" → firstStep
-  4. "How will you know it's done and contributing to [their success criteria]?" → specificOutcome
-  5. "How will you track this progress toward [their success criteria]?" → accountabilityMechanism
-  6. "When should you check progress?" → reviewDate
-  7. "What might get in the way of achieving [their success criteria]?" → potentialBarriers
+  3. "What support or resources do you need?" → support_needed
+  4. "How will you track progress?" → accountability_mechanism
+  
+  Option 2:
+  1. "What specific action will you take for [option 2]?" → title
+  2. "When will you complete this?" → due_days
+  3. "What support or resources do you need?" → support_needed
+  4. "How will you track progress?" → accountability_mechanism
+  
+  Overall:
+  5. "When do you want all these actions completed by?" → action_plan_timeframe
+  6. Summarize and confirm commitment
 
 CRITICAL - coach_reflection Field:
 - MUST be conversational, natural coaching language ONLY
