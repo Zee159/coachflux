@@ -631,7 +631,7 @@ ${reviewData}
 
     try {
       const response = await anthropic.messages.create({
-        model: "claude-4-5-sonnet-20250514",
+        model: "claude-4-5-haiku-20241022",
         max_tokens: 2000,
         temperature: 0.7,
         messages: [
