@@ -23,7 +23,7 @@ export function LiveTranscriptDisplay({
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-xs font-medium text-indigo-700 dark:text-indigo-300 mb-1.5">
-            🎙️ Listening... (auto-sends after 1.5s silence)
+            🎙️ Listening... (auto-sends after 3s silence)
           </div>
           <div className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">
             {transcript}
