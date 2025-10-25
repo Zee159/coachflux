@@ -130,7 +130,7 @@ export class GROWCoach implements FrameworkCoach {
 
   /**
    * Options step completion logic
-   * REQUIREMENTS: 3+ options and 2+ explored (with pros/cons) for quality decision-making
+   * REQUIREMENTS: 2+ options and 1+ explored (with pros/cons) for quality decision-making
    * NOTE: Success criteria alignment is encouraged through conversational prompts, not validated structurally
    */
   private checkOptionsCompletion(
@@ -156,19 +156,19 @@ export class GROWCoach implements FrameworkCoach {
 
     // Progressive relaxation based on skip count and loop detection
     if (loopDetected) {
-      // System stuck: require 2 options, 1 explored
-      return { shouldAdvance: options.length >= 2 && exploredOptions.length >= 1 };
+      // System stuck: require 1 option, 1 explored
+      return { shouldAdvance: options.length >= 1 && exploredOptions.length >= 1 };
     } else if (skipCount >= 2) {
       // User exhausted skips: require 2 options (exploration optional)
       return { shouldAdvance: options.length >= 2 }; 
     } else if (skipCount === 1) {
-      // User used one skip: require 3 options (exploration optional)
-      return { shouldAdvance: options.length >= 3 }; 
+      // User used one skip: require 2 options, 1 explored
+      return { shouldAdvance: options.length >= 2 && exploredOptions.length >= 1 }; 
     } else {
-      // DEFAULT (no skips): Require 3+ options with 2+ explored for quality decision-making
-      // Success criteria alignment is handled conversationally - no structural validation needed
-      const hasMinimumOptions = options.length >= 3;
-      const hasExploredOptions = exploredOptions.length >= 2;
+      // DEFAULT (no skips): Require 2+ options with 1+ explored for quality decision-making
+      // Lowered from 3/2 to reduce user frustration and align with realistic conversation flow
+      const hasMinimumOptions = options.length >= 2;
+      const hasExploredOptions = exploredOptions.length >= 1;
       
       // Simple and clear: good options + exploration = ready to advance
       return { 
