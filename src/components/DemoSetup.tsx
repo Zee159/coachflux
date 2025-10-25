@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
 import { FeedbackWidget } from "./FeedbackWidget";
 
@@ -125,6 +125,12 @@ export function DemoSetup() {
             >
               How It Works
             </button>
+            <Link 
+              to="/community"
+              className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 font-medium transition-colors"
+            >
+              Community
+            </Link>
             <ThemeToggle />
           </div>
         </div>
