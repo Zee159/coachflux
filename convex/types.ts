@@ -44,18 +44,21 @@ export interface GrowOption {
 
 /**
  * Enhanced Action type for WILL step
- * Includes granular breakdown and accountability
+ * Streamlined for 1-3 options with required accountability
  */
 export interface GrowAction {
+  // REQUIRED FIELDS (4-question flow)
   title: string;                           // Action description
   owner: string;                           // Who's responsible
   due_days: number;                        // Days until due
+  support_needed: string;                  // Help/resources needed (REQUIRED)
+  accountability_mechanism: string;        // How to track progress (REQUIRED)
+  
+  // OPTIONAL FIELDS (gather if user volunteers)
   firstStep?: string;                      // The very first 5-min action
   specificOutcome?: string;                // What "done" looks like
-  accountabilityMechanism?: string;        // How to track progress
   reviewDate?: number;                     // When to check progress (days)
   potentialBarriers?: string[];            // What might get in the way
-  supportNeeded?: string;                  // Help/resources needed
 }
 
 /**

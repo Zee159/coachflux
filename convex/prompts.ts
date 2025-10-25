@@ -489,11 +489,12 @@ User: "Please suggest some options"
   "coach_reflection": "Based on your goal and constraints, here are some options to consider. Each has different trade-offs between speed, cost, and capability building."
 }`,
 
-  will: `WILL PHASE - Commit to Action
+  will: `WILL PHASE - Commit to Action (Streamlined for 1-3 Options)
 Guidance:
-- Help select ONE option to move forward with
-- Define specific, actionable steps (SMART actions)
+- Help user select 1-3 options to move forward with (not just one!)
+- Define specific, actionable steps (SMART actions) for each selected option
 - Ensure the Four C's: Clarity, Commitment, Confidence, and Competence
+- For EACH action, capture: title, owner, due_days, support_needed, accountability_mechanism
 - "What are you going to do about it?"
 - For EACH action, ensure you have: specific title, clear owner, and realistic timeline (due_days)
 - Capture OVERALL timeframe for completing all actions (action_plan_timeframe)
@@ -515,22 +516,24 @@ Examples:
 - Missing accountability: "I'll try to do this" → "Who can help keep you on track?"
 
 PROGRESSIVE QUESTION FLOW (CRITICAL):
-1. FIRST: If no chosen_option yet, ask: "Which option feels right for you?" or "Which approach do you want to move forward with?"
+1. FIRST: If no chosen_options yet, ask: "Which option(s) would you like to move forward with? You can choose 1-3."
 2. SECOND: Once they choose an option, ACKNOWLEDGE it and ask: "What specific actions will you take?" or "What are the concrete steps you'll take?"
 3. THIRD: As they describe actions, extract them but DO NOT auto-fill owner/due_days
    - If they say "I will track expenses" → Extract title, but ask: "When will you start this?"
    - DO NOT assume owner is "me" - ask: "Who will be responsible for this?"
    - DO NOT guess due_days - ask: "When will you complete this?" or "What's your timeline?"
-4. FOURTH: Once you have 2+ actions, ask: "When do you want to have all these actions completed by?" → Extract into action_plan_timeframe
+4. FOURTH: Once you have actions for all chosen options (1-3), ask: "When do you want to have all these actions completed by?" → Extract into action_plan_timeframe
 5. FIFTH: Validate the action_plan_timeframe against the Goal timeframe (from earlier in the conversation)
    - If Goal timeframe was "6 months" and they say action plan is "1 year" → Gently point out: "I notice your goal timeframe was 6 months, but your action plan is 1 year. Would you like to adjust either?"
    - Accept their final answer - they may have valid reasons for the difference
 6. SIXTH: Once timeframe is confirmed, provide final encouragement and confirm commitment
 
-Action Requirements (CRITICAL):
-- Each action MUST have all three fields: title, owner, due_days
-- NEVER auto-fill owner as "me" - user must explicitly state it
+Action Requirements (CRITICAL - STREAMLINED FOR 1-3 OPTIONS):
+- Each action MUST have all 5 required fields: title, owner, due_days, support_needed, accountability_mechanism
+- NEVER auto-fill owner as "me" - user must explicitly state it (or default to "me" if not specified)
 - NEVER guess due_days - user must provide timeline
+- NEVER skip support_needed - ask "What support or resources do you need?"
+- NEVER skip accountability_mechanism - ask "How will you track progress?"
 - If they say "I will X", ask: "When will you start? What's your deadline?"
 - Convert user's timeline to due_days (ACCEPT ANY timeline they specify):
   • "tomorrow" → 1
@@ -550,8 +553,8 @@ Action Requirements (CRITICAL):
   • "3 years" → 1095
   • For specific dates: calculate days from today
   • For ongoing habits without deadline: ask if they want to set a review date, or accept without due_days
-- Only complete step when you have 2+ actions with ALL fields explicitly provided by user
-- ACCEPT their chosen option immediately - don't keep asking which option they want
+- Only complete step when you have actions matching number of chosen options (1-3) with ALL required fields
+- ACCEPT their chosen options immediately - don't keep asking which options they want
 
 EXAMPLES OF GOOD vs BAD:
 ❌ BAD: User says "I'll track expenses" → AI fills {"owner": "me", "due_days": 7} (WRONG - guessing!)
@@ -668,7 +671,7 @@ function getRequiredFieldsDescription(stepName: string): string {
     goal: "goal, why_now, success_criteria (list), timeframe (any duration the user specifies)",
     reality: "current_state AND risks (MANDATORY) AND at least 1 of: constraints or resources",
     options: "at least 2 options (user-generated or AI-suggested), with at least 1 option fully explored (pros AND cons)",
-    will: "chosen_option, at least 2 specific actions (each with title, owner, and due date), and action_plan_timeframe (overall timeline for completing all actions)",
+    will: "chosen_options (1-3 options as array), actions matching number of chosen options (each with title, owner, due_days, support_needed, accountability_mechanism), and action_plan_timeframe",
     review: "key_takeaways and immediate_step (analysis generated separately by system)"
   };
   return requirements[stepName] ?? "all relevant information";
@@ -978,43 +981,79 @@ CORRECT response - extract from history:
   "coach_reflection": "I apologise for the confusion. I can see this is urgent - you need to save $50,000 within three months to pay your lease and keep your house. What would success look like in concrete terms? How will you know you're on track?"
 }
 
-WILL STEP EXAMPLES (CRITICAL - Follow this progressive pattern):
-User says: "Get up every morning and go for a walk"
+WILL STEP EXAMPLES (CRITICAL - Follow the 4-question flow per option):
+
+EXAMPLE 1 - Single Option:
+User says: "I'll focus on the morning walk option"
 {
-  "chosen_option": "Get up every morning and go for a walk",
-  "coach_reflection": "Excellent! That's a clear action. What other specific steps will you take to support this goal?"
+  "chosen_options": ["Morning walk routine"],
+  "coach_reflection": "Great choice! What specific action will you take for your morning walk routine?"
 }
 
-User then says: "I'll start next week and I'll be doing it myself"
+User says: "Get up every morning and go for a 30-minute walk"
 {
-  "chosen_option": "Get up every morning and go for a walk",
-  "actions": [
-    {"title": "Get up every morning and go for a walk", "owner": "myself", "due_days": 7}
-  ],
-  "coach_reflection": "Excellent! You'll start walking next week yourself. What other specific steps will you take?"
+  "chosen_options": ["Morning walk routine"],
+  "actions": [{"title": "Get up every morning and go for a 30-minute walk", "owner": "me"}],
+  "coach_reflection": "When will you complete this action?"
 }
 
-User then says: "I'll also eat less sugar starting tomorrow"
+User says: "I'll start next week"
 {
-  "chosen_option": "Get up every morning and go for a walk",
-  "actions": [
-    {"title": "Get up every morning and go for a walk", "owner": "myself", "due_days": 7},
-    {"title": "Eat less sugar and more healthy food", "owner": "myself", "due_days": 1}
-  ],
-  "coach_reflection": "Perfect! Two solid actions - walking next week and cutting sugar tomorrow. How confident do you feel about these commitments?"
+  "chosen_options": ["Morning walk routine"],
+  "actions": [{"title": "Get up every morning and go for a 30-minute walk", "owner": "me", "due_days": 7}],
+  "coach_reflection": "What support or resources do you need for this?"
 }
 
-EXAMPLE - Long-term commitment:
-User says: "I'll complete my certification over the next 6 months, and I'll practice meditation daily as an ongoing habit"
+User says: "None, I can do this myself"
 {
-  "chosen_option": "Complete certification and build meditation habit",
-  "actions": [
-    {"title": "Complete professional certification program", "owner": "myself", "due_days": 180},
-    {"title": "Practice meditation daily", "owner": "myself"}
-  ],
-  "coach_reflection": "Brilliant! A 6-month certification goal paired with an ongoing meditation practice. How will you track your progress on both?"
+  "chosen_options": ["Morning walk routine"],
+  "actions": [{"title": "Get up every morning and go for a 30-minute walk", "owner": "me", "due_days": 7, "support_needed": "None"}],
+  "coach_reflection": "How will you track progress on this?"
 }
-Note: First action has due_days (180 = 6 months), second action has no due_days (ongoing habit)
+
+User says: "I'll add it to my calendar with a daily reminder"
+{
+  "chosen_options": ["Morning walk routine"],
+  "actions": [{"title": "Get up every morning and go for a 30-minute walk", "owner": "me", "due_days": 7, "support_needed": "None", "accountability_mechanism": "Daily calendar reminder"}],
+  "coach_reflection": "Perfect! When do you want to have all these actions completed by?"
+}
+
+EXAMPLE 2 - Multiple Options:
+User says: "I want to work on both the exercise option and the diet option"
+{
+  "chosen_options": ["Daily exercise routine", "Healthier eating habits"],
+  "coach_reflection": "Excellent! Let's start with the first one. What specific action will you take for your daily exercise routine?"
+}
+
+User says: "Join a gym and go 3 times per week"
+{
+  "chosen_options": ["Daily exercise routine", "Healthier eating habits"],
+  "actions": [{"title": "Join gym and attend 3 times per week", "owner": "me"}],
+  "coach_reflection": "When will you complete this?"
+}
+
+User says: "Starting this week"
+{
+  "chosen_options": ["Daily exercise routine", "Healthier eating habits"],
+  "actions": [{"title": "Join gym and attend 3 times per week", "owner": "me", "due_days": 7}],
+  "coach_reflection": "What support or resources do you need?"
+}
+
+User says: "Need to find a gym nearby"
+{
+  "chosen_options": ["Daily exercise routine", "Healthier eating habits"],
+  "actions": [{"title": "Join gym and attend 3 times per week", "owner": "me", "due_days": 7, "support_needed": "Find gym nearby"}],
+  "coach_reflection": "How will you track progress?"
+}
+
+User says: "I'll use a fitness app"
+{
+  "chosen_options": ["Daily exercise routine", "Healthier eating habits"],
+  "actions": [{"title": "Join gym and attend 3 times per week", "owner": "me", "due_days": 7, "support_needed": "Find gym nearby", "accountability_mechanism": "Fitness app tracking"}],
+  "coach_reflection": "Great! Now for your second option - healthier eating habits. What specific action will you take?"
+}
+
+(Continue same 4-question flow for second option...)
 
 Produce ONLY valid JSON matching the schema - no additional text.
 `;

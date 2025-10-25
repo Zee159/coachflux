@@ -78,18 +78,19 @@ function extractOptionsInfo(reflections: Array<{ step: string; payload: Reflecti
  * Extract action plan from will step
  */
 function extractActionPlan(reflections: Array<{ step: string; payload: ReflectionPayload }>): {
-  chosen_option?: string;
+  chosen_options?: string[];
   actions?: Array<{ title: string; owner?: string; due_days?: number }>;
   action_plan_timeframe?: string;
 } {
   const willReflection = reflections.find(r => r.step === 'will');
-  if (willReflection === undefined || willReflection === null) {
+  if (willReflection === undefined) {
     return {};
   }
   
   const actions = willReflection.payload['actions'];
+  const chosenOptions = willReflection.payload['chosen_options'];
   return {
-    chosen_option: getString(willReflection.payload, 'chosen_option'),
+    chosen_options: Array.isArray(chosenOptions) ? chosenOptions as string[] : undefined,
     actions: Array.isArray(actions) ? actions as Array<{ title: string; owner?: string; due_days?: number }> : undefined,
     action_plan_timeframe: getString(willReflection.payload, 'action_plan_timeframe')
   };
@@ -204,8 +205,11 @@ export function generateGrowReport(data: SessionReportData): FormattedReport {
   }
   
   // Action Plan Section
-  if (actionPlan.chosen_option !== undefined) {
-    const actionParts: string[] = [`🎬 CHOSEN PATH:\n${actionPlan.chosen_option}`];
+  if (actionPlan.chosen_options !== undefined && actionPlan.chosen_options.length > 0) {
+    const chosenPath = actionPlan.chosen_options.length === 1 
+      ? actionPlan.chosen_options[0]
+      : actionPlan.chosen_options.map((opt, idx) => `${idx + 1}. ${opt}`).join('\n');
+    const actionParts: string[] = [`🎬 CHOSEN PATH${actionPlan.chosen_options.length > 1 ? 'S' : ''}:\n${chosenPath}`];
     
     if (actionPlan.actions !== undefined && actionPlan.actions.length > 0) {
       actionParts.push(`\n\n📋 ACTION PLAN:`);

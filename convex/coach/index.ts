@@ -126,11 +126,16 @@ const getFrameworkHardcoded = (): Framework => {
       },
       {
         name: "will",
-        system_objective: "Select one option and define SMART actions with overall timeline.",
+        system_objective: "Select 1-3 options and define SMART actions with accountability for each.",
         required_fields_schema: {
           type: "object",
           properties: {
-            chosen_option: { type: "string" },
+            chosen_options: { 
+              type: "array", 
+              items: { type: "string" },
+              minItems: 1,
+              maxItems: 3
+            },
             actions: {
               type: "array",
               items: {
@@ -138,12 +143,14 @@ const getFrameworkHardcoded = (): Framework => {
                 properties: {
                   title: { type: "string", minLength: 4, maxLength: 120 },
                   owner: { type: "string" },
-                  due_days: { type: "integer", minimum: 1 }
+                  due_days: { type: "integer", minimum: 1 },
+                  support_needed: { type: "string", minLength: 2, maxLength: 200 },
+                  accountability_mechanism: { type: "string", minLength: 5, maxLength: 200 }
                 },
                 required: ["title"],
-                additionalProperties: false
+                additionalProperties: true  // Allow optional enhanced fields
               },
-              minItems: 0,
+              minItems: 1,
               maxItems: 3
             },
             action_plan_timeframe: { type: "string", minLength: 2, maxLength: 100 },
