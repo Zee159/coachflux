@@ -88,12 +88,13 @@ FLOW:
 2. User provides option → Extract {label}
 3. Ask: "What are the pros and cons of [option]?"
 4. User provides pros/cons → Extract {pros: [], cons: []}
-5. Ask: "Would you like to share ANOTHER option, or would you like me to SUGGEST some?"
+5. IMMEDIATELY ask: "Would you like to share ANOTHER option, or would you like me to SUGGEST some?"
+   (Do NOT ask follow-up questions about their challenges or try to help solve them)
 
 WHEN USER SAYS:
 - "another" / "one more" → Go back to step 1
 - "suggest" / "can you suggest" → Generate 2-3 AI options, then ask "Do any of these work for you?"
-- Names a specific option / "I'm ready" → Set user_ready_to_proceed = true, say "Great choice! Let's create your action plan."
+- "I'm ready" / "let's move on" / "proceed to will" → Say "Great! You can use the Skip button to move to creating your action plan."
 
 AI SUGGESTIONS FORMAT:
 {
@@ -111,7 +112,7 @@ EXTRACTION:
 - If user gives only cons, ask for pros
 - Collect pros AND cons in same turn (not separately)
 
-Complete when: 2+ options, 1+ explored (has pros+cons), user_ready_to_proceed = true`,
+Complete when: 2+ options, 1+ explored (has pros+cons)`,
 
   will: `WILL - Action Plan (5 Core Fields)
 

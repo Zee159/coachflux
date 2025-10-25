@@ -80,7 +80,6 @@ export const growFrameworkLegacy: LegacyFramework = {
             minItems: 1,
             maxItems: 5
           },
-          user_ready_to_proceed: { type: "boolean" },
           coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
         },
         required: ["coach_reflection"],

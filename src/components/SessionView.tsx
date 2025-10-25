@@ -22,7 +22,12 @@ function formatReflectionDisplay(step: string, payload: Record<string, unknown>)
   
   // Separate coach_reflection from other fields
   const coachReflection = entries.find(([key]) => key === 'coach_reflection');
-  const otherEntries = entries.filter(([key]) => key !== 'coach_reflection');
+  
+  // Filter out internal/debug fields that shouldn't be shown to users
+  const internalFields = ['user_ready_to_proceed', 'options_state', 'ai_suggestion_count'];
+  const otherEntries = entries.filter(([key]) => 
+    key !== 'coach_reflection' && !internalFields.includes(key)
+  );
   
   // Extract confidence tracking for COMPASS framework
   const confidenceTracking = payload['confidence_tracking'] as {

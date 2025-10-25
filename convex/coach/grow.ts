@@ -138,7 +138,6 @@ export class GROWCoach implements FrameworkCoach {
     loopDetected: boolean
   ): StepCompletionResult {
     const options = payload["options"];
-    const userReady = payload["user_ready_to_proceed"];
 
     if (!Array.isArray(options) || options.length === 0) {
       return { shouldAdvance: false };
@@ -154,27 +153,19 @@ export class GROWCoach implements FrameworkCoach {
     const hasExploredOptions = exploredOptions.length >= 1;
     const hasMultipleOptions = options.length >= 2;
 
-    // If user explicitly says they're ready, advance with 1+ explored option
-    if (userReady === true && hasExploredOptions) {
-      return { shouldAdvance: true };
-    }
-
     // Progressive relaxation based on skip count and loop detection
-    let requireMultiple = true; // Default: need 2+ options
-
     if (loopDetected) {
-      requireMultiple = false; // System stuck: 1 explored option is enough
+      // System stuck: 1 explored option is enough
+      return { shouldAdvance: hasExploredOptions };
     } else if (skipCount >= 2) {
-      requireMultiple = false; // User exhausted skips: 1 explored option is enough
+      // User exhausted skips: 1 explored option is enough
+      return { shouldAdvance: hasExploredOptions };
     } else if (skipCount === 1) {
-      requireMultiple = true; // User used one skip: still need 2 options
-    }
-
-    // Apply requirements
-    if (requireMultiple) {
+      // User used one skip: still need 2 options
       return { shouldAdvance: hasMultipleOptions && hasExploredOptions };
     } else {
-      return { shouldAdvance: hasExploredOptions };
+      // DEFAULT (no skips): Need 2+ options with 1+ explored
+      return { shouldAdvance: hasMultipleOptions && hasExploredOptions };
     }
   }
 
