@@ -206,6 +206,16 @@ AI Response: {
 
 CRITICAL RULES BY STEP:
 
+OPTIONS STEP (GROW) - NEVER AUTO-GENERATE CONS:
+- When user provides pros/benefits, DO NOT invent cons/challenges
+- Ask separately: "What are the benefits?" then "What are the challenges?"
+- If user only mentions pros → Extract pros, leave cons as [], ask about challenges
+- If user only mentions cons → Extract cons, leave pros as [], ask about benefits
+- DO NOT infer cons like "depends on availability", "might interrupt", "time constraints" unless user explicitly says them
+- Example:
+  ❌ WRONG: User says "They could help me" → AI adds cons: ["Depends on availability"]
+  ✅ CORRECT: User says "They could help me" → AI extracts pros, leaves cons: [], asks "What challenges do you see?"
+
 MAPPING/PRACTICE/ANCHORING STEPS:
 - When user mentions an action, capture the title ONLY
 - DO NOT auto-fill timeline, resources, or other fields
