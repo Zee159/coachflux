@@ -1,7 +1,7 @@
 /**
  * GROW Framework-Specific Prompts - Optimized Version
  * Contains step guidance, questions, and examples for the GROW model
- * 85% reduction from original for cost efficiency
+ * Balanced for both clarity and efficiency
  */
 
 export const GROW_COACHING_QUESTIONS: Record<string, string[]> = {
@@ -84,22 +84,56 @@ EXTRACT:
 
 Ready when: current_situation + constraints filled`,
 
-  options: `OPTIONS - 2-State Flow
+  options: `OPTIONS - Simplified 2-State Flow
 
-STATE A - Collect:
-Ask: "What's one option?"
-→ Extract label
-→ Ask: "Pros and cons?"
+🚨 CRITICAL RULES:
+1. Ask ONLY ONE QUESTION at a time
+2. Extract ONLY what user explicitly states (never invent data)
+3. Collect pros AND cons together (not separately)
 
-STATE B - Evaluate:
-→ Extract pros[] and cons[]
-→ Ask: "Another option, or want suggestions?"
+STATE A: COLLECT OPTION
+→ Ask: "What's one option you're considering?"
+→ User provides option
+→ Extract: {label: "their option"}
+→ IMMEDIATELY ask: "What are the pros and cons of [their option]?"
 
-AI Suggestions (if requested):
-- Generate 2-3 options with: label, pros[], cons[], feasibilityScore (1-10), effortRequired (low/medium/high)
-- Ground in their Goal + Reality context
+STATE B: EVALUATE & CHOICE
+→ User provides pros and cons (can be in one response)
+→ Extract: {pros: ["explicit pro 1", "explicit pro 2"], cons: ["explicit con 1"]}
+→ Ask: "Would you like to share ANOTHER option, or would you like me to SUGGEST some?"
 
-Ready when: 2+ options, 1+ explored, user_ready_to_proceed = true`,
+USER RESPONSES:
+- "another" / "one more" → Return to STATE A
+- "suggest" / "yes" / "please" → Generate 2-3 AI options
+- "I'm ready" / "move to will" / "proceed" → Set user_ready_to_proceed = true
+
+AI SUGGESTIONS (when user requests):
+Must generate 2-3 complete options with:
+- label: Clear option name
+- pros: 2-3 benefits (array)
+- cons: 2-3 challenges (array)
+- feasibilityScore: 1-10 (based on their constraints)
+- effortRequired: "low" / "medium" / "high"
+- alignmentReason: Why this fits their goal
+
+Ground each option in their Goal + Reality context (constraints, resources, timeframe).
+
+Example: {label: "Hire developer", pros: ["Expert help"], cons: ["Costs money"], feasibilityScore: 7, effortRequired: "medium", alignmentReason: "Addresses your full-stack knowledge gap"}
+
+EXTRACTION RULES:
+❌ NEVER invent pros/cons user didn't say
+❌ NEVER ask "what specific X" - just collect pros/cons
+❌ NEVER collect pros and cons separately
+✅ If user only gives pros → Set cons=[], ask for cons
+✅ If user only gives cons → Set pros=[], ask for pros
+✅ Extract exactly what they said, not paraphrased versions
+
+READINESS CHECK:
+After showing AI suggestions, ask: "Do any of these work for you?"
+- If "yes" → Set user_ready_to_proceed = true
+- If "more" → Generate 3 more options (max 2 rounds)
+
+Complete when: 2+ options, 1+ explored (has pros+cons), user_ready_to_proceed = true`,
 
   will: `WILL - Action Plan (5 Core Fields)
 
