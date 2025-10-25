@@ -22,20 +22,17 @@ export const GROW_COACHING_QUESTIONS: Record<string, string[]> = {
     "Who else is involved or affected?"
   ],
   options: [
-    "What are some ways you could move forward?",
-    "What else could you do?",
-    "Who in your network has faced something similar? What did they do?",
-    "What resources or support do you already have access to?",
-    "What would you do if there were no constraints?",
-    "What are the pros and cons of each option?",
-    "Which option feels most aligned with your goals?"
+    "What's one option you're considering?",
+    "What are the pros and cons of that option?",
+    "Would you like to share another option or get AI suggestions?",
+    "Which option would you like to move forward with?"
   ],
   will: [
-    "What specific actions will you take?",
-    "Who will be responsible for each action?",
-    "When will you complete these actions?",
-    "What support or resources do you need?",
-    "How will you know you've succeeded?"
+    "What action will you take?",
+    "When will you do it?",
+    "Who's responsible?",
+    "How will you track progress?",
+    "What support do you need?"
   ],
   review: [
     "What are the key takeaways from this conversation?",
@@ -103,9 +100,10 @@ STATE B: EVALUATE & CHOICE
 → Ask: "Would you like to share ANOTHER option, or would you like me to SUGGEST some?"
 
 USER RESPONSES:
-- "another" / "one more" → Return to STATE A
-- "suggest" / "yes" / "please" → Generate 2-3 AI options
-- "I'm ready" / "move to will" / "proceed" → Set user_ready_to_proceed = true
+- "another" / "one more" / "explore more" → Return to STATE A (ask "What's one option?")
+- "suggest" / "yes please" / "can you suggest" → Generate 2-3 AI options immediately
+- User names a specific option (e.g., "find a technical co-founder", "hire developer") → Set user_ready_to_proceed = true
+- "I'm ready" / "move to will" / "let's proceed" → Set user_ready_to_proceed = true
 
 AI SUGGESTIONS (when user requests):
 Must generate 2-3 complete options with:
@@ -124,9 +122,11 @@ EXTRACTION RULES:
 ❌ NEVER invent pros/cons user didn't say
 ❌ NEVER ask "what specific X" - just collect pros/cons
 ❌ NEVER collect pros and cons separately
+❌ NEVER ask follow-up questions when user selects an option (e.g., "Would you like to discuss how...")
 ✅ If user only gives pros → Set cons=[], ask for cons
 ✅ If user only gives cons → Set pros=[], ask for pros
 ✅ Extract exactly what they said, not paraphrased versions
+✅ When user selects an option → Set user_ready_to_proceed = true and say "Great choice! Let's create your action plan."
 
 READINESS CHECK:
 After showing AI suggestions, ask: "Do any of these work for you?"
