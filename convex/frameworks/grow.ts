@@ -21,7 +21,7 @@ export const growFrameworkLegacy: LegacyFramework = {
         type: "object",
         properties: {
           user_consent_given: { type: "boolean" },
-          coach_reflection: { type: "string", minLength: 100, maxLength: 500 }
+          coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
         },
         required: ["coach_reflection"],
         additionalProperties: false
@@ -157,7 +157,7 @@ export const growFramework: FrameworkDefinition = {
         type: 'object',
         properties: {
           user_consent_given: { type: 'boolean' },
-          coach_reflection: { type: 'string', minLength: 100, maxLength: 500 }
+          coach_reflection: { type: 'string', minLength: 20, maxLength: 500 }
         },
         required: ['coach_reflection'],
         additionalProperties: false

@@ -419,7 +419,11 @@ export async function generateCoachResponse(
   try {
     payload = JSON.parse(raw) as ReflectionPayload;
   } catch (error) {
-    console.error("Primary JSON parse error:", error);
+    console.error("=== PRIMARY JSON PARSE ERROR ===");
+    console.error("Error:", error);
+    console.error("Raw AI response:", raw);
+    console.error("Step:", step.name);
+    console.error("User input:", userTurn);
     throw error;
   }
   
