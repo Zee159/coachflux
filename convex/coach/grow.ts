@@ -131,6 +131,7 @@ export class GROWCoach implements FrameworkCoach {
   /**
    * Options step completion logic
    * REQUIREMENTS: 2+ options and 1+ explored (with pros/cons) for quality decision-making
+   * CRITICAL: User must explicitly indicate readiness to proceed (prevents auto-advancement after AI suggestions)
    * NOTE: Success criteria alignment is encouraged through conversational prompts, not validated structurally
    */
   private checkOptionsCompletion(
@@ -139,6 +140,7 @@ export class GROWCoach implements FrameworkCoach {
     loopDetected: boolean
   ): StepCompletionResult {
     const options = payload["options"];
+    const userReady = payload["user_ready_to_proceed"];
 
     if (!Array.isArray(options) || options.length === 0) {
       return { shouldAdvance: false };
@@ -154,25 +156,31 @@ export class GROWCoach implements FrameworkCoach {
     // The AI is instructed to reference success criteria in every question
     // No need for structural field validation - trust the conversational flow
 
+    // CRITICAL: Check if user has explicitly indicated readiness to proceed
+    // This prevents auto-advancement after AI generates options
+    const hasMinimumOptions = options.length >= 2;
+    const hasExploredOptions = exploredOptions.length >= 1;
+    const hasBasicRequirements = hasMinimumOptions && hasExploredOptions;
+
     // Progressive relaxation based on skip count and loop detection
     if (loopDetected) {
-      // System stuck: require 1 option, 1 explored
-      return { shouldAdvance: options.length >= 1 && exploredOptions.length >= 1 };
-    } else if (skipCount >= 2) {
-      // User exhausted skips: require 2 options (exploration optional)
-      return { shouldAdvance: options.length >= 2 }; 
-    } else if (skipCount === 1) {
-      // User used one skip: require 2 options, 1 explored
-      return { shouldAdvance: options.length >= 2 && exploredOptions.length >= 1 }; 
-    } else {
-      // DEFAULT (no skips): Require 2+ options with 1+ explored for quality decision-making
-      // Lowered from 3/2 to reduce user frustration and align with realistic conversation flow
-      const hasMinimumOptions = options.length >= 2;
-      const hasExploredOptions = exploredOptions.length >= 1;
-      
-      // Simple and clear: good options + exploration = ready to advance
+      // System stuck: require 1 option, 1 explored, AND user readiness
       return { 
-        shouldAdvance: hasMinimumOptions && hasExploredOptions
+        shouldAdvance: options.length >= 1 && exploredOptions.length >= 1 && userReady === true 
+      };
+    } else if (skipCount >= 2) {
+      // User exhausted skips: require 2 options AND user readiness
+      return { shouldAdvance: options.length >= 2 && userReady === true }; 
+    } else if (skipCount === 1) {
+      // User used one skip: require 2 options, 1 explored, AND user readiness
+      return { 
+        shouldAdvance: options.length >= 2 && exploredOptions.length >= 1 && userReady === true 
+      }; 
+    } else {
+      // DEFAULT (no skips): Require 2+ options with 1+ explored AND user readiness
+      // User must explicitly say they're ready to proceed (e.g., "I'm ready", "move to will", "continue")
+      return { 
+        shouldAdvance: hasBasicRequirements && userReady === true
       };
     }
   }

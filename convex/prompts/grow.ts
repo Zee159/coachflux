@@ -436,6 +436,12 @@ Example:
 - ✅ If user only provided cons, leave pros = [] and ASK for pros
 - ✅ Wait for user to provide the information - DO NOT fill it in yourself!
 
+🚨 CRITICAL RULE #4: Control step advancement with user_ready_to_proceed field!
+- After generating AI suggestions, DO NOT set user_ready_to_proceed
+- After asking "Do any of these work for you?", WAIT for user response
+- ONLY set user_ready_to_proceed = true when user says "yes", "I'm ready", "move to will", "continue", etc.
+- This prevents auto-advancement and allows iterative suggestion rounds
+
 ⚠️ ACCEPT USER RESPONSES INTELLIGENTLY:
 Extract options from ANY clear expression of approaches or strategies:
 - "cut costs" = "reduce spending" = "spend less" = ALL valid options
@@ -564,13 +570,22 @@ Detect phrases: "more", "suggest more", "more options", "more suggestions", "oth
 
 **USER SATISFIED (ready to proceed):**
 Detect phrases: "yes", "these work", "I'm ready", "move to will", "let's proceed", "continue", "next step", "action planning", "I'll choose one"
+→ SET: user_ready_to_proceed = true
 → Respond: "Great! Which option would you like to move forward with?"
 → This will advance to Will phase
 
 **USER NOT SATISFIED (wants to try again):**
 Detect phrases: "no", "none of these", "not quite", "something else", "different approach"
+→ DO NOT SET: user_ready_to_proceed (leave it undefined or false)
 → Ask: "What's missing from these options? What would your ideal solution look like?"
 → Generate 3 new options based on their clarification
+
+🚨 CRITICAL - user_ready_to_proceed FIELD:
+- ONLY set to true when user explicitly says they're ready to proceed
+- DO NOT set after generating AI suggestions - wait for user response
+- If user asks for more options, DO NOT set this field
+- If user says "yes" after seeing options, SET to true
+- This field controls step advancement - use it carefully!
 
 🚨 CRITICAL - GENERATION RULES:
 - FIRST request: Generate exactly 2 options
