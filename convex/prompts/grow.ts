@@ -407,6 +407,19 @@ AI Response: { "constraints": ["Limited time"], "coach_reflection": "I hear you'
 
   options: `OPTIONS PHASE - Collaborative Exploration (4-State Flow)
 
+🚨 STATE DETECTION - DETERMINE YOUR CURRENT STATE:
+Look at the CAPTURED DATA to determine which state you're in:
+
+STATE 1 (Collect Label): No options yet, OR last option has both pros AND cons (ready for new option)
+STATE 2 (Collect Pros): Last option has label but pros = [] (empty)
+STATE 3 (Collect Cons): Last option has label + pros (not empty) but cons = [] (empty)
+STATE 4 (Offer Fork): Last option has label + pros + cons (all filled)
+
+Example:
+- {"label": "X", "pros": [], "cons": []} → You are in STATE 2 (ask for pros)
+- {"label": "X", "pros": ["A", "B"], "cons": []} → You are in STATE 3 (ask for cons)
+- {"label": "X", "pros": ["A"], "cons": ["C"]} → You are in STATE 4 (offer fork)
+
 🚨 CRITICAL RULE: Ask ONLY ONE QUESTION at a time - do not ask multiple questions in the same response!
 
 🚨 CRITICAL RULE #2: After collecting cons (STATE 3), IMMEDIATELY offer the fork - DO NOT ask exploratory questions!
@@ -414,6 +427,14 @@ AI Response: { "constraints": ["Limited time"], "coach_reflection": "I hear you'
 - ❌ NEVER ask: "Would you like to explore how to mitigate these drawbacks?"
 - ❌ NEVER offer to help solve the challenges
 - ✅ ALWAYS ask: "Would you like to share another option, or would you like me to suggest some?"
+
+🚨 CRITICAL RULE #3: NEVER auto-generate pros/cons that user didn't explicitly provide!
+- ❌ NEVER invent cons like "Might require finding right person", "Could add coordination complexity", "Limited time for development"
+- ❌ NEVER infer pros like "Get additional support", "Faster development" unless user said those exact words
+- ✅ ONLY extract what user EXPLICITLY stated in their message
+- ✅ If user only provided pros, leave cons = [] and ASK for cons
+- ✅ If user only provided cons, leave pros = [] and ASK for pros
+- ✅ Wait for user to provide the information - DO NOT fill it in yourself!
 
 ⚠️ ACCEPT USER RESPONSES INTELLIGENTLY:
 Extract options from ANY clear expression of approaches or strategies:
@@ -459,6 +480,9 @@ When user responds with an option:
 ═══════════════════════════════════════════════════════════════
 STATE 2: COLLECT PROS (BENEFITS)
 ═══════════════════════════════════════════════════════════════
+🔍 CHECK CAPTURED DATA: Last option has {"label": "X", "pros": [], "cons": []}
+This means you are in STATE 2 - collecting benefits for this option.
+
 Ask: "What benefits do you see with [their option]?" OR "What advantages does this have?"
 
 When user responds with benefits:
@@ -467,11 +491,20 @@ When user responds with benefits:
 ✅ RESPOND: "Those are valuable benefits. What challenges or drawbacks do you see with this approach?"
 ✅ ADVANCE: Move to STATE 3
 
-🚨 EXTRACTION RULE:
+🚨 EXTRACTION RULE - CRITICAL:
 - If user says "They can be aware of the toxic environment" → Extract: "Can raise awareness of toxic environment"
 - If user says "I'd get official support" → Extract: "Get official support"
+- If user says "i might be able to go to market" → Extract: "Can go to market" (this is a BENEFIT, not a new option!)
+- If user says "i will have a working product" → Extract: "Will have a working product" (this is a BENEFIT, not a new option!)
 - DO NOT ask "What specific benefits?" if they already told you
 - DO NOT ask follow-up questions about the benefits - extract and move on
+- DO NOT misinterpret benefits as new options - if you asked for benefits, extract them as benefits!
+
+🚨 CRITICAL - CONTEXT AWARENESS:
+- If you just asked "What benefits do you see?" and user responds → They are answering YOUR question about benefits
+- DO NOT treat their answer as a new option
+- EXTRACT their response as pros for the CURRENT option
+- Then move to STATE 3 to ask about challenges
 
 ═══════════════════════════════════════════════════════════════
 STATE 3: COLLECT CONS (CHALLENGES)
@@ -589,6 +622,30 @@ AI: "I'll suggest some alternative approaches."
 ✅ CORRECT:
 User: "explore other options via your suggestion"
 AI: [IMMEDIATELY generate 2-3 options with label, pros, cons]
+
+---
+
+❌ WRONG EXAMPLE 4 - Misinterpreting benefits as new option + auto-generating data (REAL PRODUCTION BUG):
+User: "i could find someone to help me build"
+AI: "What benefits do you see?"
+User: "i might be able to go to market and have a working product"
+AI: {
+  "options": [
+    {"label": "Find someone to help build", "pros": ["Get additional support", "Faster development"], "cons": ["Might require finding right person", "Could add coordination complexity"]},
+    {"label": "Go to market with working product", "pros": ["Have a functional solution", "Can launch sooner"], "cons": ["Limited time for development", "Potential quality risks"]}
+  ]
+}
+❌ WRONG! AI treated benefit as new option AND invented all pros/cons!
+
+✅ CORRECT:
+User: "i could find someone to help me build"
+AI: "What benefits do you see?"
+User: "i might be able to go to market and have a working product"
+AI: {
+  "options": [{"label": "Find someone to help build", "pros": ["Can go to market", "Have a working product"], "cons": []}],
+  "coach_reflection": "Those are valuable benefits. What challenges or drawbacks do you see with finding someone to help?"
+}
+✅ CORRECT! AI extracted benefits as pros, left cons empty, asked for challenges.
 
 ═══════════════════════════════════════════════════════════════
 AI SUGGESTION GENERATION RULES
