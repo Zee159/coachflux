@@ -130,9 +130,7 @@ export class GROWCoach implements FrameworkCoach {
 
   /**
    * Options step completion logic
-   * REQUIREMENTS: 2+ options and 1+ explored (with pros/cons) for quality decision-making
-   * CRITICAL: User must explicitly indicate readiness to proceed (prevents auto-advancement after AI suggestions)
-   * NOTE: Success criteria alignment is encouraged through conversational prompts, not validated structurally
+   * Simple validation matching GOAL/REALITY pattern
    */
   private checkOptionsCompletion(
     payload: ReflectionPayload,
@@ -146,80 +144,37 @@ export class GROWCoach implements FrameworkCoach {
       return { shouldAdvance: false };
     }
 
+    // Count explored options (have pros AND cons)
     const exploredOptions = options.filter((opt: unknown) => {
-      const option = opt as { label?: string; pros?: unknown[]; cons?: unknown[] };
+      const option = opt as { pros?: unknown[]; cons?: unknown[] };
       return Array.isArray(option.pros) && option.pros.length > 0 &&
              Array.isArray(option.cons) && option.cons.length > 0;
     });
 
-    // Validate AI-generated options have BOTH feasibilityScore AND effortRequired
-    const validOptions = options.filter((opt: unknown) => {
-      const option = opt as { 
-        label?: string;
-        pros?: unknown[];
-        cons?: unknown[];
-        feasibilityScore?: number;
-        effortRequired?: string;
-      };
-      
-      const hasBasicFields = (
-        typeof option.label === "string" && option.label.length > 0 &&
-        Array.isArray(option.pros) && option.pros.length > 0 &&
-        Array.isArray(option.cons) && option.cons.length > 0
-      );
-      
-      // Check if option is AI-generated
-      const isAIGenerated = option.feasibilityScore !== undefined || option.effortRequired !== undefined;
-      
-      if (isAIGenerated) {
-        // AI options MUST have BOTH feasibilityScore (1-10) AND effortRequired
-        const hasValidFeasibility = (
-          typeof option.feasibilityScore === "number" &&
-          option.feasibilityScore >= 1 &&
-          option.feasibilityScore <= 10
-        );
-        const hasValidEffort = (
-          option.effortRequired === 'low' ||
-          option.effortRequired === 'medium' ||
-          option.effortRequired === 'high'
-        );
-        return hasBasicFields && hasValidFeasibility && hasValidEffort;
-      }
-      
-      // User options don't need feasibilityScore/effortRequired
-      return hasBasicFields;
-    });
-
-    // NOTE: Success criteria alignment is handled conversationally through prompts
-    // The AI is instructed to reference success criteria in every question
-    // No need for structural field validation - trust the conversational flow
-
-    // CRITICAL: Check if user has explicitly indicated readiness to proceed
-    // This prevents auto-advancement after AI generates options
-    const hasMinimumOptions = validOptions.length >= 2;
     const hasExploredOptions = exploredOptions.length >= 1;
-    const hasBasicRequirements = hasMinimumOptions && hasExploredOptions;
+    const hasMultipleOptions = options.length >= 2;
+
+    // If user explicitly says they're ready, advance with 1+ explored option
+    if (userReady === true && hasExploredOptions) {
+      return { shouldAdvance: true };
+    }
 
     // Progressive relaxation based on skip count and loop detection
+    let requireMultiple = true; // Default: need 2+ options
+
     if (loopDetected) {
-      // System stuck: require 1 option, 1 explored, AND user readiness
-      return { 
-        shouldAdvance: options.length >= 1 && exploredOptions.length >= 1 && userReady === true 
-      };
+      requireMultiple = false; // System stuck: 1 explored option is enough
     } else if (skipCount >= 2) {
-      // User exhausted skips: require 2 options AND user readiness
-      return { shouldAdvance: options.length >= 2 && userReady === true }; 
+      requireMultiple = false; // User exhausted skips: 1 explored option is enough
     } else if (skipCount === 1) {
-      // User used one skip: require 2 options, 1 explored, AND user readiness
-      return { 
-        shouldAdvance: options.length >= 2 && exploredOptions.length >= 1 && userReady === true 
-      }; 
+      requireMultiple = true; // User used one skip: still need 2 options
+    }
+
+    // Apply requirements
+    if (requireMultiple) {
+      return { shouldAdvance: hasMultipleOptions && hasExploredOptions };
     } else {
-      // DEFAULT (no skips): Require 2+ options with 1+ explored AND user readiness
-      // User must explicitly say they're ready to proceed (e.g., "I'm ready", "move to will", "continue")
-      return { 
-        shouldAdvance: hasBasicRequirements && userReady === true
-      };
+      return { shouldAdvance: hasExploredOptions };
     }
   }
 

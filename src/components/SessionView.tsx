@@ -266,22 +266,20 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
   options: {
     title: "Generate Options",
     questions: [
-      "What are the possible ways forward?",
-      "What else could you do?",
-      "What are the pros and cons of each option?",
-      "Which option feels most aligned with your goals?",
-      "What would you do if there were no constraints?"
+      "What's one option you're considering?",
+      "What are the pros and cons of that option?",
+      "Would you like to share another option or get AI suggestions?",
+      "Which option would you like to move forward with?"
     ]
   },
   will: {
     title: "Commit to Action",
     questions: [
-      "Which option will you choose?",
-      "What specific actions will you take?",
-      "Who will be responsible for each action?",
-      "When will you complete these actions?",
-      "What support or resources do you need?",
-      "How will you know you've succeeded?"
+      "What action will you take?",
+      "When will you do it?",
+      "Who's responsible?",
+      "How will you track progress?",
+      "What support do you need?"
     ]
   },
   review: {

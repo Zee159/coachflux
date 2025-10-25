@@ -81,57 +81,35 @@ EXTRACT:
 
 Ready when: current_situation + constraints filled`,
 
-  options: `OPTIONS - Simplified 2-State Flow
+  options: `OPTIONS - 2-State Flow
 
-🚨 CRITICAL RULES:
-1. Ask ONLY ONE QUESTION at a time
-2. Extract ONLY what user explicitly states (never invent data)
-3. Collect pros AND cons together (not separately)
+FLOW:
+1. Ask: "What's one option you're considering?"
+2. User provides option → Extract {label}
+3. Ask: "What are the pros and cons of [option]?"
+4. User provides pros/cons → Extract {pros: [], cons: []}
+5. Ask: "Would you like to share ANOTHER option, or would you like me to SUGGEST some?"
 
-STATE A: COLLECT OPTION
-→ Ask: "What's one option you're considering?"
-→ User provides option
-→ Extract: {label: "their option"}
-→ IMMEDIATELY ask: "What are the pros and cons of [their option]?"
+WHEN USER SAYS:
+- "another" / "one more" → Go back to step 1
+- "suggest" / "can you suggest" → Generate 2-3 AI options, then ask "Do any of these work for you?"
+- Names a specific option / "I'm ready" → Set user_ready_to_proceed = true, say "Great choice! Let's create your action plan."
 
-STATE B: EVALUATE & CHOICE
-→ User provides pros and cons (can be in one response)
-→ Extract: {pros: ["explicit pro 1", "explicit pro 2"], cons: ["explicit con 1"]}
-→ Ask: "Would you like to share ANOTHER option, or would you like me to SUGGEST some?"
+AI SUGGESTIONS FORMAT:
+{
+  label: "Clear option name",
+  pros: ["benefit 1", "benefit 2"],
+  cons: ["challenge 1", "challenge 2"],
+  feasibilityScore: 7,
+  effortRequired: "medium",
+  alignmentReason: "Why this fits their goal"
+}
 
-USER RESPONSES:
-- "another" / "one more" / "explore more" → Return to STATE A (ask "What's one option?")
-- "suggest" / "yes please" / "can you suggest" → Generate 2-3 AI options immediately
-- User names a specific option (e.g., "find a technical co-founder", "hire developer") → Set user_ready_to_proceed = true
-- "I'm ready" / "move to will" / "let's proceed" → Set user_ready_to_proceed = true
-
-AI SUGGESTIONS (when user requests):
-Must generate 2-3 complete options with:
-- label: Clear option name
-- pros: 2-3 benefits (array)
-- cons: 2-3 challenges (array)
-- feasibilityScore: 1-10 (based on their constraints)
-- effortRequired: "low" / "medium" / "high"
-- alignmentReason: Why this fits their goal
-
-Ground each option in their Goal + Reality context (constraints, resources, timeframe).
-
-Example: {label: "Hire developer", pros: ["Expert help"], cons: ["Costs money"], feasibilityScore: 7, effortRequired: "medium", alignmentReason: "Addresses your full-stack knowledge gap"}
-
-EXTRACTION RULES:
-❌ NEVER invent pros/cons user didn't say
-❌ NEVER ask "what specific X" - just collect pros/cons
-❌ NEVER collect pros and cons separately
-❌ NEVER ask follow-up questions when user selects an option (e.g., "Would you like to discuss how...")
-✅ If user only gives pros → Set cons=[], ask for cons
-✅ If user only gives cons → Set pros=[], ask for pros
-✅ Extract exactly what they said, not paraphrased versions
-✅ When user selects an option → Set user_ready_to_proceed = true and say "Great choice! Let's create your action plan."
-
-READINESS CHECK:
-After showing AI suggestions, ask: "Do any of these work for you?"
-- If "yes" → Set user_ready_to_proceed = true
-- If "more" → Generate 3 more options (max 2 rounds)
+EXTRACTION:
+- Extract only what user explicitly states
+- If user gives only pros, ask for cons
+- If user gives only cons, ask for pros
+- Collect pros AND cons in same turn (not separately)
 
 Complete when: 2+ options, 1+ explored (has pros+cons), user_ready_to_proceed = true`,
 
