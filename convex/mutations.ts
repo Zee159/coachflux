@@ -167,6 +167,30 @@ export const updateSessionStep = mutation({
   },
 });
 
+// Phase 2: Update session with OPTIONS state tracking
+export const updateSession = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    options_state: v.optional(v.union(v.literal("A"), v.literal("B"))),
+    ai_suggestion_count: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const updates: {
+      options_state?: "A" | "B";
+      ai_suggestion_count?: number;
+    } = {};
+    
+    if (args.options_state !== undefined) {
+      updates.options_state = args.options_state;
+    }
+    if (args.ai_suggestion_count !== undefined) {
+      updates.ai_suggestion_count = args.ai_suggestion_count;
+    }
+    
+    await ctx.db.patch(args.sessionId, updates);
+  },
+});
+
 export const closeSession = mutation({
   args: {
     sessionId: v.id("sessions"),

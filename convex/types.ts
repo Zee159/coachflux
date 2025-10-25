@@ -43,6 +43,14 @@ export interface GrowOption {
 }
 
 /**
+ * Helper to check if option is AI-generated
+ * AI-generated options have feasibilityScore and/or effortRequired
+ */
+export function isAIGeneratedOption(option: GrowOption): boolean {
+  return option.feasibilityScore !== undefined || option.effortRequired !== undefined;
+}
+
+/**
  * Enhanced Action type for WILL step
  * Streamlined for 1-3 options with required accountability
  */

@@ -152,13 +152,51 @@ export class GROWCoach implements FrameworkCoach {
              Array.isArray(option.cons) && option.cons.length > 0;
     });
 
+    // Validate AI-generated options have BOTH feasibilityScore AND effortRequired
+    const validOptions = options.filter((opt: unknown) => {
+      const option = opt as { 
+        label?: string;
+        pros?: unknown[];
+        cons?: unknown[];
+        feasibilityScore?: number;
+        effortRequired?: string;
+      };
+      
+      const hasBasicFields = (
+        typeof option.label === "string" && option.label.length > 0 &&
+        Array.isArray(option.pros) && option.pros.length > 0 &&
+        Array.isArray(option.cons) && option.cons.length > 0
+      );
+      
+      // Check if option is AI-generated
+      const isAIGenerated = option.feasibilityScore !== undefined || option.effortRequired !== undefined;
+      
+      if (isAIGenerated) {
+        // AI options MUST have BOTH feasibilityScore (1-10) AND effortRequired
+        const hasValidFeasibility = (
+          typeof option.feasibilityScore === "number" &&
+          option.feasibilityScore >= 1 &&
+          option.feasibilityScore <= 10
+        );
+        const hasValidEffort = (
+          option.effortRequired === 'low' ||
+          option.effortRequired === 'medium' ||
+          option.effortRequired === 'high'
+        );
+        return hasBasicFields && hasValidFeasibility && hasValidEffort;
+      }
+      
+      // User options don't need feasibilityScore/effortRequired
+      return hasBasicFields;
+    });
+
     // NOTE: Success criteria alignment is handled conversationally through prompts
     // The AI is instructed to reference success criteria in every question
     // No need for structural field validation - trust the conversational flow
 
     // CRITICAL: Check if user has explicitly indicated readiness to proceed
     // This prevents auto-advancement after AI generates options
-    const hasMinimumOptions = options.length >= 2;
+    const hasMinimumOptions = validOptions.length >= 2;
     const hasExploredOptions = exploredOptions.length >= 1;
     const hasBasicRequirements = hasMinimumOptions && hasExploredOptions;
 

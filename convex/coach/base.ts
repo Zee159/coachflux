@@ -38,6 +38,7 @@ export interface CoachMutations {
   closeSession: any;
   createReflection: any;
   updateSessionStep: any;
+  updateSession: any; // Phase 2: OPTIONS state tracking
   pauseSession: any;
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -437,11 +438,19 @@ export async function generateCoachResponse(
     capturedFields
   );
   
+  // Phase 3: Use prompt caching to reduce costs by 90% on cached content
+  // System prompt is cached across requests, saving ~2.5K tokens per message
   const primary = await client.messages.create({
     model: "claude-3-5-haiku-20241022",
     max_tokens: 800, // Increased from 600 to give more room for JSON generation
     temperature: 0.3, // Slightly increased from 0 to allow more flexibility
-    system: system + safetyAlerts + aiContext + "\n\nYou MUST respond with valid JSON only. No other text.",
+    system: [
+      {
+        type: "text",
+        text: system + safetyAlerts + aiContext + "\n\nYou MUST respond with valid JSON only. No other text.",
+        cache_control: { type: "ephemeral" } // Cache this for 5 minutes
+      }
+    ],
     messages: [
       { 
         role: "user", 
@@ -526,6 +535,113 @@ export async function validateResponse(
   const bannedHit = BANNED.some(b => lower.includes(b));
   
   return { isValid, verdict, bannedHit };
+}
+
+/**
+ * Phase 2: Pre-validate AI response before sending to user
+ * Catches structural errors early and prevents bad data from reaching users
+ */
+export function preValidateResponse(
+  payload: ReflectionPayload,
+  stepName: string,
+  requiredFields: string[]
+): { isValid: boolean; missingFields: string[]; errors: string[] } {
+  const errors: string[] = [];
+  const missingFields: string[] = [];
+
+  // Check for coach_reflection (required for all steps)
+  const coachReflection = payload["coach_reflection"];
+  if (coachReflection === undefined || coachReflection === null || typeof coachReflection !== 'string') {
+    errors.push("Missing or invalid coach_reflection");
+  } else if (coachReflection.length < 20) {
+    errors.push("coach_reflection too short (min 20 characters)");
+  }
+
+  // Check required fields for this step
+  for (const field of requiredFields) {
+    if (payload[field] === undefined || payload[field] === null) {
+      missingFields.push(field);
+    }
+  }
+
+  // OPTIONS-specific validation for GROW framework
+  if (stepName === 'options') {
+    const options = payload["options"] as Array<{
+      label?: string;
+      pros?: unknown[];
+      cons?: unknown[];
+      feasibilityScore?: number;
+      effortRequired?: string;
+    }> | undefined;
+
+    if (Array.isArray(options)) {
+      // Validate AI-generated options have required quality fields
+      options.forEach((opt, idx) => {
+        const isAIGenerated = opt.feasibilityScore !== undefined || opt.effortRequired !== undefined;
+        
+        if (isAIGenerated) {
+          // AI options MUST have both feasibilityScore AND effortRequired
+          if (opt.feasibilityScore === undefined) {
+            errors.push(`Option ${idx + 1}: AI-generated option missing feasibilityScore`);
+          } else if (opt.feasibilityScore < 1 || opt.feasibilityScore > 10) {
+            errors.push(`Option ${idx + 1}: feasibilityScore must be 1-10, got ${opt.feasibilityScore}`);
+          }
+
+          if (opt.effortRequired === undefined) {
+            errors.push(`Option ${idx + 1}: AI-generated option missing effortRequired`);
+          } else if (!['low', 'medium', 'high'].includes(opt.effortRequired)) {
+            errors.push(`Option ${idx + 1}: effortRequired must be low/medium/high, got ${opt.effortRequired}`);
+          }
+        }
+
+        // All options need label, pros, and cons
+        if (opt.label === undefined || opt.label === null || opt.label.length === 0) {
+          errors.push(`Option ${idx + 1}: missing label`);
+        }
+        if (!Array.isArray(opt.pros)) {
+          errors.push(`Option ${idx + 1}: pros must be an array`);
+        }
+        if (!Array.isArray(opt.cons)) {
+          errors.push(`Option ${idx + 1}: cons must be an array`);
+        }
+      });
+    }
+  }
+
+  // WILL-specific validation for GROW framework
+  if (stepName === 'will') {
+    const actions = payload["actions"] as Array<{
+      title?: string;
+      owner?: string;
+      due_days?: number;
+      support_needed?: string;
+      accountability_mechanism?: string;
+    }> | undefined;
+
+    if (Array.isArray(actions)) {
+      actions.forEach((action, idx) => {
+        // Check 5 core fields
+        if (action.title === undefined || action.title === null || action.title.length === 0) {
+          errors.push(`Action ${idx + 1}: missing title`);
+        }
+        if (action.owner === undefined || action.owner === null || action.owner.length === 0) {
+          errors.push(`Action ${idx + 1}: missing owner`);
+        }
+        if (typeof action.due_days !== 'number' || action.due_days <= 0) {
+          errors.push(`Action ${idx + 1}: due_days must be a positive number`);
+        }
+        if (action.support_needed === undefined || action.support_needed === null || action.support_needed.length === 0) {
+          errors.push(`Action ${idx + 1}: missing support_needed`);
+        }
+        if (action.accountability_mechanism === undefined || action.accountability_mechanism === null || action.accountability_mechanism.length === 0) {
+          errors.push(`Action ${idx + 1}: missing accountability_mechanism`);
+        }
+      });
+    }
+  }
+
+  const isValid = errors.length === 0 && missingFields.length === 0;
+  return { isValid, missingFields, errors };
 }
 
 /**

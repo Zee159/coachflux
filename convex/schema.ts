@@ -24,9 +24,17 @@ export default defineSchema({
   sessions: defineTable({
     orgId: v.id("orgs"),
     userId: v.id("users"),
-    framework: v.string(), // "GROW"
+    framework: v.string(), // "GROW" | "COMPASS"
     step: v.string(),      // "goal" | "reality" | "options" | "will" | "review"
     state: v.any(),        // JSON state: { skips: { goal: 0, reality: 0, ... } }
+    
+    // Phase 2: OPTIONS state tracking (GROW framework)
+    options_state: v.optional(v.union(
+      v.literal("A"),  // STATE A: Collecting option label
+      v.literal("B")   // STATE B: Collecting pros/cons
+    )),
+    ai_suggestion_count: v.optional(v.number()), // Track AI suggestion rounds (0-3)
+    
     startedAt: v.number(),
     closedAt: v.optional(v.number()),
     escalated: v.optional(v.boolean()), // Session flagged for escalation to HR/specialist

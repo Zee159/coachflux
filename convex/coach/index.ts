@@ -3,8 +3,9 @@
  * Exports coaching actions and orchestrates framework-specific coaches
  */
 
-import { action } from "../_generated/server";
+import { action, type ActionCtx } from "../_generated/server";
 import { v } from "convex/values";
+import type { Id } from "../_generated/dataModel";
 import Anthropic from "@anthropic-ai/sdk";
 import { ANALYSIS_GENERATION_PROMPT } from "../prompts/index";
 import { api } from "../_generated/api";
@@ -22,6 +23,7 @@ import {
   detectLoop,
   generateCoachResponse,
   validateResponse,
+  preValidateResponse,
   buildConversationHistory,
   createActionsFromPayload,
   advanceToNextStep,
@@ -207,10 +209,57 @@ function createMutations(): CoachMutations {
     closeSession: m.closeSession,
     createReflection: m.createReflection,
     updateSessionStep: m.updateSessionStep,
+    updateSession: m.updateSession, // Phase 2: OPTIONS state tracking
     pauseSession: m.pauseSession
   };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+
+// ============================================================================
+// PHASE 2: OPTIONS STATE TRACKING
+// ============================================================================
+
+/**
+ * Update OPTIONS state tracking for GROW framework
+ * Tracks current state (A or B) and AI suggestion count
+ */
+async function updateOptionsState(
+  ctx: ActionCtx,
+  _mutations: CoachMutations,
+  sessionId: Id<"sessions">,
+  payload: ReflectionPayload
+): Promise<void> {
+  const options = payload["options"] as Array<{ label?: string; pros?: unknown[]; cons?: unknown[]; feasibilityScore?: number }> | undefined;
+  
+  if (!Array.isArray(options) || options.length === 0) {
+    return; // No options yet, stay in current state
+  }
+
+  // Determine current state based on last option
+  const lastOption = options[options.length - 1];
+  const hasPros = Array.isArray(lastOption?.pros) && lastOption.pros.length > 0;
+  const hasCons = Array.isArray(lastOption?.cons) && lastOption.cons.length > 0;
+  
+  let newState: "A" | "B";
+  if (!hasPros && !hasCons) {
+    newState = "A"; // Just collected label, waiting for pros/cons
+  } else if (hasPros && hasCons) {
+    newState = "B"; // Collected pros/cons, ready for next option or AI suggestions
+  } else {
+    newState = "A"; // Partial data, stay in collection mode
+  }
+
+  // Count AI-generated options (have feasibilityScore)
+  const aiOptions = options.filter(opt => opt.feasibilityScore !== undefined);
+  const aiCount = aiOptions.length;
+
+  // Update session state
+  await ctx.runMutation(api.mutations.updateSession, {
+    sessionId,
+    options_state: newState,
+    ai_suggestion_count: aiCount
+  });
+}
 
 // ============================================================================
 // MAIN COACHING ACTION
@@ -452,6 +501,19 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
 
     const { raw, payload } = responseResult;
 
+    // Phase 2: Pre-validate response structure before sending to user
+    const preValidation = preValidateResponse(payload, step.name, requiredFields);
+    if (!preValidation.isValid) {
+      console.warn("=== PRE-VALIDATION FAILED ===", {
+        step: step.name,
+        errors: preValidation.errors,
+        missingFields: preValidation.missingFields
+      });
+      
+      // Log the issue but continue - schema validation will catch it
+      // This gives us visibility into what's failing before it reaches users
+    }
+
     // Validate response
     const validation = await validateResponse(raw, step.required_fields_schema);
     const { isValid, verdict, bannedHit } = validation;
@@ -526,6 +588,11 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
       userInput: args.userTurn,
       payload
     });
+
+    // Phase 2: Track OPTIONS state for GROW framework
+    if (session.framework === 'GROW' && step.name === 'options') {
+      await updateOptionsState(ctx, mutations, args.sessionId, payload);
+    }
 
     // Create actions if applicable
     await createActionsFromPayload(ctx, mutations, step, payload, args);
