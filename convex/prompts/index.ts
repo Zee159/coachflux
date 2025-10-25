@@ -155,6 +155,9 @@ ONLY ask to rephrase if response is GENUINELY:
 - DO NOT infer or guess field values - if you don't have the data, DON'T include the field
 - The ONLY required field is "coach_reflection" - all other fields are OPTIONAL and should only be included when earned through conversation
 
+⚠️ CRITICAL EXCEPTION - INTRODUCTION STEP:
+When the current step is "introduction" and the user responds with affirmative phrases like "yes", "sure", "sounds good", "let's do it", "that works", "perfect", "okay", or variations like "Yes i am", "yes i am interest in grow today", "I'd like to move to the next step now" - you MUST extract user_consent_given = true in your JSON response. This is the ONLY exception to the "do not infer" rule for the introduction step.
+
 EXAMPLES OF CORRECT BEHAVIOR:
 
 ❌ WRONG - Auto-generating data:
