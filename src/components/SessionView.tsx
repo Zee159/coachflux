@@ -801,8 +801,14 @@ export function SessionView() {
 
     try {
       await incrementSkip({ sessionId: session._id, step: currentStep });
-      // Signal to AI that user wants to move to next step with what they've provided
-      await handleSubmit("I'd like to move to the next step now with what we've covered so far.");
+      
+      // For OPTIONS step, use explicit "proceed to will step" phrase to trigger user_ready_to_proceed
+      // For other steps, use generic continue message
+      const continueMessage = currentStep === 'options' 
+        ? "proceed to will step"
+        : "I'd like to move to the next step now with what we've covered so far.";
+      
+      await handleSubmit(continueMessage);
     } catch (error: unknown) {
       console.error("Continue error:", error);
       setNotification({ type: "error", message: "Failed to continue. Please try again." });
