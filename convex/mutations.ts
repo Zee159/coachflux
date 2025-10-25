@@ -82,27 +82,23 @@ export const createSession = mutation({
     // Determine first step and greeting based on framework
     // UPDATED: All sessions now start with introduction phase
     let firstStep = "introduction";
-    let greeting = `Welcome! I'm here to help you think through your goals and challenges.
+    let greeting = `Welcome! I'll help you tackle your goals using the GROW coaching method - a proven approach to move from where you are to where you want to be.
 
-We'll use the GROW method - a proven coaching approach that helps you move from where you are now to where you want to be.
+Here's our 15-20 minute process:
+• Goal: Define what you want to achieve and why
+• Reality: Assess your current situation and obstacles
+• Options: Explore different approaches
+• Will: Create concrete action steps
 
-Here's what we'll do together:
-• Goal: Define what you want to achieve and why it matters
-• Reality: Understand your current situation and what's in your way  
-• Options: Explore different approaches you could take
-• Will: Create a concrete action plan with specific steps
+GROW works great for:
+• Achieving specific goals (career, personal, business)
+• Making decisions with multiple options
+• Breaking through obstacles
+• Creating project action plans
 
-This takes about 15-20 minutes.
+I'll guide you with targeted questions to build clarity and create actionable next steps you can implement immediately.
 
-GROW works well for:
-• Setting and achieving specific goals (career, personal, business)
-• Making important decisions when you have multiple options
-• Breaking through obstacles or stuck situations
-• Creating action plans for projects or changes
-
-I'll ask you questions to help you think deeply, and together we'll build a clear plan. You'll leave with specific actions you can take right away.
-
-Does this framework feel right for what you want to work on today?`;
+Ready to dive in with this framework?`;
     let skipSteps: Record<string, number> = { introduction: 0, goal: 0, reality: 0, options: 0, will: 0, review: 0 };
 
     if (args.framework === "COMPASS") {
