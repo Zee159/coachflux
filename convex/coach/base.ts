@@ -672,6 +672,7 @@ export function buildConversationHistory(
 
 /**
  * Create actions from step payload
+ * Note: Caller should ensure this is only called once per step to avoid duplicates
  */
 export async function createActionsFromPayload(
   ctx: CoachContext,

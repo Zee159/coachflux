@@ -25,19 +25,23 @@ function SessionCard({ sessionId, framework, step, startedAt, isCompleted, onCli
   const reviewReflection = reviewReflections[reviewReflections.length - 1];
   const reviewPayload = reviewReflection?.payload as Record<string, unknown> | undefined;
   
-  // Extract key insights as the summary preview
-  const summary = reviewPayload !== undefined && typeof reviewPayload['key_insights'] === 'string' 
-    ? reviewPayload['key_insights'] 
+  // Extract summary based on framework
+  const summary = reviewPayload !== undefined 
+    ? (typeof reviewPayload['key_takeaways'] === 'string' 
+        ? reviewPayload['key_takeaways']  // GROW
+        : typeof reviewPayload['key_insights'] === 'string'
+          ? reviewPayload['key_insights']  // COMPASS
+          : undefined)
     : undefined;
   
   // Check if incomplete - session was closed but review step wasn't properly finished
-  // Incomplete = closed but EITHER no review step reached OR review has no key_insights/next_actions
   const isIncomplete = isCompleted && (
     // Case 1: No review step reached at all
     reviewPayload === undefined ||
-    // Case 2: Review started but didn't capture essential data
-    (typeof reviewPayload['key_insights'] !== 'string' && 
-     !Array.isArray(reviewPayload['next_actions']))
+    // Case 2: Review started but didn't capture essential data (framework-specific)
+    (framework === 'GROW' 
+      ? (typeof reviewPayload['key_takeaways'] !== 'string' || typeof reviewPayload['immediate_step'] !== 'string')
+      : (typeof reviewPayload['key_insights'] !== 'string' && !Array.isArray(reviewPayload['next_actions'])))
   );
   
   return (
