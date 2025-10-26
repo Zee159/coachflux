@@ -59,12 +59,12 @@ Ask 3 questions:
 3. "What's your timeframe?"
 
 EXTRACT:
-- goal_statement: Their objective
+- goal: Their objective
 - why_now: Their motivation
 - success_criteria: What success looks like
 - timeframe: When they need it
 
-Ready when: goal_statement + why_now filled`,
+Ready when: goal + why_now filled`,
 
   reality: `REALITY - What's happening now?
 
@@ -74,12 +74,12 @@ Ask 3-4 questions:
 3. "What resources do you have?"
 
 EXTRACT:
-- current_situation: Their description
+- current_state: Their description
 - constraints: Barriers/limitations
 - resources: What they have available
 - risks: What could derail them
 
-Ready when: current_situation + constraints filled`,
+Ready when: current_state + constraints filled`,
 
   options: `OPTIONS - 2-State Flow
 
@@ -106,11 +106,19 @@ AI SUGGESTIONS FORMAT:
   alignmentReason: "Why this fits their goal"
 }
 
+CRITICAL - AI SUGGESTION PRESERVATION:
+When user selects an AI-suggested option (one YOU provided):
+- PRESERVE the pros/cons you already gave them
+- DO NOT ask them to repeat pros/cons
+- Move forward with deeper exploration or next option
+- Example: "Great choice. Would you like to explore another option, or move to creating your action plan?"
+
 EXTRACTION:
 - Extract only what user explicitly states
 - If user gives only pros, ask for cons
 - If user gives only cons, ask for pros
 - Collect pros AND cons in same turn (not separately)
+- When user selects YOUR suggestion, keep the pros/cons you provided
 
 Complete when: 2+ options, 1+ explored (has pros+cons)`,
 
@@ -128,16 +136,19 @@ Optional (only if volunteered):
 
 Ready when: 1+ action with all 5 core fields`,
 
-  review: `REVIEW - Wrap Up
+  review: `REVIEW - Wrap Up (User Questions Only)
 
-Ask:
-1. "Key takeaways?"
-2. "Next immediate step?"
+Ask TWO questions:
+1. "What are your key takeaways from this session?"
+2. "What's your next immediate step?"
 
-EXTRACT:
-- key_insights: Their learnings
-- next_step: Immediate action
-- confidence_level: 1-10
+EXTRACT (from user responses only):
+- key_takeaways: Their learnings (what THEY say)
+- immediate_step: Immediate action (what THEY say)
 
-Then generate report.`
+DO NOT EXTRACT:
+- summary, ai_insights, unexplored_options, identified_risks, potential_pitfalls
+- These are generated separately by AI analysis after user completes their review
+
+Once user answers both questions, step is complete.`
 };

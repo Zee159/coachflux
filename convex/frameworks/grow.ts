@@ -40,7 +40,7 @@ export const growFrameworkLegacy: LegacyFramework = {
           coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
         },
         required: ["coach_reflection"],
-        additionalProperties: true
+        additionalProperties: false
       }
     },
     {
@@ -72,7 +72,10 @@ export const growFrameworkLegacy: LegacyFramework = {
               properties: {
                 label: { type: "string", minLength: 3, maxLength: 60 },
                 pros: { type: "array", items: { type: "string" }, maxItems: 5 },
-                cons: { type: "array", items: { type: "string" }, maxItems: 5 }
+                cons: { type: "array", items: { type: "string" }, maxItems: 5 },
+                feasibilityScore: { type: "integer", minimum: 1, maximum: 10 },
+                effortRequired: { type: "string" },
+                alignmentReason: { type: "string", maxLength: 200 }
               },
               required: ["label"],
               additionalProperties: false
@@ -110,7 +113,7 @@ export const growFrameworkLegacy: LegacyFramework = {
                 accountability_mechanism: { type: "string", minLength: 5, maxLength: 200 }
               },
               required: ["title"],
-              additionalProperties: true  // Allow optional enhanced fields
+              additionalProperties: false
             },
             minItems: 1,
             maxItems: 3
@@ -175,7 +178,7 @@ export const growFramework: FrameworkDefinition = {
       ],
       guardrails: [
         'DO NOT start Goal phase without user consent',
-        'Keep introduction under 150 words',
+        'Keep introduction under 100 words',
         'Make it conversational and warm'
       ],
       transition_rules: [
@@ -206,7 +209,7 @@ export const growFramework: FrameworkDefinition = {
           coach_reflection: { type: 'string', minLength: 20, maxLength: 300 }
         },
         required: ['coach_reflection'],
-        additionalProperties: true
+        additionalProperties: false
       },
       system_prompt: 'You are a GROW coach. Clarify the desired outcome and timeframe.',
       coaching_questions: [
@@ -280,7 +283,10 @@ export const growFramework: FrameworkDefinition = {
               properties: {
                 label: { type: 'string', minLength: 3, maxLength: 60 },
                 pros: { type: 'array', items: { type: 'string' }, maxItems: 5 },
-                cons: { type: 'array', items: { type: 'string' }, maxItems: 5 }
+                cons: { type: 'array', items: { type: 'string' }, maxItems: 5 },
+                feasibilityScore: { type: 'integer', minimum: 1, maximum: 10 },
+                effortRequired: { type: 'string' },
+                alignmentReason: { type: 'string', maxLength: 200 }
               },
               required: ['label'],
               additionalProperties: false
@@ -339,7 +345,7 @@ export const growFramework: FrameworkDefinition = {
                 accountability_mechanism: { type: 'string', minLength: 5, maxLength: 200 }
               },
               required: ['title'],
-              additionalProperties: true  // Allow optional enhanced fields
+              additionalProperties: false
             },
             minItems: 1,
             maxItems: 3

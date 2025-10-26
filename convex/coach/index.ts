@@ -68,6 +68,19 @@ const getFrameworkHardcoded = (): Framework => {
     id: "GROW",
     steps: [
       {
+        name: "introduction",
+        system_objective: "Welcome user, explain GROW framework, and get consent before starting session.",
+        required_fields_schema: {
+          type: "object",
+          properties: {
+            user_consent_given: { type: "boolean" },
+            coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
+          },
+          required: ["coach_reflection"],
+          additionalProperties: false
+        }
+      },
+      {
         name: "goal",
         system_objective: "Clarify the desired outcome and timeframe.",
         required_fields_schema: {
@@ -80,7 +93,7 @@ const getFrameworkHardcoded = (): Framework => {
             coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
           },
           required: ["coach_reflection"],
-          additionalProperties: true
+          additionalProperties: false
         }
       },
       {
@@ -112,7 +125,10 @@ const getFrameworkHardcoded = (): Framework => {
                 properties: {
                   label: { type: "string", minLength: 3, maxLength: 60 },
                   pros: { type: "array", items: { type: "string" }, maxItems: 5 },
-                  cons: { type: "array", items: { type: "string" }, maxItems: 5 }
+                  cons: { type: "array", items: { type: "string" }, maxItems: 5 },
+                  feasibilityScore: { type: "integer", minimum: 1, maximum: 10 },
+                  effortRequired: { type: "string" },
+                  alignmentReason: { type: "string", maxLength: 200 }
                 },
                 required: ["label"],
                 additionalProperties: false
@@ -150,7 +166,7 @@ const getFrameworkHardcoded = (): Framework => {
                   accountability_mechanism: { type: "string", minLength: 5, maxLength: 200 }
                 },
                 required: ["title"],
-                additionalProperties: true  // Allow optional enhanced fields
+                additionalProperties: false
               },
               minItems: 1,
               maxItems: 3
@@ -705,7 +721,7 @@ ${reviewData}
 
     try {
       const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-5-20250929",
+        model: "claude-3-7-sonnet-20250219",
         max_tokens: 3000,
         temperature: 0.7,
         messages: [

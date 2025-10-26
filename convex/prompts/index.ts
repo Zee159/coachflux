@@ -314,11 +314,9 @@ Generate a rich analysis with:
 
 5. **potential_pitfalls** (2-4 items): Based on their chosen actions, what could go wrong? What should they watch out for?
 
-6. **key_takeaways** (30-60 words): What are the 1-2 most important insights or realizations from this session?
-
-7. **immediate_step** (10-20 words): What is the VERY FIRST concrete action they should take? (Based on their Will step)
-
 Make insights SPECIFIC to their situation - reference their actual goal, constraints, chosen options, and actions. Avoid generic advice.
+
+NOTE: Do NOT generate key_takeaways or immediate_step - the user has already provided these during the review conversation.
 
 Respond with ONLY valid JSON:
 {
@@ -326,9 +324,7 @@ Respond with ONLY valid JSON:
   "ai_insights": "...",
   "unexplored_options": ["option 1", "option 2", "option 3"],
   "identified_risks": ["risk 1", "risk 2", "risk 3"],
-  "potential_pitfalls": ["pitfall 1", "pitfall 2", "pitfall 3"],
-  "key_takeaways": "...",
-  "immediate_step": "..."
+  "potential_pitfalls": ["pitfall 1", "pitfall 2", "pitfall 3"]
 }
 `;
 
