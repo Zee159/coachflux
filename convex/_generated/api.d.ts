@@ -41,6 +41,7 @@ import type * as reports from "../reports.js";
 import type * as safety from "../safety.js";
 import type * as seed from "../seed.js";
 import type * as types from "../types.js";
+import type * as utils_cssCalculator from "../utils/cssCalculator.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -79,6 +80,7 @@ declare const fullApi: ApiFromModules<{
   safety: typeof safety;
   seed: typeof seed;
   types: typeof types;
+  "utils/cssCalculator": typeof utils_cssCalculator;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

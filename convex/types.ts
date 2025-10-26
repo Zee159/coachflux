@@ -477,6 +477,18 @@ export interface SessionReportData {
   compass_transformation?: CompassTransformation;
   compass_scores?: CompassScores;
   
+  // CSS (Composite Success Score) - NEW
+  css_score?: {
+    composite_success_score: number;
+    success_level: string;
+    breakdown: {
+      confidence_score: number;
+      action_score: number;
+      mindset_score: number;
+      satisfaction_score: number;
+    };
+  };
+  
   // GROW-specific (future)
   grow_goal?: string;
   grow_actions?: Array<{ title: string; owner: string; due_days: number }>;
@@ -497,7 +509,7 @@ export interface FormattedReport {
 export interface ReportSection {
   heading: string;
   content: string;
-  type: 'text' | 'scores' | 'insights' | 'actions' | 'transformation';
+  type: 'text' | 'scores' | 'insights' | 'actions' | 'transformation' | 'css_score';
   data?: Record<string, unknown>;
 }
 

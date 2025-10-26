@@ -15,7 +15,7 @@ import { CompactConfidenceDisplay } from "./ConfidenceMeter";
 import { NudgeIndicator } from "./NudgeDisplay";
 import { ConfidenceTracker } from "./ConfidenceTracker";
 
-type StepName = "introduction" | "goal" | "reality" | "options" | "will" | "review" | "clarity" | "ownership" | "mapping" | "practice" | "anchoring";
+type StepName = "introduction" | "goal" | "reality" | "options" | "will" | "review" | "clarity" | "ownership" | "mapping" | "practice";
 
 function formatReflectionDisplay(step: string, payload: Record<string, unknown>): JSX.Element {
   const entries = Object.entries(payload);
@@ -208,7 +208,6 @@ const STEP_DESCRIPTIONS: Record<StepName, string> = {
   ownership: "Transform resistance into commitment. Build confidence.",
   mapping: "Identify ONE specific action with day, time, and backup plan.",
   practice: "Lock in 10/10 commitment and recognize your transformation.",
-  anchoring: "Make it stick - design your environment and lead by example.",
 };
 
 const STEP_LABELS: Record<StepName, string> = {
@@ -222,7 +221,6 @@ const STEP_LABELS: Record<StepName, string> = {
   ownership: "💪 OWNERSHIP: Building your confidence and commitment",
   mapping: "🗺️ MAPPING: Your specific action plan",
   practice: "🎯 PRACTICE: Locking in your commitment",
-  anchoring: "⚓ ANCHORING: How will you make it stick and lead?",
 };
 
 const STEP_TIPS: Record<StepName, string> = {
@@ -236,7 +234,6 @@ const STEP_TIPS: Record<StepName, string> = {
   ownership: "Your confidence can increase 3-4 points in this stage. Let it happen.",
   mapping: "Be specific: 'Thursday 2-4pm' not 'soon'. Small action beats big plan.",
   practice: "You've had a transformation. Recognize it. Celebrate it.",
-  anchoring: "Your team watches what you do, not what you say. Design your environment and lead visibly.",
 };
 
 const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }> = {
@@ -333,16 +330,6 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
       "After you complete this action, what will you have proven to yourself?",
       "When we started, confidence was [X]/10. Where is it now?",
       "What's the one thing you're taking away from today?"
-    ]
-  },
-  anchoring: {
-    title: "Make It Stick (Personal + Team)",
-    questions: [
-      "What's the ONE thing in your environment that makes the old way easier?",
-      "What could you change to make the new way easier?",
-      "What habits do you need to build?",
-      "How will you lead by example?",
-      "Who can hold you accountable?"
     ]
   }
 };
@@ -660,7 +647,7 @@ export function SessionView() {
   
   // Framework-specific step sequences
   const GROW_STEPS = ["introduction", "goal", "reality", "options", "will", "review"];
-  const COMPASS_STEPS = ["introduction", "clarity", "ownership", "mapping", "practice"]; // New 4-stage COMPASS model
+  const COMPASS_STEPS = ["introduction", "clarity", "ownership", "mapping", "practice", "review"]; // 4-stage COMPASS + review
   const frameworkSteps = session.framework === "COMPASS" ? COMPASS_STEPS : GROW_STEPS;
   const totalSteps = frameworkSteps.length;
   const currentStepIndex = Math.max(0, frameworkSteps.indexOf(currentStep)); // Fallback to 0 if step not found

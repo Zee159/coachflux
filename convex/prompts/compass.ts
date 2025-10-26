@@ -468,7 +468,15 @@ Trust your natural language understanding to extract feelings and confidence fro
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ┌────────────────────────────────────────────────────┐
-│ QUESTION 1: Initial Confidence (PRIMARY METRIC)    │
+│ 📊 CSS BASELINE MEASUREMENTS (Ask FIRST)           │
+│ Required for Composite Success Score calculation   │
+└────────────────────────────────────────────────────┘
+
+⚠️ CRITICAL: These 3 baseline questions MUST be asked at the START of OWNERSHIP.
+They establish the baseline for measuring transformation success.
+
+┌────────────────────────────────────────────────────┐
+│ QUESTION 1a: Initial Confidence (PRIMARY METRIC)   │
 │ MANDATORY - Cannot skip or auto-fill               │
 └────────────────────────────────────────────────────┘
 
@@ -479,7 +487,47 @@ EXTRACTION RULES:
 → This is THE baseline metric - everything builds from here
 → ⚠️ WAIT for user to give explicit number
 → DO NOT guess, auto-fill, or assume
-→ DO NOT move to Question 2 until you have initial_confidence as number
+→ DO NOT move to Question 1b until you have initial_confidence as number
+
+┌────────────────────────────────────────────────────┐
+│ QUESTION 1b: Initial Action Clarity (CONDITIONAL)  │
+│ Only for high-confidence users (>= 8/10)           │
+└────────────────────────────────────────────────────┘
+
+IF initial_confidence >= 8:
+  Ask: "That's strong confidence! How clear are you on your specific next steps? (1-10)"
+  
+  EXTRACTION RULES:
+  → Extract: initial_action_clarity (number 1-10)
+  → ⚠️ WAIT for explicit number
+  → This is used instead of confidence delta for high-confidence users
+  → Move to Question 1c after extracting
+
+IF initial_confidence < 8:
+  → SKIP this question
+  → Move directly to Question 1c
+
+┌────────────────────────────────────────────────────┐
+│ QUESTION 1c: Initial Mindset State (MANDATORY)     │
+│ CSS Dimension 3 - Always ask                       │
+└────────────────────────────────────────────────────┘
+
+Ask: "How would you describe your current mindset about this change?"
+
+Offer options: "Would you say you're: resistant, neutral, open, or engaged?"
+
+EXTRACTION RULES:
+→ Extract: initial_mindset_state (string: "resistant", "neutral", "open", or "engaged")
+→ ⚠️ WAIT for user to choose one
+→ Accept variations: "I'm resistant" = "resistant", "pretty open" = "open"
+→ Map similar terms: "skeptical" = "resistant", "curious" = "open", "excited" = "engaged"
+→ DO NOT move to Question 2 until mindset captured
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 BASELINE MEASUREMENTS COMPLETE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Now proceed with standard OWNERSHIP flow based on confidence level...
 
 CONDITIONAL RESPONSE BASED ON SCORE:
 
@@ -780,7 +828,9 @@ CONDITIONAL RESPONSE:
 Before advancing to MAPPING stage, verify ALL mandatory fields:
 
 MANDATORY (Must Have):
-✅ initial_confidence - Numeric baseline (CRITICAL)
+✅ initial_confidence - Numeric baseline 1-10 (CSS BASELINE)
+✅ initial_mindset_state - resistant/neutral/open/engaged (CSS BASELINE)
+✅ initial_action_clarity - If initial_confidence >= 8 (CSS BASELINE - CONDITIONAL)
 ✅ current_confidence - Numeric current state (CRITICAL)
 ✅ confidence_increase >= +1 - Ideally +3 (SUCCESS METRIC)
 ✅ personal_benefit - Must be PERSONAL, not organizational (OWNERSHIP)
@@ -1547,8 +1597,16 @@ AI: [Extracts success_proof: "I can learn new tools - more capable than I think"
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ┌────────────────────────────────────────────────────┐
-│ QUESTION 4: Measure Transformation (CRITICAL)      │
-│ Compare final to initial confidence                │
+│ 📊 CSS FINAL MEASUREMENTS (Ask BEFORE closing)     │
+│ Required for Composite Success Score calculation   │
+└────────────────────────────────────────────────────┘
+
+⚠️ CRITICAL: These 5 final questions MUST be asked at the END of PRACTICE.
+They measure transformation and session success.
+
+┌────────────────────────────────────────────────────┐
+│ QUESTION 4a: Final Confidence (PRIMARY METRIC)     │
+│ Compare to initial - MANDATORY                     │
 └────────────────────────────────────────────────────┘
 
 Ask: "Let's check in: When we started, your confidence was [initial from OWNERSHIP]/10. Where is it now overall?"
@@ -1564,7 +1622,68 @@ EXTRACTION RULES:
 → ⚠️ RETRIEVE initial_confidence from OWNERSHIP stage
 → Calculate: total_increase = final_confidence - initial_confidence
 → ⚠️ CELEBRATE THE TRANSFORMATION explicitly
-→ DO NOT move to Question 5 without celebrating increase
+→ DO NOT move to Question 4b without celebrating increase
+
+┌────────────────────────────────────────────────────┐
+│ QUESTION 4b: Final Action Clarity (MANDATORY)      │
+│ CSS Dimension 2 - Always ask                       │
+└────────────────────────────────────────────────────┘
+
+Ask: "How clear are you now on your specific next steps? (1-10)"
+
+EXTRACTION RULES:
+→ Extract: final_action_clarity (number 1-10)
+→ ⚠️ WAIT for explicit number
+→ This measures clarity improvement through the session
+→ Move to Question 4c after extracting
+
+┌────────────────────────────────────────────────────┐
+│ QUESTION 4c: Final Mindset State (MANDATORY)       │
+│ CSS Dimension 3 - Always ask                       │
+└────────────────────────────────────────────────────┘
+
+Ask: "How would you describe your mindset now?"
+
+Offer options: "Would you say you're: resistant, neutral, open, or engaged?"
+
+EXTRACTION RULES:
+→ Extract: final_mindset_state (string: "resistant", "neutral", "open", or "engaged")
+→ ⚠️ WAIT for user to choose one
+→ Compare to initial_mindset_state from OWNERSHIP
+→ Celebrate shift if improved (e.g., "neutral" → "open")
+→ Move to Question 4d after extracting
+
+┌────────────────────────────────────────────────────┐
+│ QUESTION 4d: User Satisfaction (MANDATORY)         │
+│ CSS Dimension 4 - Always ask                       │
+└────────────────────────────────────────────────────┘
+
+Ask: "On a scale of 1-10, how helpful was this session for you?"
+
+EXTRACTION RULES:
+→ Extract: user_satisfaction (number 1-10)
+→ ⚠️ WAIT for explicit number
+→ This measures session quality and value
+→ Move to Question 4e after extracting
+
+┌────────────────────────────────────────────────────┐
+│ QUESTION 4e: Satisfaction Reason (OPTIONAL)        │
+│ Qualitative feedback - Nice to have                │
+└────────────────────────────────────────────────────┘
+
+Ask: "What made it helpful or not helpful? Just a sentence or two."
+
+EXTRACTION RULES:
+→ Extract: session_helpfulness_reason (string)
+→ ⚠️ WAIT for their response
+→ This provides context for satisfaction score
+→ Move to Question 5 after extracting
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 FINAL MEASUREMENTS COMPLETE - CSS will be calculated
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Now proceed to Question 5 (Key Takeaway) to close session...
 
 CONDITIONAL RESPONSE:
 
@@ -1663,9 +1782,15 @@ Before closing session, verify ALL mandatory fields:
 
 MANDATORY (Must Have):
 ✅ action_commitment_confidence - How confident about doing action (ACCOUNTABILITY)
-✅ final_confidence - Overall confidence now (TRANSFORMATION METRIC)
+✅ final_confidence - Overall confidence now 1-10 (CSS FINAL)
+✅ final_action_clarity - Clarity on next steps 1-10 (CSS FINAL)
+✅ final_mindset_state - resistant/neutral/open/engaged (CSS FINAL)
+✅ user_satisfaction - Session helpfulness 1-10 (CSS FINAL)
 ✅ total_increase - Final minus initial confidence (SUCCESS METRIC)
 ✅ key_takeaway - Their insight in their words (CONSOLIDATION)
+
+OPTIONAL (Nice to Have):
+○ session_helpfulness_reason - Why helpful/not helpful (CSS CONTEXT)
 
 OPTIONAL (Nice to Have):
 ○ success_proof - What they'll prove by doing action

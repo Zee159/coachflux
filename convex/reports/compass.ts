@@ -72,14 +72,7 @@ export function extractCompassScores(
       }
     }
     
-    if (reflection.step === 'anchoring') {
-      const score = getNumber(payload, 'anchoring_score');
-      if (score !== undefined) {
-        scores.anchoring_score = score;
-        totalScore += score;
-        scoreCount++;
-      }
-    }
+    // Anchoring removed in 4-step COMPASS
   }
   
   // Calculate overall readiness (average of provided scores)
@@ -270,6 +263,43 @@ export function generateCompassReport(data: SessionReportData): FormattedReport 
   
   const sections: ReportSection[] = [];
   
+  // ========================================================================
+  // CSS (Composite Success Score) Section - NEW
+  // ========================================================================
+  // Note: CSS data must be fetched separately via query since this is a pure function
+  // The frontend should call api.queries.getCSSScore({ sessionId }) and pass it here
+  // For now, we'll add a placeholder that can be populated when CSS data is available
+  
+  // CSS Score Section (if available in data)
+  // This will be populated when CSS calculation is complete
+  const cssData = data.css_score;
+  if (cssData !== undefined && cssData !== null) {
+    const css = cssData;
+    
+    const levelEmoji = {
+      'EXCELLENT': '🌟',
+      'GOOD': '✅',
+      'FAIR': '👍',
+      'MARGINAL': '⚠️',
+      'INSUFFICIENT': '❌'
+    }[css.success_level] ?? '📊';
+    
+    sections.push({
+      heading: `${levelEmoji} COMPOSITE SUCCESS SCORE`,
+      content: `Overall Score: ${Math.round(css.composite_success_score)}/100 (${css.success_level})
+
+📊 DIMENSION BREAKDOWN:
+• Confidence: ${Math.round(css.breakdown.confidence_score)}/100
+• Action Clarity: ${Math.round(css.breakdown.action_score)}/100
+• Mindset Shift: ${Math.round(css.breakdown.mindset_score)}/100
+• Session Value: ${Math.round(css.breakdown.satisfaction_score)}/100
+
+${css.composite_success_score >= 85 ? '🌟 EXCELLENT - Outstanding transformation and commitment!' : css.composite_success_score >= 70 ? '✅ GOOD - Strong progress with clear action plan!' : css.composite_success_score >= 50 ? '👍 FAIR - Meaningful progress, continue building momentum!' : css.composite_success_score >= 30 ? '⚠️ MARGINAL - Some progress, may need additional support!' : '❌ INSUFFICIENT - Consider revisiting with different approach!'}`,
+      type: 'css_score',
+      data: css
+    });
+  }
+  
   // Transformation Summary Section
   if (transformation !== null) {
     sections.push({
@@ -331,18 +361,24 @@ export function generateCompassReport(data: SessionReportData): FormattedReport 
   // Personal Connection Section (Ownership)
   const ownershipReflection = data.reflections.find(r => r.step === 'ownership');
   if (ownershipReflection !== undefined && ownershipReflection !== null) {
-    const benefits = getArray<string>(ownershipReflection.payload, 'personal_benefits');
-    const risks = getArray<string>(ownershipReflection.payload, 'personal_risks');
+    const personalBenefit = getString(ownershipReflection.payload, 'personal_benefit');
+    const confidenceStart = getNumber(ownershipReflection.payload, 'initial_confidence');
+    const confidenceCurrent = getNumber(ownershipReflection.payload, 'current_confidence');
     const parts: string[] = [];
-    
-    if (benefits !== undefined && benefits.length > 0) {
-      parts.push(`💎 PERSONAL BENEFITS:\n${benefits.map(b => `• ${b}`).join('\n')}`);
+
+    if (personalBenefit !== undefined) {
+      parts.push(`💎 PERSONAL BENEFIT:\n${personalBenefit}`);
     }
-    
-    if (risks !== undefined && risks.length > 0) {
-      parts.push(`\n⚠️ PERSONAL RISKS:\n${risks.map(r => `• ${r}`).join('\n')}`);
+    if (confidenceStart !== undefined || confidenceCurrent !== undefined) {
+      const conf = [
+        confidenceStart !== undefined ? `Start: ${confidenceStart}/10` : null,
+        confidenceCurrent !== undefined ? `Now: ${confidenceCurrent}/10` : null
+      ].filter(Boolean).join(' → ');
+      if (conf.length > 0) {
+        parts.push(`\n📈 CONFIDENCE PROGRESSION:\n${conf}`);
+      }
     }
-    
+
     if (parts.length > 0) {
       sections.push({
         heading: '💪 YOUR PERSONAL CONNECTION',
@@ -352,37 +388,43 @@ export function generateCompassReport(data: SessionReportData): FormattedReport 
     }
   }
   
-  // Implementation Strategy Section (Mapping + Anchoring)
+  // Implementation Plan Section (Mapping)
   const mappingReflection = data.reflections.find(r => r.step === 'mapping');
-  const anchoringReflection = data.reflections.find(r => r.step === 'anchoring');
-  const strategyParts: string[] = [];
-  
   if (mappingReflection !== undefined && mappingReflection !== null) {
-    const obstacles = getArray<string>(mappingReflection.payload, 'obstacles');
-    if (obstacles !== undefined && obstacles.length > 0) {
-      strategyParts.push(`🚧 ANTICIPATED OBSTACLES:\n${obstacles.map(o => `• ${o}`).join('\n')}`);
+    const committedAction = getString(mappingReflection.payload, 'committed_action');
+    const actionDay = getString(mappingReflection.payload, 'action_day');
+    const actionTime = getString(mappingReflection.payload, 'action_time');
+    const obstacle = getString(mappingReflection.payload, 'obstacle');
+    const backupPlan = getString(mappingReflection.payload, 'backup_plan');
+    const supportPerson = getString(mappingReflection.payload, 'support_person');
+
+    const planParts: string[] = [];
+    if (committedAction !== undefined) {
+      planParts.push(`🎬 ACTION: ${committedAction}`);
     }
-  }
-  
-  if (anchoringReflection !== undefined && anchoringReflection !== null) {
-    const envChanges = getArray<string>(anchoringReflection.payload, 'environmental_changes');
-    const leadership = getString(anchoringReflection.payload, 'leadership_visibility');
-    
-    if (envChanges !== undefined && envChanges.length > 0) {
-      strategyParts.push(`\n🏗️ ENVIRONMENTAL CHANGES:\n${envChanges.map(e => `• ${e}`).join('\n')}`);
+    if (actionDay !== undefined || actionTime !== undefined) {
+      const when = [actionDay, actionTime].filter(Boolean).join(' • ');
+      if (when.length > 0) {
+        planParts.push(`🗓️ WHEN: ${when}`);
+      }
     }
-    
-    if (leadership !== undefined) {
-      strategyParts.push(`\n🎖️ LEADERSHIP VISIBILITY:\n${leadership}`);
+    if (supportPerson !== undefined) {
+      planParts.push(`🤝 SUPPORT: ${supportPerson}`);
     }
-  }
-  
-  if (strategyParts.length > 0) {
-    sections.push({
-      heading: '🛠️ IMPLEMENTATION STRATEGY',
-      content: strategyParts.join('\n'),
-      type: 'text'
-    });
+    if (obstacle !== undefined) {
+      planParts.push(`🚧 OBSTACLE: ${obstacle}`);
+    }
+    if (backupPlan !== undefined) {
+      planParts.push(`🛡️ BACKUP PLAN: ${backupPlan}`);
+    }
+
+    if (planParts.length > 0) {
+      sections.push({
+        heading: '🛠️ YOUR IMPLEMENTATION PLAN',
+        content: planParts.join('\n'),
+        type: 'text'
+      });
+    }
   }
   
   // Key Insights & Reflections Section (Review)

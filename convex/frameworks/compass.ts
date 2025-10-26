@@ -538,10 +538,43 @@ User has 10/10 action commitment and recognizes their confidence increased signi
       transition_rules: [
         { 
           condition: 'action_committed_with_high_confidence',
-          nextStep: 'COMPLETE', 
-          action: 'Session complete - generate comprehensive report'
+          nextStep: 'review', 
+          action: 'Move to Review - consolidate and close the session'
         }
       ]
+    }
+    ,
+    // ========================================================================
+    // REVIEW - Consolidate insights and confirm next steps (2 minutes)
+    // ========================================================================
+    {
+      name: 'review',
+      order: 5,
+      duration_minutes: 2,
+      objective: 'Consolidate key insights, confirm immediate next actions, and record final confidence level.',
+      system_prompt: `You are a COMPASS change coach in the REVIEW stage. Summarize key takeaways succinctly and capture next actions and confidence level.`,
+      required_fields_schema: {
+        type: 'object',
+        properties: {
+          primary_barrier: { type: 'string', maxLength: 200 },
+          next_actions: { type: 'array', items: { type: 'string', minLength: 2 }, minItems: 1, maxItems: 5 },
+          confidence_level: { type: 'integer', minimum: 1, maximum: 10 },
+          coach_reflection: { type: 'string', minLength: 20, maxLength: 400 }
+        },
+        required: ['coach_reflection'],
+        additionalProperties: false
+      },
+      coaching_questions: [
+        'What are your key takeaways from today?',
+        'What immediate action will you take next?',
+        'On a scale of 1-10, how confident do you feel going forward?'
+      ],
+      guardrails: [
+        'Keep the summary short and action-oriented',
+        'Capture one immediate next action',
+        'Record final confidence level'
+      ],
+      transition_rules: []
     }
   ],
 

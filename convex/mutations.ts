@@ -14,6 +14,141 @@ export const createOrg = mutation({
   },
 });
 
+// ================================
+// CSS (Composite Success Score)
+// ================================
+
+export const createMeasurementPoint = mutation({
+  args: {
+    orgId: v.id("orgs"),
+    userId: v.id("users"),
+    sessionId: v.id("sessions"),
+    stage: v.string(),
+    measurementType: v.union(v.literal("baseline"), v.literal("final"), v.literal("marker")),
+    payload: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const payload: Record<string, unknown> = args.payload as Record<string, unknown>;
+    return await ctx.db.insert("measurement_points", {
+      orgId: args.orgId,
+      userId: args.userId,
+      sessionId: args.sessionId,
+      stage: args.stage,
+      measurementType: args.measurementType,
+      payload,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const createSuccessMeasurement = mutation({
+  args: {
+    orgId: v.id("orgs"),
+    userId: v.id("users"),
+    sessionId: v.id("sessions"),
+    dimension: v.union(
+      v.literal("confidence"),
+      v.literal("action"),
+      v.literal("mindset"),
+      v.literal("satisfaction")
+    ),
+    initialRaw: v.optional(v.union(v.number(), v.string())),
+    finalRaw: v.optional(v.union(v.number(), v.string())),
+    increase: v.optional(v.number()),
+    normalizedScore: v.optional(v.number()),
+    calculationVersion: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("success_measurements", {
+      orgId: args.orgId,
+      userId: args.userId,
+      sessionId: args.sessionId,
+      dimension: args.dimension,
+      initialRaw: args.initialRaw,
+      finalRaw: args.finalRaw,
+      increase: args.increase,
+      normalizedScore: args.normalizedScore,
+      calculatedAt: Date.now(),
+      calculationVersion: args.calculationVersion,
+    });
+  },
+});
+
+export const createCSSScore = mutation({
+  args: {
+    orgId: v.id("orgs"),
+    userId: v.id("users"),
+    sessionId: v.id("sessions"),
+    composite_success_score: v.number(),
+    success_level: v.union(
+      v.literal("EXCELLENT"),
+      v.literal("GOOD"),
+      v.literal("FAIR"),
+      v.literal("MARGINAL"),
+      v.literal("INSUFFICIENT")
+    ),
+    breakdown: v.object({
+      confidence_score: v.number(),
+      action_score: v.number(),
+      mindset_score: v.number(),
+      satisfaction_score: v.number(),
+    }),
+    raw_inputs: v.any(),
+    calculationVersion: v.string(),
+    calculation_metadata: v.optional(v.object({
+      dimension_weights: v.object({
+        confidence: v.number(),
+        action: v.number(),
+        mindset: v.number(),
+        satisfaction: v.number(),
+      }),
+      thresholds: v.object({
+        excellent: v.number(),
+        good: v.number(),
+        fair: v.number(),
+        marginal: v.number(),
+      }),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const rawInputs: Record<string, unknown> = args.raw_inputs as Record<string, unknown>;
+    return await ctx.db.insert("css_scores", {
+      orgId: args.orgId,
+      userId: args.userId,
+      sessionId: args.sessionId,
+      composite_success_score: args.composite_success_score,
+      success_level: args.success_level,
+      breakdown: args.breakdown,
+      raw_inputs: rawInputs,
+      calculatedAt: Date.now(),
+      calculationVersion: args.calculationVersion,
+      calculation_metadata: args.calculation_metadata,
+    });
+  },
+});
+
+export const createCSSInsights = mutation({
+  args: {
+    orgId: v.id("orgs"),
+    userId: v.id("users"),
+    sessionId: v.id("sessions"),
+    insights: v.optional(v.array(v.string())),
+    flags: v.optional(v.array(v.string())),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("css_insights", {
+      orgId: args.orgId,
+      userId: args.userId,
+      sessionId: args.sessionId,
+      insights: args.insights,
+      flags: args.flags,
+      notes: args.notes,
+      createdAt: Date.now(),
+    });
+  },
+});
+
 export const createFeedback = mutation({
   args: {
     orgId: v.optional(v.id("orgs")),

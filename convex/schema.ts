@@ -87,4 +87,91 @@ export default defineSchema({
     improvements: v.optional(v.string()),
     createdAt: v.number(),
   }).index("byOrg", ["orgId"]).index("byUser", ["userId"]).index("bySession", ["sessionId"]),
+
+  // === Composite Success Score (CSS) tables ===
+  // Raw measurement capture at defined points (baseline, final, qualitative markers)
+  measurement_points: defineTable({
+    orgId: v.id("orgs"),
+    userId: v.id("users"),
+    sessionId: v.id("sessions"),
+    stage: v.string(), // e.g. "ownership", "practice", "sustaining" (legacy)
+    measurementType: v.union(
+      v.literal("baseline"),
+      v.literal("final"),
+      v.literal("marker") // qualitative marker during flow
+    ),
+    payload: v.any(), // raw answers captured from prompts at this point
+    createdAt: v.number(),
+  }).index("bySession", ["sessionId"]).index("byUser", ["userId"]).index("byType", ["measurementType"]),
+
+  // Per-dimension summarized measurements (normalized and deltas)
+  success_measurements: defineTable({
+    orgId: v.id("orgs"),
+    userId: v.id("users"),
+    sessionId: v.id("sessions"),
+    dimension: v.union(
+      v.literal("confidence"),
+      v.literal("action"),
+      v.literal("mindset"),
+      v.literal("satisfaction")
+    ),
+    // Raw values may be numeric (1-10) or categorical (mindset states)
+    initialRaw: v.optional(v.union(v.number(), v.string())),
+    finalRaw: v.optional(v.union(v.number(), v.string())),
+    increase: v.optional(v.number()), // numeric delta where applicable
+    normalizedScore: v.optional(v.number()), // 0-100 per dimension
+    calculatedAt: v.number(),
+    calculationVersion: v.string(),
+  }).index("bySession", ["sessionId"]).index("byUser", ["userId"]).index("byDimension", ["dimension"]),
+
+  // Final CSS score with full breakdown and metadata for reproducibility
+  css_scores: defineTable({
+    orgId: v.id("orgs"),
+    userId: v.id("users"),
+    sessionId: v.id("sessions"),
+    composite_success_score: v.number(), // 0-100
+    success_level: v.union(
+      v.literal("EXCELLENT"),
+      v.literal("GOOD"),
+      v.literal("FAIR"),
+      v.literal("MARGINAL"),
+      v.literal("INSUFFICIENT")
+    ),
+    breakdown: v.object({
+      confidence_score: v.number(),
+      action_score: v.number(),
+      mindset_score: v.number(),
+      satisfaction_score: v.number(),
+    }),
+    // Input snapshot for transparency/debug
+    raw_inputs: v.any(), // includes initial/final confidence/clarity, mindset states, satisfaction, etc.
+    calculatedAt: v.number(),
+    calculationVersion: v.string(),
+    calculation_metadata: v.optional(v.object({
+      dimension_weights: v.object({
+        confidence: v.number(),
+        action: v.number(),
+        mindset: v.number(),
+        satisfaction: v.number(),
+      }),
+      thresholds: v.object({
+        excellent: v.number(),
+        good: v.number(),
+        fair: v.number(),
+        marginal: v.number(),
+      }),
+    })),
+  }).index("bySession", ["sessionId"]).index("byUser", ["userId"]).index("byLevel", ["success_level"]),
+
+  // Generated narrative insights, flags, and notes supporting the score
+  css_insights: defineTable({
+    orgId: v.id("orgs"),
+    userId: v.id("users"),
+    sessionId: v.id("sessions"),
+    insights: v.optional(v.array(v.string())),
+    flags: v.optional(v.array(v.string())), // e.g., "high_confidence_path", "breakthrough_detected"
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("bySession", ["sessionId"]).index("byUser", ["userId"]),
 });
+

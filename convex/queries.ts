@@ -118,6 +118,23 @@ export const generateReport = query({
       .order("asc")
       .collect();
     
+    // Get CSS score if available (COMPASS only)
+    let cssScore = undefined;
+    if (session.framework === 'COMPASS') {
+      const cssRecord = await ctx.db
+        .query("css_scores")
+        .withIndex("bySession", (q) => q.eq("sessionId", args.sessionId))
+        .first();
+      
+      if (cssRecord !== null && cssRecord !== undefined) {
+        cssScore = {
+          composite_success_score: cssRecord.composite_success_score,
+          success_level: cssRecord.success_level,
+          breakdown: cssRecord.breakdown
+        };
+      }
+    }
+    
     // Build session data
     const durationMs = (session.closedAt ?? Date.now()) - session._creationTime;
     const durationMinutes = Math.round(durationMs / 60000); // Convert ms to minutes
@@ -134,11 +151,37 @@ export const generateReport = query({
         return reflection;
       }),
       completed_at: session.closedAt ?? Date.now(),
-      duration_minutes: durationMinutes
+      duration_minutes: durationMinutes,
+      css_score: cssScore
     };
     
     // Generate report using dynamic template system
     const report: FormattedReport = generateSessionReport(sessionData);
     return report;
+  },
+});
+
+/**
+ * Get CSS score for a session
+ */
+export const getCSSScore = query({
+  args: { sessionId: v.id("sessions") },
+  handler: async (ctx, args) => {
+    const cssRecord = await ctx.db
+      .query("css_scores")
+      .withIndex("bySession", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+    
+    if (cssRecord === null || cssRecord === undefined) {
+      return null;
+    }
+    
+    return {
+      composite_success_score: cssRecord.composite_success_score,
+      success_level: cssRecord.success_level,
+      breakdown: cssRecord.breakdown,
+      calculatedAt: cssRecord.calculatedAt,
+      calculationVersion: cssRecord.calculationVersion
+    };
   },
 });

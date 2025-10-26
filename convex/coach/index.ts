@@ -31,6 +31,8 @@ import {
   type CoachMutations,
   type CoachQueries
 } from "./base";
+import { calculateCSS } from "../utils/cssCalculator";
+import type { MindsetState } from "../utils/cssCalculator";
 
 // ============================================================================
 // FEATURE FLAGS
@@ -613,6 +615,38 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
       payload
     });
 
+    // =============================
+    // CSS Baseline capture (COMPASS)
+    // Capture baseline once at OWNERSHIP start
+    // =============================
+    if (session.framework === 'COMPASS' && step.name === 'ownership') {
+      // messageCount is number of prior reflections in this step
+      // Only capture baseline on first ownership message
+      if (messageCount === 0) {
+        const initialConfidence = (payload['initial_confidence'] as number | undefined);
+        const initialActionClarity = (payload['initial_action_clarity'] as number | undefined);
+        const initialMindset = (payload['initial_mindset_state'] as string | undefined);
+        if (
+          (typeof initialConfidence === 'number' && initialConfidence >= 1 && initialConfidence <= 10) ||
+          (typeof initialActionClarity === 'number' && initialActionClarity >= 1 && initialActionClarity <= 10) ||
+          (typeof initialMindset === 'string' && initialMindset.length > 0)
+        ) {
+          await ctx.runMutation(api.mutations.createMeasurementPoint, {
+            orgId: args.orgId,
+            userId: args.userId,
+            sessionId: args.sessionId,
+            stage: 'ownership',
+            measurementType: 'baseline',
+            payload: {
+              initial_confidence: initialConfidence,
+              initial_action_clarity: initialActionClarity,
+              initial_mindset_state: initialMindset,
+            }
+          });
+        }
+      }
+    }
+
     // Phase 2: Track OPTIONS state for GROW framework
     if (session.framework === 'GROW' && step.name === 'options') {
       await updateOptionsState(ctx, mutations, args.sessionId, payload);
@@ -646,6 +680,150 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
     let sessionClosed = false;
 
     if (completionResult.shouldAdvance) {
+      // If COMPASS PRACTICE completed, compute and persist CSS before advancing
+      if (session.framework === 'COMPASS' && step.name === 'practice') {
+        try {
+          // Re-fetch reflections including this turn
+          const reflections = await ctx.runQuery(api.queries.getSessionReflections, { sessionId: args.sessionId });
+          const ownership = reflections.find((r: { step: string }) => r.step === 'ownership');
+          const practiceList = reflections.filter((r: { step: string }) => r.step === 'practice');
+          const practice = practiceList.length > 0 ? practiceList[practiceList.length - 1] : undefined;
+
+          const getNum = (obj: unknown, key: string): number | undefined => {
+            if (typeof obj === 'object' && obj !== null) {
+              const v = (obj as Record<string, unknown>)[key];
+              if (typeof v === 'number' && Number.isFinite(v)) {
+                return v;
+              }
+            }
+            return undefined;
+          };
+          const getStr = (obj: unknown, key: string): string | undefined => {
+            if (typeof obj === 'object' && obj !== null) {
+              const v = (obj as Record<string, unknown>)[key];
+              if (typeof v === 'string' && v.length > 0) {
+                return v;
+              }
+            }
+            return undefined;
+          };
+          const toMindsetState = (s: string | undefined): MindsetState => {
+            const allowed: MindsetState[] = ['resistant', 'neutral', 'open', 'engaged'];
+            return allowed.includes(s as MindsetState) ? (s as MindsetState) : 'neutral';
+          };
+
+          const initialConfidence = ownership !== undefined && ownership !== null ? getNum(ownership.payload, 'initial_confidence') : undefined;
+          const initialActionClarity = ownership !== undefined && ownership !== null ? getNum(ownership.payload, 'initial_action_clarity') : undefined;
+          const initialMindsetStr = ownership !== undefined && ownership !== null ? getStr(ownership.payload, 'initial_mindset_state') : undefined;
+
+          const finalConfidence = practice !== undefined && practice !== null ? getNum(practice.payload, 'final_confidence') : undefined;
+          const finalActionClarity = practice !== undefined && practice !== null ? getNum(practice.payload, 'final_action_clarity') : undefined;
+          const finalMindsetStr = practice !== undefined && practice !== null ? getStr(practice.payload, 'final_mindset_state') : undefined;
+          const userSatisfaction = practice !== undefined && practice !== null ? getNum(practice.payload, 'user_satisfaction') : undefined;
+
+          // Build CSS input with safe defaults if some fields missing
+          const ic = typeof initialConfidence === 'number' ? initialConfidence : 5;
+          const fc = typeof finalConfidence === 'number' ? finalConfidence : 5;
+          const iac = typeof initialActionClarity === 'number' ? initialActionClarity : 5;
+          const fac = typeof finalActionClarity === 'number' ? finalActionClarity : 5;
+          const im = toMindsetState(initialMindsetStr);
+          const fm = toMindsetState(finalMindsetStr);
+          const sat = typeof userSatisfaction === 'number' ? userSatisfaction : 7;
+
+          // Calculate CSS
+          const css = calculateCSS({
+            initialConfidence: ic,
+            finalConfidence: fc,
+            initialActionClarity: iac,
+            finalActionClarity: fac,
+            initialMindset: im,
+            finalMindset: fm,
+            userSatisfaction: sat,
+          });
+
+          // Persist per-dimension success measurements
+          await ctx.runMutation(api.mutations.createSuccessMeasurement, {
+            orgId: args.orgId,
+            userId: args.userId,
+            sessionId: args.sessionId,
+            dimension: 'confidence',
+            initialRaw: ic,
+            finalRaw: fc,
+            increase: fc - ic,
+            normalizedScore: css.breakdown.confidence_score,
+            calculationVersion: css.calculationVersion,
+          });
+          await ctx.runMutation(api.mutations.createSuccessMeasurement, {
+            orgId: args.orgId,
+            userId: args.userId,
+            sessionId: args.sessionId,
+            dimension: 'action',
+            initialRaw: iac,
+            finalRaw: fac,
+            increase: fac - iac,
+            normalizedScore: css.breakdown.action_score,
+            calculationVersion: css.calculationVersion,
+          });
+          await ctx.runMutation(api.mutations.createSuccessMeasurement, {
+            orgId: args.orgId,
+            userId: args.userId,
+            sessionId: args.sessionId,
+            dimension: 'mindset',
+            initialRaw: im,
+            finalRaw: fm,
+            normalizedScore: css.breakdown.mindset_score,
+            calculationVersion: css.calculationVersion,
+          });
+          await ctx.runMutation(api.mutations.createSuccessMeasurement, {
+            orgId: args.orgId,
+            userId: args.userId,
+            sessionId: args.sessionId,
+            dimension: 'satisfaction',
+            finalRaw: sat,
+            normalizedScore: css.breakdown.satisfaction_score,
+            calculationVersion: css.calculationVersion,
+          });
+
+          // Persist final CSS score
+          await ctx.runMutation(api.mutations.createCSSScore, {
+            orgId: args.orgId,
+            userId: args.userId,
+            sessionId: args.sessionId,
+            composite_success_score: css.composite_success_score,
+            success_level: css.success_level,
+            breakdown: css.breakdown,
+            raw_inputs: {
+              initial_confidence: ic,
+              final_confidence: fc,
+              initial_action_clarity: iac,
+              final_action_clarity: fac,
+              initial_mindset_state: im,
+              final_mindset_state: fm,
+              user_satisfaction: sat,
+            },
+            calculationVersion: css.calculationVersion,
+            calculation_metadata: css.calculation_metadata,
+          });
+
+          // Record final measurement point
+          await ctx.runMutation(api.mutations.createMeasurementPoint, {
+            orgId: args.orgId,
+            userId: args.userId,
+            sessionId: args.sessionId,
+            stage: 'practice',
+            measurementType: 'final',
+            payload: {
+              final_confidence: fc,
+              final_action_clarity: fac,
+              final_mindset_state: fm,
+              user_satisfaction: sat,
+            },
+          });
+        } catch (e) {
+          console.error('CSS computation failed:', e);
+        }
+      }
+
       nextStepName = await advanceToNextStep(ctx, mutations, fw, step, frameworkCoach, args);
       sessionClosed = nextStepName === "review" && step.name === "review";
     }
