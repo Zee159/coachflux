@@ -62,7 +62,7 @@ export default defineSchema({
     dueAt: v.optional(v.number()),
     status: v.union(v.literal("open"), v.literal("done")),
     createdAt: v.number(),
-  }).index("byUser", ["userId"]),
+  }).index("byUser", ["userId"]).index("bySession", ["sessionId"]),
 
   safetyIncidents: defineTable({
     orgId: v.id("orgs"),

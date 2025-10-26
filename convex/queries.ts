@@ -67,6 +67,16 @@ export const getUserActions = query({
   },
 });
 
+export const getSessionActions = query({
+  args: { sessionId: v.id("sessions") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("actions")
+      .withIndex("bySession", (q) => q.eq("sessionId", args.sessionId))
+      .collect();
+  },
+});
+
 export const getOrgSafetyIncidents = query({
   args: { orgId: v.id("orgs") },
   handler: async (ctx, args) => {

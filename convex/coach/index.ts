@@ -28,7 +28,8 @@ import {
   createActionsFromPayload,
   advanceToNextStep,
   extractExistingContext,
-  type CoachMutations
+  type CoachMutations,
+  type CoachQueries
 } from "./base";
 
 // ============================================================================
@@ -227,6 +228,13 @@ function createMutations(): CoachMutations {
     updateSessionStep: m.updateSessionStep,
     updateSession: m.updateSession, // Phase 2: OPTIONS state tracking
     pauseSession: m.pauseSession
+  };
+}
+
+function createQueries(): CoachQueries {
+  const q: any = api.queries;
+  return {
+    getSessionActions: q.getSessionActions
   };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
@@ -611,7 +619,8 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
     }
 
     // Create actions if applicable
-    await createActionsFromPayload(ctx, mutations, step, payload, args);
+    const queries = createQueries();
+    await createActionsFromPayload(ctx, mutations, queries, step, payload, args);
 
     // Check if step is complete before advancing
     const completionResult = frameworkCoach.checkStepCompletion(

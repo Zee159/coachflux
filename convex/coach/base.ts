@@ -41,6 +41,16 @@ export interface CoachMutations {
   updateSession: any; // Phase 2: OPTIONS state tracking
   pauseSession: any;
 }
+
+/**
+ * Queries interface - passed by caller to avoid importing api in base.ts
+ * 
+ * NOTE: Using 'any' here is a documented workaround for Convex's deep type recursion.
+ * This is whitelisted in scripts/safety-check.js
+ */
+export interface CoachQueries {
+  getSessionActions: any;
+}
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 // Safety constants
@@ -672,11 +682,12 @@ export function buildConversationHistory(
 
 /**
  * Create actions from step payload
- * Note: Caller should ensure this is only called once per step to avoid duplicates
+ * Includes deduplication logic to prevent creating duplicate actions for the same session
  */
 export async function createActionsFromPayload(
   ctx: CoachContext,
   mutations: CoachMutations,
+  queries: CoachQueries,
   step: { name: string },
   payload: ReflectionPayload,
   args: { orgId: Id<"orgs">; userId: Id<"users">; sessionId: Id<"sessions"> }
@@ -684,21 +695,34 @@ export async function createActionsFromPayload(
   const actions = payload["actions"];
   const nextActions = payload["next_actions"];
   
+  // Check if actions already exist for this session to prevent duplicates
+  const existingActions = await ctx.runQuery(queries.getSessionActions, {
+    sessionId: args.sessionId
+  }) as Array<{ title: string }>;
+  
   // GROW Framework: Create actions from "will" step
   if (step.name === "will" && Array.isArray(actions)) {
     for (const a of actions) {
       const action = a as { title: string; owner: string; due_days?: number };
-      const due = action.due_days !== undefined && action.due_days !== null && action.due_days > 0 
-        ? Date.now() + action.due_days * 86400000 
-        : undefined;
-      await ctx.runMutation(mutations.createAction, {
-        orgId: args.orgId,
-        userId: args.userId,
-        sessionId: args.sessionId,
-        title: action.title,
-        dueAt: due,
-        status: "open"
-      });
+      
+      // Check if this action already exists (by title)
+      const isDuplicate = existingActions.some(
+        (existing: { title: string }) => existing.title === action.title
+      );
+      
+      if (isDuplicate === false) {
+        const due = action.due_days !== undefined && action.due_days !== null && action.due_days > 0 
+          ? Date.now() + action.due_days * 86400000 
+          : undefined;
+        await ctx.runMutation(mutations.createAction, {
+          orgId: args.orgId,
+          userId: args.userId,
+          sessionId: args.sessionId,
+          title: action.title,
+          dueAt: due,
+          status: "open"
+        });
+      }
     }
   }
   
@@ -706,15 +730,22 @@ export async function createActionsFromPayload(
   if (step.name === "review" && Array.isArray(nextActions)) {
     for (const actionTitle of nextActions) {
       if (typeof actionTitle === 'string' && actionTitle.length > 0) {
-        const defaultDue = Date.now() + 7 * 86400000; // 7 days
-        await ctx.runMutation(mutations.createAction, {
-          orgId: args.orgId,
-          userId: args.userId,
-          sessionId: args.sessionId,
-          title: actionTitle,
-          dueAt: defaultDue,
-          status: "open"
-        });
+        // Check if this action already exists (by title)
+        const isDuplicate = existingActions.some(
+          (existing: { title: string }) => existing.title === actionTitle
+        );
+        
+        if (isDuplicate === false) {
+          const defaultDue = Date.now() + 7 * 86400000; // 7 days
+          await ctx.runMutation(mutations.createAction, {
+            orgId: args.orgId,
+            userId: args.userId,
+            sessionId: args.sessionId,
+            title: actionTitle,
+            dueAt: defaultDue,
+            status: "open"
+          });
+        }
       }
     }
   }

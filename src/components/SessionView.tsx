@@ -435,18 +435,18 @@ export function SessionView() {
     };
   }, [isListening, isSpeaking, stopListening, stopSpeaking]);
 
+  const validSessionId = sessionId !== undefined && sessionId !== null && sessionId !== '' 
+    ? (sessionId as Id<"sessions">) 
+    : undefined;
+
   const session = useQuery(
     api.queries.getSession,
-    sessionId !== undefined && sessionId !== null && sessionId !== '' 
-      ? { sessionId: sessionId as Id<"sessions"> } 
-      : "skip"
+    validSessionId !== null && validSessionId !== undefined ? { sessionId: validSessionId } : "skip"
   );
 
   const reflections = useQuery(
     api.queries.getSessionReflections,
-    sessionId !== undefined && sessionId !== null && sessionId !== '' 
-      ? { sessionId: sessionId as Id<"sessions"> } 
-      : "skip"
+    validSessionId !== null && validSessionId !== undefined ? { sessionId: validSessionId } : "skip"
   );
 
   const nextStepAction = useAction(api.coach.nextStep);
