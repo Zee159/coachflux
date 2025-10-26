@@ -625,6 +625,7 @@ export function SessionView() {
 
             if (analysisResult.ok) {
               setNotification({ type: "success", message: "🎉 Coaching session complete! Your report is now ready." });
+              // Voice synthesis will be triggered automatically by the useEffect when the new reflection arrives
             } else {
               setNotification({ type: "error", message: `Report generation failed: ${analysisResult.message ?? 'Unknown error'}` });
             }
