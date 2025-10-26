@@ -441,7 +441,7 @@ export async function generateCoachResponse(
   // Phase 3: Use prompt caching to reduce costs by 90% on cached content
   // System prompt is cached across requests, saving ~2.5K tokens per message
   const primary = await client.messages.create({
-    model: "claude-3-5-haiku-20241022",
+    model: "claude-sonnet-4-5-20250929",
     max_tokens: 800, // Increased from 600 to give more room for JSON generation
     temperature: 0.3, // Slightly increased from 0 to allow more flexibility
     system: [
@@ -496,7 +496,7 @@ export async function validateResponse(
   const strippedSchema = stripValidationConstraints(schema) as Record<string, unknown>;
   
   const validator = await client.messages.create({
-    model: "claude-3-5-haiku-20241022",
+    model: "claude-sonnet-4-5-20250929",
     max_tokens: 300,
     temperature: 0,
     system: "You validate JSON output for schema conformance and banned terms. Respond with ONLY valid JSON.",

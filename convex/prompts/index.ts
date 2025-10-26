@@ -285,13 +285,14 @@ Respond with ONLY valid JSON in this format:
 `;
 
 /**
- * Analysis generation prompt (framework-agnostic)
+ * Analysis generation prompt for GROW framework
+ * Generates comprehensive insights based on the entire coaching journey
  */
 export const ANALYSIS_GENERATION_PROMPT = (
   conversationSummary: string,
   stepData: string
 ): string => `
-You are an AI coach providing a final summary and insights for a coaching session.
+You are an expert GROW coach providing a comprehensive final analysis for a completed coaching session.
 
 CONVERSATION SUMMARY:
 ${conversationSummary}
@@ -299,16 +300,35 @@ ${conversationSummary}
 STEP DATA:
 ${stepData}
 
-Generate a thoughtful analysis with:
-1. **Summary** (2-3 sentences): What was discussed and decided
-2. **Key Insights** (2-3 bullet points): Important patterns, strengths, or realizations
-3. **Recommendations** (2-3 bullet points): Practical next steps or considerations
+Your task is to synthesize the ENTIRE GROW journey (Goal → Reality → Options → Will) into actionable insights.
+
+Generate a rich analysis with:
+
+1. **summary** (50-100 words): Synthesize the goal, current reality, chosen approach, and action plan into a cohesive narrative
+
+2. **ai_insights** (40-80 words): Identify 2-3 key patterns, strengths, or strategic insights from their journey. What stands out about their approach? What shows good thinking?
+
+3. **unexplored_options** (2-4 items): Based on their goal and reality, what OTHER viable options did they NOT explore that could be worth considering?
+
+4. **identified_risks** (2-4 items): What risks or obstacles from their Reality step could derail their action plan? Be specific to THEIR situation.
+
+5. **potential_pitfalls** (2-4 items): Based on their chosen actions, what could go wrong? What should they watch out for?
+
+6. **key_takeaways** (30-60 words): What are the 1-2 most important insights or realizations from this session?
+
+7. **immediate_step** (10-20 words): What is the VERY FIRST concrete action they should take? (Based on their Will step)
+
+Make insights SPECIFIC to their situation - reference their actual goal, constraints, chosen options, and actions. Avoid generic advice.
 
 Respond with ONLY valid JSON:
 {
   "summary": "...",
-  "key_insights": ["insight 1", "insight 2"],
-  "recommendations": ["rec 1", "rec 2"]
+  "ai_insights": "...",
+  "unexplored_options": ["option 1", "option 2", "option 3"],
+  "identified_risks": ["risk 1", "risk 2", "risk 3"],
+  "potential_pitfalls": ["pitfall 1", "pitfall 2", "pitfall 3"],
+  "key_takeaways": "...",
+  "immediate_step": "..."
 }
 `;
 
