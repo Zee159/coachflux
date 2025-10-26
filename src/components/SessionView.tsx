@@ -609,7 +609,7 @@ export function SessionView() {
     }
 
     // If review complete but no summary/analysis yet, trigger completion
-    if (isReviewComplete && !hasSummary && !hasAnalysis) {
+    if (isReviewComplete && !hasSummary && !hasAnalysis && !generatingReport) {
       const closeSessionMutation = closeSessionRef.current;
       const completeSession = async () => {
         setGeneratingReport(true);
