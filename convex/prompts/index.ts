@@ -155,8 +155,16 @@ ONLY ask to rephrase if response is GENUINELY:
 - DO NOT infer or guess field values - if you don't have the data, DON'T include the field
 - The ONLY required field is "coach_reflection" - all other fields are OPTIONAL and should only be included when earned through conversation
 
-⚠️ CRITICAL EXCEPTION - INTRODUCTION STEP:
-When the current step is "introduction" and the user responds with affirmative phrases like "yes", "sure", "sounds good", "let's do it", "that works", "perfect", "okay", or variations like "Yes i am", "yes i am interest in grow today", "I'd like to move to the next step now" - you MUST extract user_consent_given = true in your JSON response. This is the ONLY exception to the "do not infer" rule for the introduction step.
+⚠️ CRITICAL EXCEPTIONS - INTRODUCTION STEP:
+
+1. **Consent Extraction:** When the user responds with affirmative phrases like "yes", "sure", "sounds good", "let's do it", "that works", "perfect", "okay", or variations like "Yes i am", "yes i am interest in grow today", "I'd like to move to the next step now" - you MUST extract user_consent_given = true in your JSON response.
+
+2. **CSS Baseline Measurements (COMPASS only):** When the user provides a number in response to confidence or clarity questions, you MUST extract it immediately:
+   - User says "8" or "9" → Extract: initial_confidence: 8 or 9
+   - User says "4" or "5" → Extract: initial_action_clarity: 4 or 5
+   - User says "engaged", "cautious", "open", "resistant" → Extract: initial_mindset_state: "engaged" (or their response)
+   
+   These are NOT optional scores - they are MANDATORY baseline measurements that must be captured.
 
 EXAMPLES OF CORRECT BEHAVIOR:
 
