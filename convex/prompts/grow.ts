@@ -15,11 +15,10 @@ export const GROW_COACHING_QUESTIONS: Record<string, string[]> = {
     "What timeframe are you working with?"
   ],
   reality: [
-    "Describe the issue as you see it",
-    "What's the impact of this situation?",
-    "What constraints or barriers are you facing?",
-    "What resources do you currently have available?",
-    "Who else is involved or affected?"
+    "What's the current situation?",
+    "What's getting in the way?",
+    "What resources do you have?",
+    "What could derail your progress or put this at risk?"
   ],
   options: [
     "What's one option you're considering?",
@@ -68,18 +67,21 @@ Ready when: goal + why_now filled`,
 
   reality: `REALITY - What's happening now?
 
-Ask 3-4 questions:
+Ask 4 questions progressively:
 1. "What's the current situation?"
 2. "What's getting in the way?"
 3. "What resources do you have?"
+4. "What could derail your progress or put this at risk?"
 
 EXTRACT:
-- current_state: Their description
-- constraints: Barriers/limitations
-- resources: What they have available
-- risks: What could derail them
+- current_state: Their description (from Q1)
+- constraints: Barriers/limitations (from Q2)
+- resources: What they have available (from Q3)
+- risks: What could derail them (from Q4)
 
-Ready when: current_state + constraints filled`,
+CRITICAL: Ask ALL 4 questions before advancing. Risks is REQUIRED.
+
+Ready when: current_state + constraints + resources + risks all filled`,
 
   options: `OPTIONS - 2-State Flow
 
