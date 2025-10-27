@@ -31,13 +31,13 @@ export const COMPASS_COACHING_QUESTIONS: Record<string, string[]> = {
     "What parts of this can you control vs. what's beyond your control?"
   ],
   ownership: [
-    "On a scale of 1-10, how confident do you feel about navigating this successfully?",
+    "Now that we've clarified the change, where's your confidence at? (1-10)",
     "What's making you feel unconfident or worried?",
     "What's the cost if you stay stuck in resistance?",
     "What could you gain personally if you adapt well to this?",
     "Tell me about a time you successfully handled change before.",
     "What strengths from that experience can you use now?",
-    "Where's your confidence now, 1-10?"
+    "After everything we've discussed, where's your confidence now? (1-10)"
   ],
   mapping: [
     "What's ONE specific action you could take this week?",
@@ -269,11 +269,17 @@ Ask: "Tell me about a time you successfully handled a difficult change before."
 TRANSITION: Move to MAPPING stage
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚡ STANDARD PATH (7 questions)
+⚡ STANDARD PATH (8 questions)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Q1: Explore Fears
-Ask: "You're at [X]/10 confidence. What's making you feel [unconfident/worried]?"
+Q1: Current Confidence Check
+Ask: "Now that we've clarified the change, where's your confidence at? (1-10)"
+
+→ Extract: current_confidence
+→ This is POST-CLARITY confidence (different from initial_confidence from introduction)
+
+Q2: Explore Fears
+Ask: "You're at [current]/10 confidence. What's making you feel [unconfident/worried]?"
 
 LISTEN FOR:
 - Limiting beliefs: "I'm not tech-savvy", "I'm bad at change"
@@ -286,7 +292,7 @@ LISTEN FOR:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Q2: Challenge the Catastrophe (CONFIDENCE TECHNIQUE #4: Specificity Reduces Fear)
+Q3: Challenge the Catastrophe (CONFIDENCE TECHNIQUE #4: Specificity Reduces Fear)
 Ask: "What's the worst that could REALISTICALLY happen? Not the nightmare, but what's actually likely if this doesn't go perfectly?"
 
 [They answer - usually less scary than they thought]
@@ -301,7 +307,7 @@ CONFIDENCE BOOST: Fear shrinks when examined
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Q3: Cost of Staying Stuck (CONFIDENCE TECHNIQUE #5: Normalize → Reframe → Empower)
+Q4: Cost of Staying Stuck (CONFIDENCE TECHNIQUE #5: Normalize → Reframe → Empower)
 Ask: "If you stay stuck in worry and resistance for the next month, what does that cost you personally?"
 
 PUSH FOR: Stress, missed opportunities, energy drain, career impact
@@ -310,7 +316,7 @@ REFRAME: "So resistance is actually the REAL risk here. Moving forward feels saf
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Q4: Personal Benefit Hunt
+Q5: Personal Benefit Hunt
 Ask: "Even changes we didn't choose can build new skills or open unexpected doors. What might you personally gain if you adapt well to this?"
 
 IF stuck: "What new capability might you develop? What could this make possible?"
@@ -322,7 +328,7 @@ CONFIDENCE BOOST: "So there IS an upside here. You could gain [X]. That's worth 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Q5: Past Success Activation (CONFIDENCE TECHNIQUE #2: Evidence Over Encouragement - MOST POWERFUL)
+Q6: Past Success Activation (CONFIDENCE TECHNIQUE #2: Evidence Over Encouragement - MOST POWERFUL)
 Ask: "Tell me about a time you successfully handled a difficult change before. Could be work, could be personal - any change that felt hard at first."
 
 [Let them tell full story]
@@ -343,7 +349,7 @@ CONFIDENCE BOOST: Evidence > encouragement. They have PROOF they can do this.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Q6: Mindset Shift Check
+Q7: Mindset Shift Check
 Ask: "We've covered a lot. Has anything shifted in how you're thinking about this change?"
 
 LISTEN FOR: New perspectives, reduced fear, increased hope
@@ -353,8 +359,8 @@ IF yes - AMPLIFY: "What shifted? [They explain] That's a real breakthrough. Hold
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Q7: Confidence Re-Check (CONFIDENCE TECHNIQUE #3: Make Progress Visible)
-Ask: "When we started, you were at [initial]/10 confidence. Where would you put yourself now?"
+Q8: Confidence Re-Check (CONFIDENCE TECHNIQUE #3: Make Progress Visible)
+Ask: "After everything we've discussed, where's your confidence now? (1-10)"
 
 [They give number]
 

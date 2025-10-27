@@ -20,7 +20,8 @@ export class COMPASSCoach implements FrameworkCoach {
         // Note: initial_action_clarity is OPTIONAL (only asked if initial_confidence >= 8)
         introduction: ["initial_confidence", "initial_mindset_state"],
         clarity: ["change_description", "sphere_of_control"],
-        ownership: ["initial_confidence", "current_confidence", "personal_benefit"],
+        // Note: initial_confidence is from introduction, not captured again in ownership
+        ownership: ["current_confidence", "personal_benefit"],
         mapping: ["committed_action", "action_day", "action_time"],
         practice: [
           "action_commitment_confidence",
@@ -52,12 +53,12 @@ export class COMPASSCoach implements FrameworkCoach {
   checkStepCompletion(
     stepName: string,
     payload: ReflectionPayload,
-    _reflections: Array<{ step: string; payload: ReflectionPayload }>,
+    reflections: Array<{ step: string; payload: ReflectionPayload }>,
     skipCount: number,
     loopDetected: boolean
   ): StepCompletionResult {
     if (this.useNewCompass) {
-      return this.checkNewCOMPASSCompletion(stepName, payload, skipCount, loopDetected);
+      return this.checkNewCOMPASSCompletion(stepName, payload, reflections, skipCount, loopDetected);
     } else {
       return this.checkLegacyCOMPASSCompletion(stepName, payload, skipCount, loopDetected);
     }
@@ -69,6 +70,7 @@ export class COMPASSCoach implements FrameworkCoach {
   private checkNewCOMPASSCompletion(
     stepName: string,
     payload: ReflectionPayload,
+    reflections: Array<{ step: string; payload: ReflectionPayload }>,
     _skipCount: number,
     _loopDetected: boolean
   ): StepCompletionResult {
@@ -88,7 +90,10 @@ export class COMPASSCoach implements FrameworkCoach {
       return { shouldAdvance: hasChangeDescription && hasSphereOfControl };
     } else if (stepName === "ownership") {
       // High-confidence branching: requires fewer fields if initial_confidence >= 8
-      const initialConfidence = payload["initial_confidence"] as number | undefined;
+      // Get initial_confidence from introduction step (not current payload)
+      const introReflections = reflections.filter(r => r.step === 'introduction');
+      const latestIntro = introReflections[introReflections.length - 1];
+      const initialConfidence = latestIntro?.payload?.['initial_confidence'] as number | undefined;
       const isHighConfidence = typeof initialConfidence === "number" && initialConfidence >= 8;
 
       const hasCurrentConfidence = typeof payload["current_confidence"] === "number" && payload["current_confidence"] >= 1 && payload["current_confidence"] <= 10;
@@ -347,14 +352,21 @@ export class COMPASSCoach implements FrameworkCoach {
 
     // Add CSS measurement triggers for practice stage
     if (this.useNewCompass && stepName === 'practice') {
+      // Get initial_confidence from introduction for comparison
+      const introReflections = reflections.filter(r => r.step === 'introduction');
+      const latestIntro = introReflections[introReflections.length - 1];
+      const initialConfidence = latestIntro?.payload?.['initial_confidence'] as number | undefined;
+      const initialValue = typeof initialConfidence === 'number' ? initialConfidence : '[initial]';
+      
       context += `\n\n📊 CSS FINAL MEASUREMENTS REQUIRED\n`;
+      context += `Initial confidence from introduction: ${initialValue}/10\n\n`;
       context += `You MUST ask these 5 questions before closing the session:\n`;
-      context += `1. final_confidence (1-10): "When we started, you were at [initial]/10. Where are you now?"\n`;
+      context += `1. final_confidence (1-10): "When we started, you were at ${initialValue}/10. Where are you now?"\n`;
       context += `2. final_action_clarity (1-10): "How clear are you now on your specific next steps?"\n`;
       context += `3. final_mindset_state: "How would you describe your mindset now? (resistant/neutral/open/engaged)"\n`;
       context += `4. user_satisfaction (1-10): "How helpful was this session for you?"\n`;
       context += `5. key_takeaway: "What's the ONE thing you're taking away from our conversation?"\n`;
-      context += `\nCelebrate the transformation: Calculate confidence increase and acknowledge their progress.\n`;
+      context += `\nCelebrate the transformation: Calculate confidence increase (${initialValue} → final) and acknowledge their progress.\n`;
     }
 
     // Generate AI suggestions if applicable

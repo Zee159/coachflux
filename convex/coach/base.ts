@@ -448,6 +448,11 @@ export async function generateCoachResponse(
     capturedFields
   );
   
+  // Strip validation constraints from schema before showing to AI
+  // This prevents the AI from trying to meet minLength/maxLength requirements
+  // which can cause unnatural responses or validation failures
+  const strippedSchema = stripValidationConstraints(step.required_fields_schema) as Record<string, unknown>;
+  
   // Phase 3: Use prompt caching to reduce costs by 90% on cached content
   // System prompt is cached across requests, saving ~2.5K tokens per message
   const primary = await client.messages.create({
@@ -464,7 +469,7 @@ export async function generateCoachResponse(
     messages: [
       { 
         role: "user", 
-        content: `Schema:\n${JSON.stringify(step.required_fields_schema, null, 2)}\n\n${user}\n\nRespond with ONLY valid JSON matching the schema.`
+        content: `Schema:\n${JSON.stringify(strippedSchema, null, 2)}\n\n${user}\n\nRespond with ONLY valid JSON matching the schema.`
       }
     ]
   });

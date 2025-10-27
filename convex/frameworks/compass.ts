@@ -29,7 +29,7 @@ export const compassFrameworkLegacy: LegacyFramework = {
         type: "object",
         properties: {
           user_consent_given: { type: "boolean" },
-          coach_reflection: { type: "string", minLength: 120, maxLength: 600 }
+          coach_reflection: { type: "string", minLength: 20, maxLength: 600 }
         },
         required: ["coach_reflection"],
         additionalProperties: false
@@ -103,9 +103,10 @@ export const compassFramework: FrameworkDefinition = {
             type: 'string',
             maxLength: 20
           },
-          coach_reflection: { type: 'string', minLength: 120, maxLength: 600 }
+          coach_reflection: { type: 'string', minLength: 20, maxLength: 600 }
         },
-        required: ['coach_reflection', 'initial_confidence', 'initial_mindset_state'],
+        // Note: Only coach_reflection is required. CSS baseline fields are captured progressively.
+        required: ['coach_reflection'],
         additionalProperties: false
       },
       
@@ -264,11 +265,7 @@ User should have confidence of 6+/10 and see at least ONE personal benefit.`,
       required_fields_schema: {
         type: 'object',
         properties: {
-          initial_confidence: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 10
-          },
+          // Note: initial_confidence is from introduction step, not captured here
           current_confidence: {
             type: 'integer',
             minimum: 1,
@@ -308,7 +305,7 @@ User should have confidence of 6+/10 and see at least ONE personal benefit.`,
             maxLength: 300
           }
         },
-        required: ['initial_confidence', 'current_confidence', 'personal_benefit', 'coach_reflection'],
+        required: ['current_confidence', 'personal_benefit', 'coach_reflection'],
         additionalProperties: false
       },
 
@@ -584,7 +581,6 @@ User has 10/10 action commitment and recognizes their confidence increased signi
     {
       required_fields: [
         'change_description',
-        'initial_confidence', 
         'final_confidence',
         'personal_benefit',
         'committed_action',
@@ -593,16 +589,15 @@ User has 10/10 action commitment and recognizes their confidence increased signi
       ],
       validation: (data: Record<string, unknown>): boolean => {
         const hasDescription = 'change_description' in data && typeof data['change_description'] === 'string';
-        const hasInitialConf = 'initial_confidence' in data && typeof data['initial_confidence'] === 'number';
         const hasFinalConf = 'final_confidence' in data && typeof data['final_confidence'] === 'number';
         const hasBenefit = 'personal_benefit' in data && typeof data['personal_benefit'] === 'string';
         const hasAction = 'committed_action' in data && typeof data['committed_action'] === 'string';
         const hasActionConf = 'action_commitment_confidence' in data && typeof data['action_commitment_confidence'] === 'number';
         const hasTakeaway = 'key_takeaway' in data && typeof data['key_takeaway'] === 'string';
         
-        return hasDescription && hasInitialConf && hasFinalConf && hasBenefit && hasAction && hasActionConf && hasTakeaway;
+        return hasDescription && hasFinalConf && hasBenefit && hasAction && hasActionConf && hasTakeaway;
       },
-      error_message: 'Complete session requires: change description, confidence tracking, personal benefit, committed action, and key takeaway'
+      error_message: 'Complete session requires: change description, final confidence, personal benefit, committed action, and key takeaway'
     }
   ]
 };

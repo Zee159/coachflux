@@ -13,7 +13,7 @@ import {
   isValidFrameworkId 
 } from './types';
 import { growFramework, growFrameworkLegacy } from './grow';
-import { compassFramework, compassFrameworkLegacy } from './compass';
+import { compassFramework } from './compass';
 
 // ============================================================================
 // Legacy Registry (Phase 1 - Migration Mode)
@@ -22,10 +22,13 @@ import { compassFramework, compassFrameworkLegacy } from './compass';
 /**
  * Legacy framework registry - matches current coach.ts behavior exactly
  * Used during migration to ensure zero regression
+ * 
+ * NOTE: COMPASS now uses the NEW 4-stage confidence-optimized version
+ * Legacy 6-stage version is kept for backward compatibility only
  */
 const legacyFrameworkRegistry: Record<string, LegacyFramework> = {
   'GROW': growFrameworkLegacy,
-  'COMPASS': compassFrameworkLegacy,
+  'COMPASS': compassFramework as unknown as LegacyFramework, // Use NEW COMPASS (4-stage)
 };
 
 /**

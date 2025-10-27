@@ -44,6 +44,12 @@ const ALLOWED_WORKAROUNDS = [
     files: ['convex/safety.ts'],
     reason: 'US emergency resources guaranteed to exist as fallback',
     patterns: ['eslint-disable directive']
+  },
+  {
+    // Framework registry type compatibility
+    files: ['convex/frameworks/registry.ts'],
+    reason: 'Type compatibility between FrameworkDefinition and LegacyFramework for migration',
+    patterns: ['Double assertion "as unknown as"']
   }
 ];
 

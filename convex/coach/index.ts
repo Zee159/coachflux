@@ -617,33 +617,31 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
 
     // =============================
     // CSS Baseline capture (COMPASS)
-    // Capture baseline once at OWNERSHIP start
+    // Capture baseline in INTRODUCTION step when CSS fields are present
     // =============================
-    if (session.framework === 'COMPASS' && step.name === 'ownership') {
-      // messageCount is number of prior reflections in this step
-      // Only capture baseline on first ownership message
-      if (messageCount === 0) {
-        const initialConfidence = (payload['initial_confidence'] as number | undefined);
-        const initialActionClarity = (payload['initial_action_clarity'] as number | undefined);
-        const initialMindset = (payload['initial_mindset_state'] as string | undefined);
-        if (
-          (typeof initialConfidence === 'number' && initialConfidence >= 1 && initialConfidence <= 10) ||
-          (typeof initialActionClarity === 'number' && initialActionClarity >= 1 && initialActionClarity <= 10) ||
-          (typeof initialMindset === 'string' && initialMindset.length > 0)
-        ) {
-          await ctx.runMutation(api.mutations.createMeasurementPoint, {
-            orgId: args.orgId,
-            userId: args.userId,
-            sessionId: args.sessionId,
-            stage: 'ownership',
-            measurementType: 'baseline',
-            payload: {
-              initial_confidence: initialConfidence,
-              initial_action_clarity: initialActionClarity,
-              initial_mindset_state: initialMindset,
-            }
-          });
-        }
+    if (session.framework === 'COMPASS' && step.name === 'introduction') {
+      const initialConfidence = (payload['initial_confidence'] as number | undefined);
+      const initialActionClarity = (payload['initial_action_clarity'] as number | undefined);
+      const initialMindset = (payload['initial_mindset_state'] as string | undefined);
+      
+      // Save baseline if ANY CSS field is present
+      if (
+        (typeof initialConfidence === 'number' && initialConfidence >= 1 && initialConfidence <= 10) ||
+        (typeof initialActionClarity === 'number' && initialActionClarity >= 1 && initialActionClarity <= 10) ||
+        (typeof initialMindset === 'string' && initialMindset.length > 0)
+      ) {
+        await ctx.runMutation(api.mutations.createMeasurementPoint, {
+          orgId: args.orgId,
+          userId: args.userId,
+          sessionId: args.sessionId,
+          stage: 'introduction',
+          measurementType: 'baseline',
+          payload: {
+            initial_confidence: initialConfidence,
+            initial_action_clarity: initialActionClarity,
+            initial_mindset_state: initialMindset,
+          }
+        });
       }
     }
 
@@ -685,7 +683,9 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
         try {
           // Re-fetch reflections including this turn
           const reflections = await ctx.runQuery(api.queries.getSessionReflections, { sessionId: args.sessionId });
-          const ownership = reflections.find((r: { step: string }) => r.step === 'ownership');
+          // Get CSS baseline from introduction step (not ownership)
+          const introList = reflections.filter((r: { step: string }) => r.step === 'introduction');
+          const introduction = introList.length > 0 ? introList[introList.length - 1] : undefined;
           const practiceList = reflections.filter((r: { step: string }) => r.step === 'practice');
           const practice = practiceList.length > 0 ? practiceList[practiceList.length - 1] : undefined;
 
@@ -712,9 +712,10 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
             return allowed.includes(s as MindsetState) ? (s as MindsetState) : 'neutral';
           };
 
-          const initialConfidence = ownership !== undefined && ownership !== null ? getNum(ownership.payload, 'initial_confidence') : undefined;
-          const initialActionClarity = ownership !== undefined && ownership !== null ? getNum(ownership.payload, 'initial_action_clarity') : undefined;
-          const initialMindsetStr = ownership !== undefined && ownership !== null ? getStr(ownership.payload, 'initial_mindset_state') : undefined;
+          // Get CSS baseline from introduction step
+          const initialConfidence = introduction !== undefined && introduction !== null ? getNum(introduction.payload, 'initial_confidence') : undefined;
+          const initialActionClarity = introduction !== undefined && introduction !== null ? getNum(introduction.payload, 'initial_action_clarity') : undefined;
+          const initialMindsetStr = introduction !== undefined && introduction !== null ? getStr(introduction.payload, 'initial_mindset_state') : undefined;
 
           const finalConfidence = practice !== undefined && practice !== null ? getNum(practice.payload, 'final_confidence') : undefined;
           const finalActionClarity = practice !== undefined && practice !== null ? getNum(practice.payload, 'final_action_clarity') : undefined;
