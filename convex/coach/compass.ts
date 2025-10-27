@@ -17,7 +17,8 @@ export class COMPASSCoach implements FrameworkCoach {
     if (this.useNewCompass) {
       // NEW COMPASS (4-stage) - Confidence-Optimized
       return {
-        introduction: ["initial_confidence", "initial_action_clarity", "initial_mindset_state"],
+        // Note: initial_action_clarity is OPTIONAL (only asked if initial_confidence >= 8)
+        introduction: ["initial_confidence", "initial_mindset_state"],
         clarity: ["change_description", "sphere_of_control"],
         ownership: ["initial_confidence", "current_confidence", "personal_benefit"],
         mapping: ["committed_action", "action_day", "action_time"],

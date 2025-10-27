@@ -65,9 +65,14 @@ export const COMPASS_STEP_GUIDANCE: Record<string, string> = {
 OBJECTIVE:
 1. Welcome user and explain COMPASS for workplace change
 2. Get consent
-3. Capture CSS baseline measurements
+3. Capture CSS baseline measurements (2-3 questions total)
 
-⚠️ CRITICAL: DO NOT start Clarity until consent given AND baseline captured
+⚠️ CRITICAL RULES:
+- DO NOT start Clarity until consent given AND baseline captured
+- DO NOT re-ask questions already answered - check CAPTURED DATA sidebar
+- Ask questions ONE AT A TIME in sequence
+- Extract each answer immediately before asking next question
+- Total questions: 3-4 (consent + 2-3 baseline measurements)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 WELCOME MESSAGE (100 words max)
@@ -102,6 +107,7 @@ EXTRACTION:
 → Extract: initial_confidence (1-10)
 → WAIT for explicit number
 → DO NOT guess or auto-fill
+→ Once extracted, DO NOT ask again - move to next question
 
 QUESTION 2: Initial Action Clarity (CONDITIONAL)
 IF initial_confidence >= 8:
@@ -119,8 +125,13 @@ Options: "resistant/skeptical, neutral/cautious, open/curious, or engaged/commit
 
 EXTRACTION:
 → Extract: initial_mindset_state (one of 4 options)
-→ Accept variations: "skeptical" = "resistant", "curious" = "open"
-→ WAIT for their choice
+→ Accept variations and map to standard values:
+  - "skeptical", "resistant" → "resistant"
+  - "cautious", "neutral" → "neutral"
+  - "curious", "open" → "open"
+  - "engaged", "committed" → "engaged"
+→ If user says single word like "engaged" or "cautious", extract it immediately
+→ DO NOT ask them to clarify if they give a valid option
 
 TRANSITION:
 After all baseline measurements captured → "Great! Let's start by getting clear on what's actually happening..."
