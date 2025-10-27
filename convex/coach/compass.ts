@@ -15,15 +15,25 @@ export class COMPASSCoach implements FrameworkCoach {
    */
   getRequiredFields(): Record<string, string[]> {
     if (this.useNewCompass) {
-      // NEW COMPASS (4-stage)
+      // NEW COMPASS (4-stage) - Confidence-Optimized
       return {
-        clarity: ["change_description"],
+        introduction: ["initial_confidence", "initial_action_clarity", "initial_mindset_state"],
+        clarity: ["change_description", "sphere_of_control"],
         ownership: ["initial_confidence", "current_confidence", "personal_benefit"],
         mapping: ["committed_action", "action_day", "action_time"],
-        practice: ["action_commitment_confidence", "final_confidence", "key_takeaway"],
+        practice: [
+          "action_commitment_confidence",
+          "final_confidence",
+          "final_action_clarity",
+          "final_mindset_state",
+          "user_satisfaction",
+          "key_takeaway"
+        ],
       };
     } else {
-      // LEGACY COMPASS (6-stage)
+      // ⚠️ DEPRECATED: LEGACY COMPASS (6-stage) - Kept for backward compatibility only
+      // DO NOT USE: This model has been replaced by the confidence-optimized 4-stage model
+      // See COMPASS_REFACTOR_COMPLETE.md for migration guide
       return {
         clarity: ["change_description", "why_it_matters", "supporters", "resistors"],
         ownership: ["personal_feelings", "personal_benefits", "personal_risks", "values_alignment"],
@@ -53,7 +63,7 @@ export class COMPASSCoach implements FrameworkCoach {
   }
 
   /**
-   * NEW COMPASS (4-stage) completion logic
+   * NEW COMPASS (4-stage) completion logic - Confidence-Optimized
    */
   private checkNewCOMPASSCompletion(
     stepName: string,
@@ -61,18 +71,39 @@ export class COMPASSCoach implements FrameworkCoach {
     _skipCount: number,
     _loopDetected: boolean
   ): StepCompletionResult {
-    if (stepName === "clarity") {
-      // Only requires change_description
-      const hasChangeDescription = typeof payload["change_description"] === "string" && payload["change_description"].length > 0;
-      return { shouldAdvance: hasChangeDescription };
-    } else if (stepName === "ownership") {
-      // Requires initial_confidence, current_confidence, personal_benefit
-      const hasInitialConfidence = typeof payload["initial_confidence"] === "number" && payload["initial_confidence"] >= 1 && payload["initial_confidence"] <= 5;
-      const hasCurrentConfidence = typeof payload["current_confidence"] === "number" && payload["current_confidence"] >= 1 && payload["current_confidence"] <= 5;
-      const hasPersonalBenefit = typeof payload["personal_benefit"] === "string" && payload["personal_benefit"].length > 0;
+    if (stepName === "introduction") {
+      // Requires CSS baseline measurements
+      const hasInitialConfidence = typeof payload["initial_confidence"] === "number" && payload["initial_confidence"] >= 1 && payload["initial_confidence"] <= 10;
+      const hasInitialActionClarity = typeof payload["initial_action_clarity"] === "number" && payload["initial_action_clarity"] >= 1 && payload["initial_action_clarity"] <= 10;
+      const hasInitialMindsetState = typeof payload["initial_mindset_state"] === "string" && payload["initial_mindset_state"].length > 0;
 
-      const completedFields = [hasInitialConfidence, hasCurrentConfidence, hasPersonalBenefit].filter(Boolean).length;
-      return { shouldAdvance: completedFields >= 2 }; // At least 2 out of 3 fields
+      const completedFields = [hasInitialConfidence, hasInitialActionClarity, hasInitialMindsetState].filter(Boolean).length;
+      return { shouldAdvance: completedFields >= 2 }; // At least 2 out of 3 CSS baseline fields
+    } else if (stepName === "clarity") {
+      // Requires change_description and sphere_of_control
+      const hasChangeDescription = typeof payload["change_description"] === "string" && payload["change_description"].length > 0;
+      const hasSphereOfControl = typeof payload["sphere_of_control"] === "string" && payload["sphere_of_control"].length > 0;
+
+      return { shouldAdvance: hasChangeDescription && hasSphereOfControl };
+    } else if (stepName === "ownership") {
+      // High-confidence branching: requires fewer fields if initial_confidence >= 8
+      const initialConfidence = payload["initial_confidence"] as number | undefined;
+      const isHighConfidence = typeof initialConfidence === "number" && initialConfidence >= 8;
+
+      const hasCurrentConfidence = typeof payload["current_confidence"] === "number" && payload["current_confidence"] >= 1 && payload["current_confidence"] <= 10;
+      const hasPersonalBenefit = typeof payload["personal_benefit"] === "string" && payload["personal_benefit"].length > 0;
+      const hasPastSuccess = typeof payload["past_success"] === "object" && payload["past_success"] !== null;
+
+      if (isHighConfidence) {
+        // High-confidence path: 3 questions (confidence_source, personal_benefit, past_success)
+        const hasConfidenceSource = typeof payload["confidence_source"] === "string" && payload["confidence_source"].length > 0;
+        const completedFields = [hasConfidenceSource, hasPersonalBenefit, hasPastSuccess].filter(Boolean).length;
+        return { shouldAdvance: completedFields >= 2 }; // At least 2 out of 3 fields
+      } else {
+        // Standard path: 7 questions (requires current_confidence, personal_benefit, and past_success)
+        const completedFields = [hasCurrentConfidence, hasPersonalBenefit, hasPastSuccess].filter(Boolean).length;
+        return { shouldAdvance: completedFields >= 2 }; // At least 2 out of 3 core fields
+      }
     } else if (stepName === "mapping") {
       // Requires committed_action, action_day, action_time
       const hasCommittedAction = typeof payload["committed_action"] === "string" && payload["committed_action"].length > 0;
@@ -82,13 +113,25 @@ export class COMPASSCoach implements FrameworkCoach {
       const completedFields = [hasCommittedAction, hasActionDay, hasActionTime].filter(Boolean).length;
       return { shouldAdvance: completedFields >= 2 }; // At least 2 out of 3 fields
     } else if (stepName === "practice") {
-      // Requires action_commitment_confidence, final_confidence, key_takeaway
-      const hasActionCommitmentConfidence = typeof payload["action_commitment_confidence"] === "number" && payload["action_commitment_confidence"] >= 1 && payload["action_commitment_confidence"] <= 5;
-      const hasFinalConfidence = typeof payload["final_confidence"] === "number" && payload["final_confidence"] >= 1 && payload["final_confidence"] <= 5;
+      // Requires CSS final measurements (5 mandatory fields)
+      const hasActionCommitmentConfidence = typeof payload["action_commitment_confidence"] === "number" && payload["action_commitment_confidence"] >= 1 && payload["action_commitment_confidence"] <= 10;
+      const hasFinalConfidence = typeof payload["final_confidence"] === "number" && payload["final_confidence"] >= 1 && payload["final_confidence"] <= 10;
+      const hasFinalActionClarity = typeof payload["final_action_clarity"] === "number" && payload["final_action_clarity"] >= 1 && payload["final_action_clarity"] <= 10;
+      const hasFinalMindsetState = typeof payload["final_mindset_state"] === "string" && payload["final_mindset_state"].length > 0;
+      const hasUserSatisfaction = typeof payload["user_satisfaction"] === "number" && payload["user_satisfaction"] >= 1 && payload["user_satisfaction"] <= 10;
       const hasKeyTakeaway = typeof payload["key_takeaway"] === "string" && payload["key_takeaway"].length > 0;
 
-      const completedFields = [hasActionCommitmentConfidence, hasFinalConfidence, hasKeyTakeaway].filter(Boolean).length;
-      return { shouldAdvance: completedFields >= 2 }; // At least 2 out of 3 fields
+      const completedFields = [
+        hasActionCommitmentConfidence,
+        hasFinalConfidence,
+        hasFinalActionClarity,
+        hasFinalMindsetState,
+        hasUserSatisfaction,
+        hasKeyTakeaway
+      ].filter(Boolean).length;
+
+      // Require at least 4 out of 6 CSS final fields (strict for session completion)
+      return { shouldAdvance: completedFields >= 4 };
     } else if (stepName === "review") {
       // Review never auto-advances
       return { shouldAdvance: false };
@@ -100,7 +143,9 @@ export class COMPASSCoach implements FrameworkCoach {
   }
 
   /**
-   * LEGACY COMPASS (6-stage) completion logic
+   * ⚠️ DEPRECATED: LEGACY COMPASS (6-stage) completion logic
+   * Kept for backward compatibility only - DO NOT USE for new sessions
+   * See COMPASS_REFACTOR_COMPLETE.md for the new 4-stage model
    */
   private checkLegacyCOMPASSCompletion(
     stepName: string,
@@ -229,23 +274,25 @@ export class COMPASSCoach implements FrameworkCoach {
    */
   getStepTransitions(): StepTransitions {
     if (this.useNewCompass) {
-      // NEW COMPASS (4-stage) transitions
+      // NEW COMPASS (4-stage) transitions - Confidence-Optimized
       return {
         transitions: {
-          clarity: "Great! You've clarified the change. Now let's explore your personal connection and build confidence.",
-          ownership: "Excellent! You've built personal commitment. Now let's map out your specific action plan.",
-          mapping: "Perfect! You've got a clear plan. Now let's practice and commit to your first step.",
-          practice: "Well done! You're ready to take action. Let's review everything together.",
+          introduction: "Thank you. Let's start by getting clear on what's actually happening...",
+          clarity: "Great! You've clarified the change and identified what you can control. Now let's build your confidence.",
+          ownership: "Excellent! Your confidence has grown. Now let's map out your specific action plan.",
+          mapping: "Perfect! You've got a clear plan. Now let's lock in your commitment and measure your transformation.",
+          practice: "Well done! You're ready to take action. Your session is complete.",
         },
         openers: {
-          ownership: "We clarified the change. Now let's explore your personal connection — how confident do you feel about this change, and what personal benefits do you see? This builds the foundation for your action plan.",
-          mapping: "With your personal connection established, let's map out your specific action plan. What's the ONE specific action you want to commit to, and when will you do it?",
-          practice: "You've got your action plan. Now let's practice and commit — how confident are you about taking this action, and what's your key takeaway from our session?",
+          clarity: "Let's get super clear on what's actually changing. In your day-to-day work, what will be different?",
+          ownership: "You're at [X]/10 confidence. Let's explore what's driving that and build it higher.",
+          mapping: "With your confidence built, let's map out your specific action plan. What's the ONE action you want to commit to?",
+          practice: "You've got your action plan. Now let's lock in your commitment and see how far you've come.",
           review: "Time to consolidate. Let's review your key takeaways and next actions.",
         }
       };
     } else {
-      // LEGACY COMPASS (6-stage) transitions
+      // ⚠️ DEPRECATED: LEGACY COMPASS (6-stage) transitions - DO NOT USE
       return {
         transitions: {
           clarity: "Excellent! You've clarified the change. Now let's explore your personal ownership.",
@@ -266,7 +313,7 @@ export class COMPASSCoach implements FrameworkCoach {
   }
 
   /**
-   * Generate COMPASS-specific AI context (suggestions, nudges)
+   * Generate COMPASS-specific AI context (suggestions, nudges, branching logic)
    */
   generateAIContext(
     stepName: string,
@@ -274,6 +321,40 @@ export class COMPASSCoach implements FrameworkCoach {
     userInput: string
   ): string {
     let context = '';
+
+    // Add high-confidence branching logic for ownership stage
+    if (this.useNewCompass && stepName === 'ownership') {
+      const introReflections = reflections.filter(r => r.step === 'introduction');
+      const latestIntro = introReflections[introReflections.length - 1];
+      const initialConfidence = latestIntro?.payload?.['initial_confidence'] as number | undefined;
+
+      if (typeof initialConfidence === 'number') {
+        if (initialConfidence >= 8) {
+          context += `\n\n🔀 HIGH-CONFIDENCE PATH ACTIVATED (initial_confidence: ${initialConfidence}/10)\n`;
+          context += `Use shortened Ownership flow (3 questions):\n`;
+          context += `1. Confidence Source: "You're at ${initialConfidence}/10 - that's strong! What's giving you that confidence?"\n`;
+          context += `2. Personal Benefit: "What could you gain personally if you adapt well to this change?"\n`;
+          context += `3. Past Success: "Tell me about a time you successfully handled change before."\n`;
+          context += `Then fast-track to MAPPING stage.\n`;
+        } else {
+          context += `\n\n⚡ STANDARD PATH (initial_confidence: ${initialConfidence}/10)\n`;
+          context += `Use full Ownership flow (7 questions) to build confidence from ${initialConfidence}/10 to 6-7/10.\n`;
+          context += `Focus on fear exploration, reframing, and past success activation.\n`;
+        }
+      }
+    }
+
+    // Add CSS measurement triggers for practice stage
+    if (this.useNewCompass && stepName === 'practice') {
+      context += `\n\n📊 CSS FINAL MEASUREMENTS REQUIRED\n`;
+      context += `You MUST ask these 5 questions before closing the session:\n`;
+      context += `1. final_confidence (1-10): "When we started, you were at [initial]/10. Where are you now?"\n`;
+      context += `2. final_action_clarity (1-10): "How clear are you now on your specific next steps?"\n`;
+      context += `3. final_mindset_state: "How would you describe your mindset now? (resistant/neutral/open/engaged)"\n`;
+      context += `4. user_satisfaction (1-10): "How helpful was this session for you?"\n`;
+      context += `5. key_takeaway: "What's the ONE thing you're taking away from our conversation?"\n`;
+      context += `\nCelebrate the transformation: Calculate confidence increase and acknowledge their progress.\n`;
+    }
 
     // Generate AI suggestions if applicable
     const suggestionContext = this.generateAISuggestions(stepName, reflections);
@@ -369,6 +450,6 @@ export class COMPASSCoach implements FrameworkCoach {
 }
 
 // Export singleton instances
-export const compassCoach = new COMPASSCoach(true); // New COMPASS (4-stage)
-export const compassLegacyCoach = new COMPASSCoach(false); // Legacy COMPASS (6-stage)
+export const compassCoach = new COMPASSCoach(true); // ✅ NEW COMPASS (4-stage confidence-optimized)
+export const compassLegacyCoach = new COMPASSCoach(false); // ⚠️ DEPRECATED: Legacy COMPASS (6-stage) - DO NOT USE
 

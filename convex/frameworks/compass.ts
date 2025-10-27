@@ -1,12 +1,16 @@
 /**
- * NEW COMPASS Framework - 4-Stage Model
- * For individuals navigating organizational change
+ * COMPASS Framework - Confidence-Optimized 4-Stage Model
+ * For individuals navigating organizational change with confidence
  * 
  * Single 20-minute session format:
- * - Clarity (5 min): Understand change and sphere of control
- * - Ownership (8 min): Build confidence and personal commitment  
- * - Mapping (4 min): Identify ONE specific action
- * - Practice (3 min): Lock in commitment and measure progress
+ * - Introduction (2 min): Welcome, consent, CSS baseline measurements
+ * - Clarity (4 min): Understand change and sphere of control
+ * - Ownership (9 min): Build confidence through reframes and evidence (TRANSFORMATION STAGE)
+ * - Mapping (5 min): Create ONE specific action with commitment confidence
+ * - Practice (2 min): Lock in commitment, CSS final measurements, celebrate transformation
+ * 
+ * North Star: "Will this increase the user's confidence?"
+ * Target: +4 point confidence increase (e.g., 3/10 → 7/10)
  */
 
 import type { FrameworkDefinition, LegacyFramework } from './types';
@@ -51,16 +55,6 @@ export const compassFrameworkLegacy: LegacyFramework = {
       system_objective: "Plan small experiments.",
       required_fields_schema: { type: "object", properties: {}, required: ["coach_reflection"] }
     },
-    {
-      name: "anchoring",
-      system_objective: "Make it stick.",
-      required_fields_schema: { type: "object", properties: {}, required: ["coach_reflection"] }
-    },
-    {
-      name: "review",
-      system_objective: "Assess progress.",
-      required_fields_schema: { type: "object", properties: {}, required: ["coach_reflection"] }
-    }
   ]
 };
 
@@ -91,14 +85,35 @@ export const compassFramework: FrameworkDefinition = {
         type: 'object',
         properties: {
           user_consent_given: { type: 'boolean' },
+          // CSS BASELINE MEASUREMENTS
+          // initial_confidence: PRIMARY METRIC - baseline confidence level
+          initial_confidence: { 
+            type: 'integer', 
+            minimum: 1, 
+            maximum: 10
+          },
+          // initial_action_clarity: CONDITIONAL - only for high-confidence users (>=8)
+          initial_action_clarity: { 
+            type: 'integer', 
+            minimum: 1, 
+            maximum: 10
+          },
+          // initial_mindset_state: MANDATORY - baseline mindset state (resistant/neutral/open/engaged)
+          initial_mindset_state: { 
+            type: 'string',
+            maxLength: 20
+          },
           coach_reflection: { type: 'string', minLength: 120, maxLength: 600 }
         },
-        required: ['coach_reflection'],
+        required: ['coach_reflection', 'initial_confidence', 'initial_mindset_state'],
         additionalProperties: false
       },
       
       coaching_questions: [
-        'Does this framework feel right for what you\'re facing today?'
+        'Does this framework feel right for what you\'re facing today?',
+        'On a scale of 1-10, how confident do you feel about navigating this change successfully?',
+        'How clear are you on your specific next steps? (1-10)', // ONLY if confidence >= 8
+        'How would you describe your current mindset? (resistant/neutral/open/engaged)'
       ],
       
       guardrails: [
@@ -172,7 +187,7 @@ Move to Ownership when clarity is established.`,
             maxLength: 300
           }
         },
-        required: ['change_description', 'coach_reflection'],
+        required: ['change_description', 'sphere_of_control', 'coach_reflection'],
         additionalProperties: false
       },
 
@@ -282,10 +297,10 @@ User should have confidence of 6+/10 and see at least ONE personal benefit.`,
             type: 'string',
             maxLength: 200
           },
-          ownership_score: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 5
+          // confidence_source: For high-confidence users (>=8) - what gives them confidence
+          confidence_source: {
+            type: 'string',
+            maxLength: 200
           },
           coach_reflection: {
             type: 'string',
@@ -397,11 +412,6 @@ User has ONE specific action with full details and 8+/10 confidence they'll do i
             type: 'string',
             maxLength: 100
           },
-          mapping_score: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 5
-          },
           coach_reflection: {
             type: 'string',
             minLength: 20,
@@ -482,32 +492,55 @@ User has 10/10 action commitment and recognizes their confidence increased signi
       required_fields_schema: {
         type: 'object',
         properties: {
-          action_commitment_confidence: {
-            type: 'integer',
-            minimum: 1,
+          // action_commitment_confidence: Confidence they will complete the action
+          action_commitment_confidence: { 
+            type: 'integer', 
+            minimum: 1, 
             maximum: 10
           },
-          final_confidence: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 10
-          },
-          success_proof: {
-            type: 'string',
-            maxLength: 150
-          },
-          key_takeaway: {
-            type: 'string',
+          // key_takeaway: User's biggest insight from session
+          key_takeaway: { 
+            type: 'string', 
             maxLength: 200
           },
-          what_shifted: {
-            type: 'string',
-            maxLength: 250
-          },
-          practice_score: {
-            type: 'integer',
-            minimum: 1,
+          // CSS FINAL MEASUREMENTS
+          // final_confidence: CSS Dimension 1 - final confidence level
+          final_confidence: { 
+            type: 'integer', 
+            minimum: 1, 
             maximum: 10
+          },
+          // final_action_clarity: CSS Dimension 2 - clarity on next steps
+          final_action_clarity: { 
+            type: 'integer', 
+            minimum: 1, 
+            maximum: 10
+          },
+          // final_mindset_state: CSS Dimension 3 - final mindset state (resistant/neutral/open/engaged)
+          final_mindset_state: { 
+            type: 'string',
+            maxLength: 20
+          },
+          // user_satisfaction: CSS Dimension 4 - session helpfulness
+          user_satisfaction: { 
+            type: 'integer', 
+            minimum: 1, 
+            maximum: 10
+          },
+          // session_helpfulness_reason: Why session was helpful/not helpful (optional)
+          session_helpfulness_reason: { 
+            type: 'string', 
+            maxLength: 300
+          },
+          // CELEBRATION FIELDS
+          // confidence_increase: Calculated: final_confidence - initial_confidence
+          confidence_increase: { 
+            type: 'integer'
+          },
+          // what_caused_shift: What caused their confidence to increase
+          what_caused_shift: { 
+            type: 'string', 
+            maxLength: 250
           },
           coach_reflection: {
             type: 'string',
@@ -515,7 +548,15 @@ User has 10/10 action commitment and recognizes their confidence increased signi
             maxLength: 300
           }
         },
-        required: ['action_commitment_confidence', 'final_confidence', 'key_takeaway', 'coach_reflection'],
+        required: [
+          'action_commitment_confidence', 
+          'final_confidence', 
+          'final_action_clarity',
+          'final_mindset_state',
+          'user_satisfaction',
+          'key_takeaway', 
+          'coach_reflection'
+        ],
         additionalProperties: false
       },
 
@@ -535,45 +576,6 @@ User has 10/10 action commitment and recognizes their confidence increased signi
         'End with strong encouragement and belief'
       ],
 
-      transition_rules: [
-        { 
-          condition: 'action_committed_with_high_confidence',
-          nextStep: 'review', 
-          action: 'Move to Review - consolidate and close the session'
-        }
-      ]
-    }
-    ,
-    // ========================================================================
-    // REVIEW - Consolidate insights and confirm next steps (2 minutes)
-    // ========================================================================
-    {
-      name: 'review',
-      order: 5,
-      duration_minutes: 2,
-      objective: 'Consolidate key insights, confirm immediate next actions, and record final confidence level.',
-      system_prompt: `You are a COMPASS change coach in the REVIEW stage. Summarize key takeaways succinctly and capture next actions and confidence level.`,
-      required_fields_schema: {
-        type: 'object',
-        properties: {
-          primary_barrier: { type: 'string', maxLength: 200 },
-          next_actions: { type: 'array', items: { type: 'string', minLength: 2 }, minItems: 1, maxItems: 5 },
-          confidence_level: { type: 'integer', minimum: 1, maximum: 10 },
-          coach_reflection: { type: 'string', minLength: 20, maxLength: 400 }
-        },
-        required: ['coach_reflection'],
-        additionalProperties: false
-      },
-      coaching_questions: [
-        'What are your key takeaways from today?',
-        'What immediate action will you take next?',
-        'On a scale of 1-10, how confident do you feel going forward?'
-      ],
-      guardrails: [
-        'Keep the summary short and action-oriented',
-        'Capture one immediate next action',
-        'Record final confidence level'
-      ],
       transition_rules: []
     }
   ],

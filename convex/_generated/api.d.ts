@@ -28,6 +28,7 @@ import type * as mutations from "../mutations.js";
 import type * as nudges from "../nudges.js";
 import type * as prompts_base from "../prompts/base.js";
 import type * as prompts_compass from "../prompts/compass.js";
+import type * as prompts_compass_streamlined from "../prompts/compass_streamlined.js";
 import type * as prompts_grow from "../prompts/grow.js";
 import type * as prompts_index from "../prompts/index.js";
 import type * as prompts from "../prompts.js";
@@ -67,6 +68,7 @@ declare const fullApi: ApiFromModules<{
   nudges: typeof nudges;
   "prompts/base": typeof prompts_base;
   "prompts/compass": typeof prompts_compass;
+  "prompts/compass_streamlined": typeof prompts_compass_streamlined;
   "prompts/grow": typeof prompts_grow;
   "prompts/index": typeof prompts_index;
   prompts: typeof prompts;

@@ -229,12 +229,20 @@ const COACHING_QUESTIONS: Record<string, string[]> = {
     "What did you learn?",
     "What will you do differently next time?"
   ],
+  // ⚠️ DEPRECATED: Legacy 6-stage COMPASS - DO NOT USE
   anchoring: [
     "What's the ONE thing in your environment that makes the old way easier?",
     "What could you change to make the new way easier?",
     "What habits do you need to build?",
-    "How will you lead by example?",
+    "What reminders or cues will help you remember?",
     "Who can hold you accountable?"
+  ],
+  // ⚠️ DEPRECATED: Legacy 6-stage COMPASS - DO NOT USE
+  sustaining: [
+    "What's the plan to maintain momentum?",
+    "How will you handle setbacks or obstacles?",
+    "What support systems do you have in place?",
+    "How will you celebrate progress and successes?"
   ]
 };
 
@@ -646,21 +654,11 @@ Guidance:
 - Adapt approach based on experience
 - Ask: "What have you tried?" "What worked/didn't work?" "What did you learn?"`,
 
-  anchoring: `ANCHORING PHASE - Make It Stick (Personal + Team)
-Guidance:
-- Keep it LIGHT - focus on ONE key change (personal) + ONE leadership action (team)
-- Redesign environment to support change
-- Build sustainable habits AND lead visibly
-- Create accountability systems
-- Reduce friction for new behaviors
-- Ask: "What makes the old way easier?" "How will you lead by example?" "Who can hold you accountable?"`,
+  anchoring: `⚠️ DEPRECATED - This stage has been removed in the confidence-optimized COMPASS model
+See COMPASS_REFACTOR_COMPLETE.md for the new 4-stage model`,
 
-  sustaining: `DEPRECATED - This step was merged into ANCHORING
-Guidance:
-- See ANCHORING phase for updated guidance
-- Track meaningful metrics
-- Adjust course based on results
-- Celebrate progress and wins
+  sustaining: `⚠️ DEPRECATED - This stage has been removed in the confidence-optimized COMPASS model
+See COMPASS_REFACTOR_COMPLETE.md for the new 4-stage model
 - Ask: "How are you role-modeling this?" "What metrics are you tracking?" "How are you helping your team?"`
 };
 

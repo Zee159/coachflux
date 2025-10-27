@@ -20,7 +20,7 @@ The 6 frameworks cover **100% of leadership coaching situations:**
 
 1. **GROW** (Goal-Reality-Options-Will) — Generic goals & performance
 2. **CLEAR** (Contracting-Listening-Exploring-Action-Review) — Complex/emotional situations
-3. **COMPASS** (Clarity-Ownership-Mapping-Practice-Anchoring-Sustaining) — Change management & transformation
+3. **COMPASS** (Clarity-Ownership-Mapping-Practice) — Change management & confidence transformation
 4. **Power-Interest Grid** (Map-Assess-Strategise) — Stakeholder management
 5. **Psychological Safety** (Assess-Barriers-Interventions-Rituals) — Team development
 6. **Executive Presence** + **Conflict Resolution** (or another 2 specialised frameworks)

@@ -214,7 +214,8 @@ export interface ActionSuggestion {
 }
 
 /**
- * AI-generated suggestion for ANCHORING phase environment design
+ * ⚠️ DEPRECATED: AI-generated suggestion for ANCHORING phase environment design
+ * Legacy 6-stage COMPASS only - DO NOT USE for new sessions
  */
 export interface EnvironmentSuggestion {
   barrier?: string;
@@ -225,7 +226,8 @@ export interface EnvironmentSuggestion {
 }
 
 /**
- * AI-generated suggestion for SUSTAINING phase leadership
+ * ⚠️ DEPRECATED: AI-generated suggestion for SUSTAINING phase leadership
+ * Legacy 6-stage COMPASS only - DO NOT USE for new sessions
  */
 export interface LeadershipSuggestion {
   visibility_action?: string;
@@ -395,7 +397,7 @@ export interface CompassScores extends Record<string, unknown> {
   ownership_score?: number;    // 1-5
   mapping_score?: number;      // 1-5
   practice_score?: number;     // 1-5
-  anchoring_score?: number;    // 1-5 (now includes leadership visibility - merged from sustaining)
+  anchoring_score?: number;    // ⚠️ DEPRECATED: Legacy 6-stage COMPASS only
   overall_readiness: number;   // Average of provided scores (5 dimensions max: clarity, ownership, mapping, practice, anchoring)
 }
 

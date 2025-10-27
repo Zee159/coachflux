@@ -20,7 +20,8 @@ import { calculateTransformationMagnitude } from './types';
 import { getNumber, getString, getArray, formatCompassScoresContent } from './base';
 
 /**
- * Extract COMPASS scores from reflections  
+ * Extract COMPASS scores from reflections (Confidence-Optimized)
+ * Now uses 1-10 scale and CSS measurements
  */
 export function extractCompassScores(
   reflections: Array<{ step: string; payload: ReflectionPayload }>
@@ -32,57 +33,53 @@ export function extractCompassScores(
   let scoreCount = 0;
   let totalScore = 0;
   
-  // Extract scores from each phase
-  for (const reflection of reflections) {
-    const payload = reflection.payload;
-    
-    if (reflection.step === 'clarity') {
-      const score = getNumber(payload, 'clarity_score');
-      if (score !== undefined) {
-        scores.clarity_score = score;
-        totalScore += score;
-        scoreCount++;
-      }
+  // Extract confidence progression (primary metric)
+  const introReflection = reflections.find(r => r.step === 'introduction');
+  const practiceReflection = reflections.find(r => r.step === 'practice');
+  
+  if (introReflection !== undefined) {
+    const initialConfidence = getNumber(introReflection.payload, 'initial_confidence');
+    if (initialConfidence !== undefined) {
+      scores['initial_confidence'] = initialConfidence;
     }
-    
-    if (reflection.step === 'ownership') {
-      const score = getNumber(payload, 'ownership_score');
-      if (score !== undefined) {
-        scores.ownership_score = score;
-        totalScore += score;
-        scoreCount++;
-      }
-    }
-    
-    if (reflection.step === 'mapping') {
-      const score = getNumber(payload, 'mapping_score');
-      if (score !== undefined) {
-        scores.mapping_score = score;
-        totalScore += score;
-        scoreCount++;
-      }
-    }
-    
-    if (reflection.step === 'practice') {
-      const score = getNumber(payload, 'practice_score');
-      if (score !== undefined) {
-        scores.practice_score = score;
-        totalScore += score;
-        scoreCount++;
-      }
-    }
-    
-    // Anchoring removed in 4-step COMPASS
   }
   
-  // Calculate overall readiness (average of provided scores)
+  if (practiceReflection !== undefined) {
+    const finalConfidence = getNumber(practiceReflection.payload, 'final_confidence');
+    if (finalConfidence !== undefined) {
+      scores['final_confidence'] = finalConfidence;
+      totalScore += finalConfidence;
+      scoreCount++;
+    }
+    
+    const actionCommitment = getNumber(practiceReflection.payload, 'action_commitment_confidence');
+    if (actionCommitment !== undefined) {
+      scores['action_commitment'] = actionCommitment;
+      totalScore += actionCommitment;
+      scoreCount++;
+    }
+  }
+  
+  // Extract optional clarity score
+  const clarityReflection = reflections.find(r => r.step === 'clarity');
+  if (clarityReflection !== undefined) {
+    const score = getNumber(clarityReflection.payload, 'clarity_score');
+    if (score !== undefined) {
+      scores.clarity_score = score;
+      totalScore += score;
+      scoreCount++;
+    }
+  }
+  
+  // Calculate overall readiness (average of provided scores, normalized to 10)
   scores.overall_readiness = scoreCount > 0 ? Math.round((totalScore / scoreCount) * 10) / 10 : 0;
   
   return scores;
 }
 
 /**
- * Extract COMPASS transformation data
+ * Extract COMPASS transformation data (Confidence-Optimized)
+ * Now uses CSS mindset_state measurements
  */
 export function extractCompassTransformation(
   reflections: Array<{ step: string; payload: ReflectionPayload }>
@@ -92,20 +89,22 @@ export function extractCompassTransformation(
   let pivotMoment: PivotMoment | null = null;
   const unlockFactors: string[] = [];
   
-  // Extract initial emotional state from clarity
-  const clarityReflection = reflections.find(r => r.step === 'clarity');
-  if (clarityReflection !== undefined && clarityReflection !== null) {
-    const state = getString(clarityReflection.payload, 'initial_emotional_state');
+  // Extract initial mindset state from introduction (CSS baseline)
+  const introReflection = reflections.find(r => r.step === 'introduction');
+  if (introReflection !== undefined && introReflection !== null) {
+    const state = getString(introReflection.payload, 'initial_mindset_state');
     if (state !== undefined) {
+      // Map mindset_state to EmotionalState
       initialState = state as EmotionalState;
     }
   }
   
-  // Extract final emotional state from review
-  const reviewReflection = reflections.find(r => r.step === 'review');
-  if (reviewReflection !== undefined && reviewReflection !== null) {
-    const state = getString(reviewReflection.payload, 'final_emotional_state');
+  // Extract final mindset state from practice (CSS final)
+  const practiceReflection = reflections.find(r => r.step === 'practice');
+  if (practiceReflection !== undefined && practiceReflection !== null) {
+    const state = getString(practiceReflection.payload, 'final_mindset_state');
     if (state !== undefined) {
+      // Map mindset_state to EmotionalState
       finalState = state as EmotionalState;
     }
   }
@@ -318,14 +317,12 @@ ${css.composite_success_score >= 85 ? '🌟 EXCELLENT - Outstanding transformati
     data: scores
   });
   
-  // Change Context Section (Enhanced with Success Vision)
+  // Change Context Section (Confidence-Optimized)
   const clarityReflection = data.reflections.find(r => r.step === 'clarity');
   if (clarityReflection !== undefined && clarityReflection !== null) {
     const changeDesc = getString(clarityReflection.payload, 'change_description');
-    const whyMatters = getString(clarityReflection.payload, 'why_it_matters');
-    const successVision = getString(clarityReflection.payload, 'success_vision');
-    const supporters = getArray<string>(clarityReflection.payload, 'supporters');
-    const resistors = getArray<string>(clarityReflection.payload, 'resistors');
+    const sphereOfControl = getString(clarityReflection.payload, 'sphere_of_control');
+    const clarityScore = getNumber(clarityReflection.payload, 'clarity_score');
     
     const parts: string[] = [];
     
@@ -333,59 +330,63 @@ ${css.composite_success_score >= 85 ? '🌟 EXCELLENT - Outstanding transformati
       parts.push(`📌 WHAT'S CHANGING:\n${changeDesc}`);
     }
     
-    if (whyMatters !== undefined) {
-      parts.push(`\n🎯 WHY IT MATTERS:\n${whyMatters}`);
+    if (sphereOfControl !== undefined) {
+      parts.push(`\n🎯 WHAT YOU CAN CONTROL:\n${sphereOfControl}`);
     }
     
-    if (successVision !== undefined) {
-      parts.push(`\n✨ YOUR SUCCESS VISION:\n${successVision}`);
-    }
-    
-    if (supporters !== undefined && supporters.length > 0) {
-      parts.push(`\n✅ SUPPORTERS:\n${supporters.map(s => `• ${s}`).join('\n')}`);
-    }
-    
-    if (resistors !== undefined && resistors.length > 0) {
-      parts.push(`\n⚠️ RESISTORS:\n${resistors.map(r => `• ${r}`).join('\n')}`);
+    if (clarityScore !== undefined) {
+      parts.push(`\n📊 CLARITY LEVEL: ${clarityScore}/10`);
     }
     
     if (parts.length > 0) {
       sections.push({
-        heading: '📋 CHANGE LANDSCAPE',
+        heading: '📋 CHANGE CLARITY',
         content: parts.join('\n'),
         type: 'text'
       });
     }
   }
   
-  // Personal Connection Section (Ownership)
+  // Personal Connection Section (Confidence Transformation)
+  const introReflection = data.reflections.find(r => r.step === 'introduction');
   const ownershipReflection = data.reflections.find(r => r.step === 'ownership');
-  if (ownershipReflection !== undefined && ownershipReflection !== null) {
+  const practiceReflection = data.reflections.find(r => r.step === 'practice');
+  
+  const parts: string[] = [];
+  
+  // Confidence transformation (primary metric)
+  const initialConfidence = introReflection !== undefined ? getNumber(introReflection.payload, 'initial_confidence') : undefined;
+  const finalConfidence = practiceReflection !== undefined ? getNumber(practiceReflection.payload, 'final_confidence') : undefined;
+  
+  if (initialConfidence !== undefined && finalConfidence !== undefined) {
+    const increase = finalConfidence - initialConfidence;
+    const arrow = increase > 0 ? '↗️' : increase < 0 ? '↘️' : '➡️';
+    parts.push(`📈 CONFIDENCE TRANSFORMATION:\n${initialConfidence}/10 ${arrow} ${finalConfidence}/10 (${increase > 0 ? '+' : ''}${increase} points)`);
+  }
+  
+  // Personal benefit
+  if (ownershipReflection !== undefined) {
     const personalBenefit = getString(ownershipReflection.payload, 'personal_benefit');
-    const confidenceStart = getNumber(ownershipReflection.payload, 'initial_confidence');
-    const confidenceCurrent = getNumber(ownershipReflection.payload, 'current_confidence');
-    const parts: string[] = [];
-
     if (personalBenefit !== undefined) {
-      parts.push(`💎 PERSONAL BENEFIT:\n${personalBenefit}`);
+      parts.push(`\n💎 PERSONAL BENEFIT:\n${personalBenefit}`);
     }
-    if (confidenceStart !== undefined || confidenceCurrent !== undefined) {
-      const conf = [
-        confidenceStart !== undefined ? `Start: ${confidenceStart}/10` : null,
-        confidenceCurrent !== undefined ? `Now: ${confidenceCurrent}/10` : null
-      ].filter(Boolean).join(' → ');
-      if (conf.length > 0) {
-        parts.push(`\n📈 CONFIDENCE PROGRESSION:\n${conf}`);
+    
+    // Past success
+    const pastSuccess = ownershipReflection.payload['past_success'];
+    if (pastSuccess !== undefined && typeof pastSuccess === 'object' && pastSuccess !== null) {
+      const achievement = (pastSuccess as Record<string, unknown>)['achievement'];
+      if (typeof achievement === 'string') {
+        parts.push(`\n🏆 PAST SUCCESS:\n${achievement}`);
       }
     }
-
-    if (parts.length > 0) {
-      sections.push({
-        heading: '💪 YOUR PERSONAL CONNECTION',
-        content: parts.join('\n'),
-        type: 'text'
-      });
-    }
+  }
+  
+  if (parts.length > 0) {
+    sections.push({
+      heading: '💪 YOUR CONFIDENCE JOURNEY',
+      content: parts.join('\n'),
+      type: 'text'
+    });
   }
   
   // Implementation Plan Section (Mapping)
@@ -427,40 +428,28 @@ ${css.composite_success_score >= 85 ? '🌟 EXCELLENT - Outstanding transformati
     }
   }
   
-  // Key Insights & Reflections Section (Review)
-  const reviewReflection = data.reflections.find(r => r.step === 'review');
-  if (reviewReflection !== undefined && reviewReflection !== null) {
-    const keyInsights = getString(reviewReflection.payload, 'key_insights');
-    const whatShifted = getString(reviewReflection.payload, 'what_shifted');
-    const nextActions = getArray<string>(reviewReflection.payload, 'next_actions');
-    const confidenceLevel = getNumber(reviewReflection.payload, 'confidence_level');
+  // Key Takeaway & Session Value (Practice Stage)
+  if (practiceReflection !== undefined && practiceReflection !== null) {
+    const keyTakeaway = getString(practiceReflection.payload, 'key_takeaway');
+    const userSatisfaction = getNumber(practiceReflection.payload, 'user_satisfaction');
+    const actionCommitment = getNumber(practiceReflection.payload, 'action_commitment_confidence');
     
-    // Key Insights
-    if (keyInsights !== undefined) {
+    // Key Takeaway
+    if (keyTakeaway !== undefined) {
       sections.push({
-        heading: '💡 YOUR KEY INSIGHTS',
-        content: keyInsights,
+        heading: '💡 YOUR KEY TAKEAWAY',
+        content: keyTakeaway,
         type: 'text'
       });
     }
     
-    // What Shifted
-    if (whatShifted !== undefined) {
+    // Session Value
+    if (userSatisfaction !== undefined) {
+      const satisfactionEmoji = userSatisfaction >= 8 ? '🌟' : userSatisfaction >= 6 ? '✅' : userSatisfaction >= 4 ? '👍' : '⚠️';
       sections.push({
-        heading: '🔄 WHAT SHIFTED FOR YOU',
-        content: whatShifted,
+        heading: `${satisfactionEmoji} SESSION VALUE`,
+        content: `Session Helpfulness: ${userSatisfaction}/10\n${actionCommitment !== undefined ? `Action Commitment: ${actionCommitment}/10` : ''}`,
         type: 'text'
-      });
-    }
-    
-    // Action Plan
-    if (nextActions !== undefined && nextActions.length > 0) {
-      const confidenceLevelStr = confidenceLevel !== undefined ? String(confidenceLevel) : 'N/A';
-      sections.push({
-        heading: '🎬 YOUR ACTION PLAN',
-        content: `IMMEDIATE ACTIONS (Next 7 days):\n${nextActions.map((a, i) => `${i + 1}. ${a}`).join('\n')}\n\n✊ Confidence Level: ${confidenceLevelStr}/10`,
-        type: 'actions',
-        data: { next_actions: nextActions, confidence_level: confidenceLevel }
       });
     }
   }
@@ -475,9 +464,12 @@ ${css.composite_success_score >= 85 ? '🌟 EXCELLENT - Outstanding transformati
     });
   }
   
+  const initialConf = typeof scores['initial_confidence'] === 'number' ? scores['initial_confidence'] : 'N/A';
+  const finalConf = typeof scores['final_confidence'] === 'number' ? scores['final_confidence'] : 'N/A';
+  
   return {
-    title: 'COMPASS Change Readiness Report',
-    summary: `Overall Readiness: ${scores.overall_readiness}/5 | ${transformation?.transformation_achieved === true ? 'Transformation Achieved ✅' : 'In Progress'}`,
+    title: 'COMPASS Confidence Journey Report',
+    summary: `Confidence: ${initialConf}/10 → ${finalConf}/10 | ${transformation?.transformation_achieved === true ? 'Transformation Achieved ✅' : 'Building Confidence 📈'}`,
     sections
   };
 }

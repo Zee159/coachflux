@@ -61,10 +61,10 @@ This directory contains everything you need to build 6 coaching frameworks in 8 
    - Coaching questions per step
    - Real session example
 
-8. **3_FRAMEWORK_COMPASS.md**
-   - COMPASS (Clarity → Ownership → Mapping → Practice → Anchoring → Sustaining)
-   - 6 complete steps with barrier diagnosis
-   - Real session example
+8. **3_FRAMEWORK_COMPASS.md** [ARCHIVED - See root COMPASS_REFACTOR_COMPLETE.md]
+   - COMPASS (Clarity → Ownership → Mapping → Practice)
+   - 4-stage confidence-optimized model
+   - Measurable transformation tracking
 
 9. **4_FRAMEWORK_POWER_INTEREST_GRID.md**
    - Power-Interest Grid (Map → Assess → Strategise)
@@ -133,7 +133,7 @@ This directory contains everything you need to build 6 coaching frameworks in 8 
 ### What's a "Framework"?
 A coaching model that structures conversations with specific steps, questions, and decision points. Examples:
 - GROW = 4 steps (Goal-Reality-Options-Will)
-- COMPASS = 6 steps (diagnosis of change barriers)
+- COMPASS = 4 steps (confidence transformation)
 - Each framework optimized for different situations
 
 ### Why 6 Frameworks?

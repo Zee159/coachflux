@@ -12,7 +12,7 @@ What's your coaching situation?
 │  └─ USE: CLEAR (Contracting-Listening-Exploring-Action-Review)
 │
 ├─ "We're implementing change and people are resisting"
-│  └─ USE: COMPASS (Clarity-Ownership-Mapping-Practice-Anchoring-Sustaining)
+│  └─ USE: COMPASS (Clarity-Ownership-Mapping-Practice) - Confidence-focused
 │
 ├─ "I need to influence multiple people with different interests"
 │  └─ USE: POWER-INTEREST GRID (Map-Assess-Strategise)
@@ -33,7 +33,7 @@ What's your coaching situation?
 |-----------|----------|-------|----------|--------------|
 | **GROW** | 20 min | 4 | Any goal/challenge | Goal-focused, rapid solutions |
 | **CLEAR** | 20 min | 5 | Complex situations, emotions | Deep listening before solutions |
-| **COMPASS** | 20 min | 6 | Change management, adoption | Fix the barrier, not the symptom |
+| **COMPASS** | 20 min | 4 | Change management, adoption | Build confidence through transformation |
 | **Power-Interest Grid** | 20 min | 3 | Stakeholder management | Different people need different approaches |
 | **Psychological Safety** | 20 min | 5 | Team development, trust | Leader behaviour is #1 factor |
 
@@ -51,8 +51,9 @@ What's your coaching situation?
 
 ### COMPASS: Change management
 - Organisation implementing change
-- People resisting
-- Need to diagnose barrier
+- People resisting or uncertain
+- Need confidence to navigate change
+- Measurable transformation (+4 confidence target)
 
 ### Power-Interest Grid: Stakeholder navigation
 - Multiple stakeholders

@@ -339,15 +339,21 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
   
   // Step display info
   const stepInfo: Record<string, { label: string; icon: string }> = {
+    // GROW Framework
     goal: { label: "Goal", icon: "G" },
     reality: { label: "Reality", icon: "R" },
     options: { label: "Options", icon: "O" },
     will: { label: "Will (Action Plan)", icon: "W" },
+    // COMPASS Framework (4-stage confidence-optimized)
+    introduction: { label: "Introduction", icon: "👋" },
     clarity: { label: "Clarity", icon: "🧭" },
     ownership: { label: "Ownership", icon: "💪" },
     mapping: { label: "Mapping", icon: "🗺️" },
     practice: { label: "Practice", icon: "🎯" },
-    anchoring: { label: "Anchoring", icon: "⚓" },
+    // ⚠️ DEPRECATED: Legacy 6-stage COMPASS only
+    anchoring: { label: "Anchoring (Legacy)", icon: "⚓" },
+    sustaining: { label: "Sustaining (Legacy)", icon: "🔄" },
+    // Common
     review: { label: "Review", icon: "✓" }
   };
   

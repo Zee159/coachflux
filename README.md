@@ -25,6 +25,12 @@ Visit `http://localhost:5173` to start coaching!
 
 ## 📚 Documentation
 
+### Quick Links
+- **[COMPASS Implementation Guide](./COMPASS_REFACTOR_COMPLETE.md)** - NEW confidence-optimized model ✨
+- **[COMPASS Reference](./COMPASS_CONFIDENCE_OPTIMIZED.md)** - Detailed coaching guide
+- **[CSS Implementation](./COMPOSITE_SUCCESS_SCORE_IMPLEMENTATION_GUIDE.md)** - Success metrics
+
+### Full Documentation
 All project documentation is organized in the [`docs/`](./docs/) folder:
 
 - **[Getting Started](./docs/01-getting-started/)** - Setup and project overview
@@ -53,6 +59,13 @@ All project documentation is organized in the [`docs/`](./docs/) folder:
 - Session reports with structured data
 - Safety escalation system
 - UK English conversational tone
+
+**Phase 1.5: COMPASS Confidence-Optimized** ✅ Complete
+- 4-stage confidence-focused model (67% more efficient)
+- High-confidence adaptive branching
+- Composite Success Score (CSS) measurement
+- Measurable transformation tracking (+4 confidence target)
+- 20-minute session duration
 
 **Phase 2: User Onboarding & Freemium** 🚧 In Progress
 - User authentication
