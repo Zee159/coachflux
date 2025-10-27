@@ -193,6 +193,23 @@ AI Response: {
 
 COMPASS-SPECIFIC EXAMPLES:
 
+❌ WRONG - Not extracting CSS baseline measurements:
+User: "9"
+AI Response: {
+  "user_consent_given": true,
+  "coach_reflection": "Thanks! On a scale of 1-10, how confident do you feel?"
+}
+❌ WRONG! User said "9" but AI didn't extract initial_confidence!
+
+✅ CORRECT - Extract CSS baseline immediately:
+User: "9"
+AI Response: {
+  "user_consent_given": true,
+  "initial_confidence": 9,
+  "coach_reflection": "That's strong confidence! How clear are you on your specific next steps? (1-10)"
+}
+✅ CORRECT! AI extracted the confidence score and moved to next question.
+
 ❌ WRONG - Including fields without user input:
 User: "We're moving to a new CRM system"
 AI Response: {
