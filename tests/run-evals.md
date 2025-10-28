@@ -7,7 +7,7 @@ Automated testing to ensure:
 3. Banned term detection
 4. Input validation
 5. Proper error handling
-6. Safety incident logging
+6. Safety incident loggings
 
 ## Test Files
 - `evals/escalation_tests.json` - Critical safety escalation scenarios
