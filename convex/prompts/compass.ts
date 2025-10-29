@@ -158,6 +158,8 @@ Ask: "What specific change are you dealing with?"
 EXTRACTION:
 → Extract: change_description
 → WAIT for their description
+→ ⚠️ CRITICAL: ONLY extract what they ACTUALLY said - DO NOT invent or elaborate
+   Example: If they say "org restructure", extract "org restructure" NOT "Moving to new CRM system"
 → IF vague ("things are changing"): Push for specificity
    "Let's get specific. What exactly is changing in your day-to-day work?"
 
@@ -182,10 +184,14 @@ IF 3-5: "What do you understand so far?"
 Q3: Sphere of Control (CRITICAL)
 Ask: "In this situation, what parts can you control versus what's beyond your control?"
 
+⚠️ NOTE: If user already mentioned what they can/can't control in Q1, extract it immediately.
+Otherwise, ask this question as a follow-up.
+
 EXTRACTION:
 → Extract: sphere_of_control
 → WAIT for meaningful answer
 → DO NOT advance without this
+→ ⚠️ CRITICAL: Extract what they ACTUALLY said - DO NOT invent control areas
 
 IF "Nothing" or "I can't control anything":
 → USE REFRAME: control_clarification
