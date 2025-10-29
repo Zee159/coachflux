@@ -402,7 +402,7 @@ export const nextStep = action({
       const frameworkCoach = getFrameworkCoach(fw.id);
       const transitions = frameworkCoach.getStepTransitions();
       const transitionMessage = transitions.transitions[step.name] ?? "Let's move forward.";
-      const nextStepName = await advanceToNextStep(ctx, mutations, fw, step, frameworkCoach, args);
+      const nextStepName = await advanceToNextStep(ctx, mutations, fw, step, frameworkCoach, args, sessionReflections);
       
       // Create transition reflection
       const escapePayload: ReflectionPayload = {
@@ -824,7 +824,7 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
         }
       }
 
-      nextStepName = await advanceToNextStep(ctx, mutations, fw, step, frameworkCoach, args);
+      nextStepName = await advanceToNextStep(ctx, mutations, fw, step, frameworkCoach, args, sessionReflections);
       sessionClosed = nextStepName === "review" && step.name === "review";
     }
 

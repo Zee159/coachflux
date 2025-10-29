@@ -765,7 +765,8 @@ export async function advanceToNextStep(
   framework: Framework,
   currentStep: { name: string },
   frameworkCoach: FrameworkCoach,
-  args: { orgId: Id<"orgs">; userId: Id<"users">; sessionId: Id<"sessions"> }
+  args: { orgId: Id<"orgs">; userId: Id<"users">; sessionId: Id<"sessions"> },
+  reflections?: Array<{ step: string; payload: Record<string, unknown> }>
 ): Promise<string> {
   const order = framework.steps.map((s) => s.name);
   const idx = order.indexOf(currentStep.name);
@@ -801,7 +802,19 @@ export async function advanceToNextStep(
   });
   
   // Create step opener reflection
-  const opener = openers[nextStepName];
+  let opener = openers[nextStepName];
+  
+  // COMPASS: Replace [X] placeholder in ownership opener with actual initial_confidence
+  if (opener !== undefined && nextStepName === 'ownership' && reflections !== undefined) {
+    const introReflections = reflections.filter(r => r.step === 'introduction');
+    const latestIntro = introReflections[introReflections.length - 1];
+    const initialConfidence = latestIntro?.payload?.['initial_confidence'];
+    
+    if (typeof initialConfidence === 'number' && opener.includes('[X]')) {
+      opener = opener.replace('[X]', String(initialConfidence));
+    }
+  }
+  
   if (opener !== undefined) {
     await ctx.runMutation(mutations.createReflection, {
       orgId: args.orgId,
