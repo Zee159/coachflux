@@ -294,13 +294,14 @@ ${raw}
 
 VALIDATION RULES:
 1. Check if JSON is valid and parseable
-2. Check if all required fields from schema are present
-3. Check if field types match (string, number, array, object)
+2. Check if "coach_reflection" field is present (ALWAYS REQUIRED)
+3. Check if field types match (string, number, array, object) for any fields that ARE present
 4. Ignore ALL validation constraints: minLength, maxLength, minItems, additionalProperties, etc.
-5. Focus ONLY on structure: Does the JSON have the required fields with correct types?
+5. ALLOW PROGRESSIVE QUESTIONING: Other required fields (besides coach_reflection) can be missing if the coach is asking for them
 6. IGNORE any "additionalProperties: false" in the schema - extra fields are acceptable
 
-If the JSON has all required fields with correct types, it is VALID. Period.
+If the JSON has "coach_reflection" and all present fields have correct types, it is VALID. Period.
+The coach can collect other required fields progressively across multiple turns.
 
 Respond with ONLY valid JSON in this format:
 {
