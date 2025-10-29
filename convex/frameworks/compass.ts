@@ -13,53 +13,10 @@
  * Target: +4 point confidence increase (e.g., 3/10 → 7/10)
  */
 
-import type { FrameworkDefinition, LegacyFramework } from './types';
+import type { FrameworkDefinition } from './types';
 
 /**
- * Legacy COMPASS Framework (6-Stage) - For backward compatibility only
- * This is a simplified version for existing sessions
- */
-export const compassFrameworkLegacy: LegacyFramework = {
-  id: "COMPASS",
-  steps: [
-    {
-      name: "introduction",
-      system_objective: "Welcome user, explain COMPASS framework for workplace change, and get consent before starting session.",
-      required_fields_schema: {
-        type: "object",
-        properties: {
-          user_consent_given: { type: "boolean" },
-          coach_reflection: { type: "string", minLength: 20, maxLength: 600 }
-        },
-        required: ["coach_reflection"],
-        additionalProperties: false
-      }
-    },
-    {
-      name: "clarity",
-      system_objective: "Help identify what's changing, why it matters, and what forces support or resist it.",
-      required_fields_schema: { type: "object", properties: {}, required: ["coach_reflection"] }
-    },
-    {
-      name: "ownership",
-      system_objective: "Transform intellectual understanding into emotional commitment.",
-      required_fields_schema: { type: "object", properties: {}, required: ["coach_reflection"] }
-    },
-    {
-      name: "mapping",
-      system_objective: "Design specific, sequenced actions.",
-      required_fields_schema: { type: "object", properties: {}, required: ["coach_reflection"] }
-    },
-    {
-      name: "practice",
-      system_objective: "Plan small experiments.",
-      required_fields_schema: { type: "object", properties: {}, required: ["coach_reflection"] }
-    },
-  ]
-};
-
-/**
- * NEW COMPASS Framework (4-Stage) - Active version
+ * COMPASS Framework (4-Stage) - Confidence-Optimized Model
  */
 
 export const compassFramework: FrameworkDefinition = {

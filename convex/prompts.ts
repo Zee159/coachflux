@@ -228,21 +228,6 @@ const COACHING_QUESTIONS: Record<string, string[]> = {
     "What was harder than expected?",
     "What did you learn?",
     "What will you do differently next time?"
-  ],
-  // ⚠️ DEPRECATED: Legacy 6-stage COMPASS - DO NOT USE
-  anchoring: [
-    "What's the ONE thing in your environment that makes the old way easier?",
-    "What could you change to make the new way easier?",
-    "What habits do you need to build?",
-    "What reminders or cues will help you remember?",
-    "Who can hold you accountable?"
-  ],
-  // ⚠️ DEPRECATED: Legacy 6-stage COMPASS - DO NOT USE
-  sustaining: [
-    "What's the plan to maintain momentum?",
-    "How will you handle setbacks or obstacles?",
-    "What support systems do you have in place?",
-    "How will you celebrate progress and successes?"
   ]
 };
 

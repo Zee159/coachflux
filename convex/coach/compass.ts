@@ -8,66 +8,33 @@ import type { ReflectionPayload, NudgeType } from "../types";
 import { detectApplicableNudges, generateNudgePrompt } from "../nudges";
 
 export class COMPASSCoach implements FrameworkCoach {
-  constructor(private useNewCompass: boolean = true) {}
 
   /**
    * Required fields for each COMPASS step (for agent state tracking)
    */
   getRequiredFields(): Record<string, string[]> {
-    if (this.useNewCompass) {
-      // NEW COMPASS (4-stage) - Confidence-Optimized
-      return {
-        // Note: initial_action_clarity is OPTIONAL (only asked if initial_confidence >= 8)
-        introduction: ["initial_confidence", "initial_mindset_state"],
-        clarity: ["change_description", "sphere_of_control"],
-        // Note: initial_confidence is from introduction, not captured again in ownership
-        ownership: ["current_confidence", "personal_benefit"],
-        mapping: ["committed_action", "action_day", "action_time"],
-        practice: [
-          "action_commitment_confidence",
-          "final_confidence",
-          "final_action_clarity",
-          "final_mindset_state",
-          "user_satisfaction",
-          "key_takeaway"
-        ],
-      };
-    } else {
-      // ⚠️ DEPRECATED: LEGACY COMPASS (6-stage) - Kept for backward compatibility only
-      // DO NOT USE: This model has been replaced by the confidence-optimized 4-stage model
-      // See COMPASS_REFACTOR_COMPLETE.md for migration guide
-      return {
-        clarity: ["change_description", "why_it_matters", "supporters", "resistors"],
-        ownership: ["personal_feelings", "personal_benefits", "personal_risks", "values_alignment"],
-        mapping: ["actions", "potential_obstacles", "mapping_score"],
-        anchoring: ["environmental_barriers", "environmental_changes", "habits_to_build", "accountability_plan"],
-        sustaining: ["leadership_visibility", "metrics_tracking", "team_support_plan", "celebration_plan"],
-        practice: ["actions_taken", "what_worked", "what_was_hard", "lessons_learned"],
-      };
-    }
+    return {
+      // Note: initial_action_clarity is OPTIONAL (only asked if initial_confidence >= 8)
+      introduction: ["initial_confidence", "initial_mindset_state"],
+      clarity: ["change_description", "sphere_of_control"],
+      // Note: initial_confidence is from introduction, not captured again in ownership
+      ownership: ["current_confidence", "personal_benefit"],
+      mapping: ["committed_action", "action_day", "action_time"],
+      practice: [
+        "action_commitment_confidence",
+        "final_confidence",
+        "final_action_clarity",
+        "final_mindset_state",
+        "user_satisfaction",
+        "key_takeaway"
+      ],
+    };
   }
 
   /**
    * Check if a COMPASS step is complete
    */
   checkStepCompletion(
-    stepName: string,
-    payload: ReflectionPayload,
-    reflections: Array<{ step: string; payload: ReflectionPayload }>,
-    skipCount: number,
-    loopDetected: boolean
-  ): StepCompletionResult {
-    if (this.useNewCompass) {
-      return this.checkNewCOMPASSCompletion(stepName, payload, reflections, skipCount, loopDetected);
-    } else {
-      return this.checkLegacyCOMPASSCompletion(stepName, payload, skipCount, loopDetected);
-    }
-  }
-
-  /**
-   * NEW COMPASS (4-stage) completion logic - Confidence-Optimized
-   */
-  private checkNewCOMPASSCompletion(
     stepName: string,
     payload: ReflectionPayload,
     reflections: Array<{ step: string; payload: ReflectionPayload }>,
@@ -149,173 +116,25 @@ export class COMPASSCoach implements FrameworkCoach {
   }
 
   /**
-   * ⚠️ DEPRECATED: LEGACY COMPASS (6-stage) completion logic
-   * Kept for backward compatibility only - DO NOT USE for new sessions
-   * See COMPASS_REFACTOR_COMPLETE.md for the new 4-stage model
-   */
-  private checkLegacyCOMPASSCompletion(
-    stepName: string,
-    payload: ReflectionPayload,
-    skipCount: number,
-    loopDetected: boolean
-  ): StepCompletionResult {
-    if (stepName === "clarity") {
-      const hasChangeDescription = typeof payload["change_description"] === "string" && payload["change_description"].length > 0;
-      const hasWhyItMatters = typeof payload["why_it_matters"] === "string" && payload["why_it_matters"].length > 0;
-      const hasSupporters = Array.isArray(payload["supporters"]) && payload["supporters"].length > 0;
-      const hasResistors = Array.isArray(payload["resistors"]) && payload["resistors"].length > 0;
-
-      const completedFields = [hasChangeDescription, hasWhyItMatters, hasSupporters, hasResistors].filter(Boolean).length;
-
-      let requiredFields = 4;
-      if (loopDetected) {
-        requiredFields = 2;
-      } else if (skipCount >= 2) {
-        requiredFields = 2;
-      } else if (skipCount === 1) {
-        requiredFields = 3;
-      }
-
-      const minGuardsMet = hasWhyItMatters && (hasSupporters || hasResistors);
-      return { shouldAdvance: (completedFields >= requiredFields) && minGuardsMet };
-    } else if (stepName === "ownership") {
-      const hasPersonalFeelings = typeof payload["personal_feelings"] === "string" && payload["personal_feelings"].length > 0;
-      const hasPersonalBenefits = Array.isArray(payload["personal_benefits"]) && payload["personal_benefits"].length > 0;
-      const hasPersonalRisks = Array.isArray(payload["personal_risks"]) && payload["personal_risks"].length > 0;
-      const hasValuesAlignment = typeof payload["values_alignment"] === "string" && payload["values_alignment"].length > 0;
-
-      const completedFields = [hasPersonalFeelings, hasPersonalBenefits, hasPersonalRisks, hasValuesAlignment].filter(Boolean).length;
-
-      let requiredFields = 4;
-      if (loopDetected) {
-        requiredFields = 2;
-      } else if (skipCount >= 2) {
-        requiredFields = 2;
-      } else if (skipCount === 1) {
-        requiredFields = 3;
-      }
-
-      return { shouldAdvance: completedFields >= requiredFields };
-    } else if (stepName === "mapping") {
-      const actions = payload["actions"];
-      const hasActions = Array.isArray(actions) && actions.length > 0;
-      const hasObstacles = Array.isArray(payload["potential_obstacles"]) && payload["potential_obstacles"].length > 0;
-      const hasMappingScore = typeof payload["mapping_score"] === "number" && payload["mapping_score"] >= 1 && payload["mapping_score"] <= 5;
-
-      const completedFields = [hasActions, hasObstacles, hasMappingScore].filter(Boolean).length;
-
-      let requiredFields = 3;
-      if (loopDetected) {
-        requiredFields = 2;
-      } else if (skipCount >= 2) {
-        requiredFields = 1;
-      } else if (skipCount === 1) {
-        requiredFields = 2;
-      }
-
-      return { shouldAdvance: completedFields >= requiredFields };
-    } else if (stepName === "anchoring") {
-      const hasEnvBarriers = Array.isArray(payload["environmental_barriers"]) && payload["environmental_barriers"].length > 0;
-      const hasEnvChanges = Array.isArray(payload["environmental_changes"]) && payload["environmental_changes"].length > 0;
-      const hasHabits = Array.isArray(payload["habits_to_build"]) && payload["habits_to_build"].length > 0;
-      const hasAccountability = typeof payload["accountability_plan"] === "string" && payload["accountability_plan"].length > 0;
-
-      const completedFields = [hasEnvBarriers, hasEnvChanges, hasHabits, hasAccountability].filter(Boolean).length;
-
-      let requiredFields = 4;
-      if (loopDetected) {
-        requiredFields = 2;
-      } else if (skipCount >= 2) {
-        requiredFields = 2;
-      } else if (skipCount === 1) {
-        requiredFields = 3;
-      }
-
-      return { shouldAdvance: completedFields >= requiredFields };
-    } else if (stepName === "sustaining") {
-      const hasLeadership = typeof payload["leadership_visibility"] === "string" && payload["leadership_visibility"].length > 0;
-      const hasMetrics = Array.isArray(payload["metrics_tracking"]) && payload["metrics_tracking"].length > 0;
-      const hasTeamSupport = typeof payload["team_support_plan"] === "string" && payload["team_support_plan"].length > 0;
-      const hasCelebration = typeof payload["celebration_plan"] === "string" && payload["celebration_plan"].length > 0;
-
-      const completedFields = [hasLeadership, hasMetrics, hasTeamSupport, hasCelebration].filter(Boolean).length;
-
-      let requiredFields = 4;
-      if (loopDetected) {
-        requiredFields = 2;
-      } else if (skipCount >= 2) {
-        requiredFields = 2;
-      } else if (skipCount === 1) {
-        requiredFields = 3;
-      }
-
-      return { shouldAdvance: completedFields >= requiredFields };
-    } else if (stepName === "practice") {
-      const hasActionsTaken = Array.isArray(payload["actions_taken"]) && payload["actions_taken"].length > 0;
-      const hasWhatWorked = Array.isArray(payload["what_worked"]) && payload["what_worked"].length > 0;
-      const hasWhatWasHard = Array.isArray(payload["what_was_hard"]) && payload["what_was_hard"].length > 0;
-      const hasLessonsLearned = typeof payload["lessons_learned"] === "string" && payload["lessons_learned"].length > 0;
-
-      const completedFields = [hasActionsTaken, hasWhatWorked, hasWhatWasHard, hasLessonsLearned].filter(Boolean).length;
-
-      let requiredFields = 4;
-      if (loopDetected) {
-        requiredFields = 2;
-      } else if (skipCount >= 2) {
-        requiredFields = 2;
-      } else if (skipCount === 1) {
-        requiredFields = 3;
-      }
-
-      return { shouldAdvance: completedFields >= requiredFields };
-    }
-
-    // Default: advance if coach_reflection exists
-    const hasCoachReflection = typeof payload["coach_reflection"] === "string" && payload["coach_reflection"].length > 0;
-    return { shouldAdvance: hasCoachReflection };
-  }
-
-  /**
    * Get COMPASS step transitions and openers
    */
   getStepTransitions(): StepTransitions {
-    if (this.useNewCompass) {
-      // NEW COMPASS (4-stage) transitions - Confidence-Optimized
-      return {
-        transitions: {
-          introduction: "Thank you. Let's start by getting clear on what's actually happening...",
-          clarity: "Great! You've clarified the change and identified what you can control. Now let's build your confidence.",
-          ownership: "Excellent! Your confidence has grown. Now let's map out your specific action plan.",
-          mapping: "Perfect! You've got a clear plan. Now let's lock in your commitment and measure your transformation.",
-          practice: "Well done! You're ready to take action. Your session is complete.",
-        },
-        openers: {
-          clarity: "Let's get super clear on what's actually changing. In your day-to-day work, what will be different?",
-          ownership: "You're at [X]/10 confidence. Let's explore what's driving that and build it higher.",
-          mapping: "With your confidence built, let's map out your specific action plan. What's the ONE action you want to commit to?",
-          practice: "You've got your action plan. Now let's lock in your commitment and see how far you've come.",
-          review: "Time to consolidate. Let's review your key takeaways and next actions.",
-        }
-      };
-    } else {
-      // ⚠️ DEPRECATED: LEGACY COMPASS (6-stage) transitions - DO NOT USE
-      return {
-        transitions: {
-          clarity: "Excellent! You've clarified the change. Now let's explore your personal ownership.",
-          ownership: "Great! You've built personal ownership. Now let's map out your action plan.",
-          mapping: "Perfect! You've got a clear plan. Now let's anchor the new behavior.",
-          anchoring: "Fantastic! You've got what you need to make this work. Let's review everything together.",
-          practice: "Well done! You've practiced the new behavior. Let's review everything together.",
-        },
-        openers: {
-          ownership: "We clarified the change. Now let's explore your personal connection — how does this change feel to you personally?",
-          mapping: "With your personal ownership established, let's map out your action plan. What specific actions will you take?",
-          anchoring: "Let's make it stick — one environmental change and one way to lead by example. Then we'll review everything together. What's the ONE thing in your environment that makes the old way easier?",
-          practice: "You've anchored the behavior. Now let's explore what you've learned through practice.",
-          review: "Time to consolidate. Let's review your key takeaways and next actions.",
-        }
-      };
-    }
+    return {
+      transitions: {
+        introduction: "Thank you. Let's start by getting clear on what's actually happening...",
+        clarity: "Great! You've clarified the change and identified what you can control. Now let's build your confidence.",
+        ownership: "Excellent! Your confidence has grown. Now let's map out your specific action plan.",
+        mapping: "Perfect! You've got a clear plan. Now let's lock in your commitment and measure your transformation.",
+        practice: "Well done! You're ready to take action. Your session is complete.",
+      },
+      openers: {
+        clarity: "Let's get super clear on what's actually changing. In your day-to-day work, what will be different?",
+        ownership: "You're at [X]/10 confidence. Let's explore what's driving that and build it higher.",
+        mapping: "With your confidence built, let's map out your specific action plan. What's the ONE action you want to commit to?",
+        practice: "You've got your action plan. Now let's lock in your commitment and see how far you've come.",
+        review: "Time to consolidate. Let's review your key takeaways and next actions.",
+      }
+    };
   }
 
   /**
@@ -329,7 +148,7 @@ export class COMPASSCoach implements FrameworkCoach {
     let context = '';
 
     // Add high-confidence branching logic for ownership stage
-    if (this.useNewCompass && stepName === 'ownership') {
+    if (stepName === 'ownership') {
       const introReflections = reflections.filter(r => r.step === 'introduction');
       const latestIntro = introReflections[introReflections.length - 1];
       const initialConfidence = latestIntro?.payload?.['initial_confidence'] as number | undefined;
@@ -351,7 +170,7 @@ export class COMPASSCoach implements FrameworkCoach {
     }
 
     // Add CSS measurement triggers for practice stage
-    if (this.useNewCompass && stepName === 'practice') {
+    if (stepName === 'practice') {
       // Get initial_confidence from introduction for comparison
       const introReflections = reflections.filter(r => r.step === 'introduction');
       const latestIntro = introReflections[introReflections.length - 1];
@@ -376,15 +195,13 @@ export class COMPASSCoach implements FrameworkCoach {
     }
 
     // Detect and add nudges if applicable
-    if (this.useNewCompass) {
-      const applicableNudges = detectApplicableNudges(userInput, stepName as 'clarity' | 'ownership' | 'mapping' | 'practice');
-      if (applicableNudges.length > 0) {
-        const nudge = applicableNudges[0];
-        if (nudge !== undefined) {
-          const nudgeTypes: NudgeType[] = applicableNudges.map(n => n.type);
-          const nudgePrompt = generateNudgePrompt(stepName as 'clarity' | 'ownership' | 'mapping' | 'practice', nudgeTypes);
-          context += `\n\n🎯 NUDGE ACTIVATED: ${nudge.name}\n${nudgePrompt}\n\nUse this nudge naturally in your response to help the user progress.`;
-        }
+    const applicableNudges = detectApplicableNudges(userInput, stepName as 'clarity' | 'ownership' | 'mapping' | 'practice');
+    if (applicableNudges.length > 0) {
+      const nudge = applicableNudges[0];
+      if (nudge !== undefined) {
+        const nudgeTypes: NudgeType[] = applicableNudges.map(n => n.type);
+        const nudgePrompt = generateNudgePrompt(stepName as 'clarity' | 'ownership' | 'mapping' | 'practice', nudgeTypes);
+        context += `\n\n🎯 NUDGE ACTIVATED: ${nudge.name}\n${nudgePrompt}\n\nUse this nudge naturally in your response to help the user progress.`;
       }
     }
 
@@ -446,14 +263,6 @@ export class COMPASSCoach implements FrameworkCoach {
       return `Context for AI suggestions: ${context}\n\nSuggest 2-3 specific actions based on their change situation. Include timeline and resources needed for each. Focus on stakeholder communication, change champions, and feedback mechanisms that align with their change description.`;
     }
 
-    if (stepName === 'anchoring') {
-      return `Context for AI suggestions: ${context}\n\nSuggest 2-3 environmental design strategies based on change psychology. Include environmental changes, habit stacking techniques, cues/reminders, and accountability mechanisms that align with their actions and learnings.`;
-    }
-
-    if (stepName === 'sustaining') {
-      return `Context for AI suggestions: ${context}\n\nSuggest 2-3 leadership visibility strategies. Include specific metrics to track (leading and lagging indicators), team support mechanisms, and celebration plans that align with their change leadership role.`;
-    }
-
     if (stepName === 'ownership') {
       return `Context for AI suggestions: ${context}\n\nOffer 2-3 benefit perspectives (as questions, not statements) from categories: career development, skills building, relationship strengthening, values alignment, or personal growth. Frame as "Some leaders have found..." and ask if any resonate. Be careful not to prescribe - offer perspectives for them to validate.`;
     }
@@ -462,7 +271,6 @@ export class COMPASSCoach implements FrameworkCoach {
   }
 }
 
-// Export singleton instances
-export const compassCoach = new COMPASSCoach(true); // ✅ NEW COMPASS (4-stage confidence-optimized)
-export const compassLegacyCoach = new COMPASSCoach(false); // ⚠️ DEPRECATED: Legacy COMPASS (6-stage) - DO NOT USE
+// Export singleton instance
+export const compassCoach = new COMPASSCoach();
 

@@ -14,7 +14,7 @@ import { detectSuggestionChoice } from "../types";
 import { getFrameworkLegacy } from "../frameworks/registry";
 import type { FrameworkCoach, CoachActionResult } from "./types";
 import { growCoach } from "./grow";
-import { compassCoach, compassLegacyCoach } from "./compass";
+import { compassCoach } from "./compass";
 import { getEmergencyResources } from "../safety";
 import {
   aggregateStepState,
@@ -38,7 +38,6 @@ import type { MindsetState } from "../utils/cssCalculator";
 // FEATURE FLAGS
 // ============================================================================
 const USE_MODULAR_REGISTRY = true; // Use modular framework registry
-const USE_NEW_COMPASS = true; // Use NEW 4-stage COMPASS with safety + nudges
 
 // ============================================================================
 // FRAMEWORK COACH REGISTRY
@@ -55,7 +54,7 @@ function getFrameworkCoach(frameworkId: string): FrameworkCoach {
   }
   
   if (id === 'COMPASS') {
-    return USE_NEW_COMPASS ? compassCoach : compassLegacyCoach;
+    return compassCoach;
   }
   
   // Default to GROW coach for unknown frameworks
@@ -584,8 +583,8 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
       return { ok: true };
     }
 
-    // NEW COMPASS: Track confidence progression and nudges
-    if (USE_NEW_COMPASS && session.framework === 'COMPASS') {
+    // COMPASS: Track confidence progression and nudges
+    if (session.framework === 'COMPASS') {
       const initialConfidence = payload['initial_confidence'] as number | undefined;
       const currentConfidence = payload['current_confidence'] as number | undefined;
       const finalConfidence = payload['final_confidence'] as number | undefined;
