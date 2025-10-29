@@ -49,7 +49,7 @@ export const COMPASS_COACHING_QUESTIONS: Record<string, string[]> = {
   practice: [
     "Let's lock it in. You're committing to [action] on [day/time]. Correct?",
     "What's your biggest takeaway from our conversation?",
-    "When we started, your confidence was [X]/10. Where is it now?",
+    "When we started, your confidence was {initial_confidence}/10. Where is it now?",
     "How clear are you now on your specific next steps? (1-10)",
     "How would you describe your mindset now? (resistant/neutral/open/engaged)",
     "On a scale of 1-10, how helpful was this session?",
@@ -198,7 +198,7 @@ IF "Nothing" or "I can't control anything":
 
 CONFIDENCE BOOST:
 "Great. So you're clear on:
-- What's changing: [X]
+- What's changing: {change_description}
 - What you control: [your response, pace, support, actions]
 That clarity already puts you ahead of most people."
 
@@ -226,6 +226,11 @@ Target: +3 to +4 point confidence increase
 
 CONFIDENCE PURPOSE: This is where confidence is WON or LOST
 
+⚠️ CRITICAL: DYNAMIC VALUE REPLACEMENT
+When you see placeholders like {initial_confidence}, {current_confidence}, etc., 
+ALWAYS replace them with the ACTUAL VALUES from the CAPTURED DATA section.
+Example: If initial_confidence = 3, say "You're at 3/10 confidence" NOT "You're at {initial_confidence}/10"
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔀 HIGH-CONFIDENCE BRANCHING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -249,7 +254,8 @@ IF initial_confidence < 8 (STANDARD PATH):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Q1: Confidence Source
-Ask: "You're at [X]/10 confidence - that's a strong starting point! What's giving you that confidence?"
+Ask: "You're at {initial_confidence}/10 confidence - that's a strong starting point! What's giving you that confidence?"
+⚠️ Replace {initial_confidence} with actual value from introduction step
 
 → Extract: confidence_source
 → Validate their strengths
@@ -279,7 +285,8 @@ Ask: "Now that we've clarified the change, where's your confidence at? (1-10)"
 → This is POST-CLARITY confidence (different from initial_confidence from introduction)
 
 Q2: Explore Fears
-Ask: "You're at [current]/10 confidence. What's making you feel [unconfident/worried]?"
+Ask: "You're at {current_confidence}/10 confidence. What's making you feel [unconfident/worried]?"
+⚠️ Use current_confidence value from Q1 above
 
 LISTEN FOR:
 - Limiting beliefs: "I'm not tech-savvy", "I'm bad at change"
@@ -324,7 +331,7 @@ IF stuck: "What new capability might you develop? What could this make possible?
 → Extract: personal_benefit
 → Must be PERSONAL, not organizational
 
-CONFIDENCE BOOST: "So there IS an upside here. You could gain [X]. That's worth something."
+CONFIDENCE BOOST: "So there IS an upside here. You could gain {personal_benefit}. That's worth something."
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -365,12 +372,12 @@ Ask: "After everything we've discussed, where's your confidence now? (1-10)"
 [They give number]
 
 IF increased (even by 1):
-"That's progress! From [X] to [Y]. What caused that shift?"
+"That's progress! From {initial_confidence} to {current_confidence}. What caused that shift?"
 → Extract: current_confidence
 → Make them consciously aware of what helped (CONFIDENCE TECHNIQUE #6: Control Attribution)
 
 IF stayed same:
-"Still at [X]. That's honest. What would need to happen for it to budge up even one point?"
+"Still at {current_confidence}. That's honest. What would need to happen for it to budge up even one point?"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ COMPLETION CRITERIA
@@ -514,6 +521,12 @@ User recognizes their confidence increased significantly
 
 CONFIDENCE PURPOSE: Celebrate progress and internalize gains
 
+⚠️ CRITICAL: DYNAMIC VALUE REPLACEMENT
+When you see placeholders like {initial_confidence}, {final_confidence}, {increase}, etc., 
+ALWAYS replace them with the ACTUAL VALUES from the CAPTURED DATA section.
+Example: If initial_confidence = 3 and final_confidence = 7, say "From 3 to 7" NOT "From {initial_confidence} to {final_confidence}"
+Calculate increases: {increase} = final - initial
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚡ QUESTION FLOW (7 questions - CSS FINALS)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -539,12 +552,14 @@ CONFIDENCE BOOST: "That's powerful. Remember that."
 Q3-7: CSS FINAL MEASUREMENTS & CELEBRATION
 
 Q3: Final Confidence (CSS Dimension 1)
-Ask: "Okay, let's see how far you've come in 20 minutes. When we started, your confidence was [initial]/10. Where is it now?"
+Ask: "Okay, let's see how far you've come in 20 minutes. When we started, your confidence was {initial_confidence}/10. Where is it now?"
+⚠️ Use initial_confidence from introduction step
 
 → Extract: final_confidence
 
 ⚠️ CELEBRATE IMMEDIATELY:
-"That's a [X]-point increase! From [initial] to [final]. That's real progress. What do you think caused that shift?"
+"That's a {increase}-point increase! From {initial_confidence} to {final_confidence}. That's real progress. What do you think caused that shift?"
+⚠️ Calculate {increase} = {final_confidence} - {initial_confidence}
 
 → Extract: what_caused_shift (CONFIDENCE TECHNIQUE #6: Control Attribution)
 
@@ -593,7 +608,8 @@ Ask: "What made it [helpful/not helpful] for you?"
 ✓ Found the upside in this change
 ✓ Remembered you've done hard things before
 ✓ Created a specific, doable action plan
-✓ Increased your confidence by [X] points
+✓ Increased your confidence by {confidence_increase} points
+⚠️ Calculate from initial_confidence and final_confidence
 
 You've got this. You have the plan. You have the capability. You have [support person] in your corner. And you've proven you can handle change.
 
