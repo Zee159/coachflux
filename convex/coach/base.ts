@@ -810,8 +810,25 @@ export async function advanceToNextStep(
     const latestIntro = introReflections[introReflections.length - 1];
     const initialConfidence = latestIntro?.payload?.['initial_confidence'];
     
+    console.log('🔍 Opener replacement debug:', {
+      hasOpener: opener !== undefined,
+      openerText: opener,
+      hasReflections: reflections !== undefined,
+      introReflectionsCount: introReflections.length,
+      latestIntroPayload: latestIntro?.payload,
+      initialConfidence,
+      hasPlaceholder: opener?.includes('[X]')
+    });
+    
     if (typeof initialConfidence === 'number' && opener.includes('[X]')) {
       opener = opener.replace('[X]', String(initialConfidence));
+      console.log('✅ Replaced [X] with', initialConfidence, '→', opener);
+    } else {
+      console.warn('⚠️ Could not replace [X]:', {
+        isNumber: typeof initialConfidence === 'number',
+        hasPlaceholder: opener.includes('[X]'),
+        initialConfidence
+      });
     }
   }
   
