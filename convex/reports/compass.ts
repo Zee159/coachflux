@@ -288,8 +288,9 @@ export function generateCompassReport(data: SessionReportData): FormattedReport 
       content: `Overall Score: ${Math.round(css.composite_success_score)}/100 (${css.success_level})
 
 📊 DIMENSION BREAKDOWN:
-• Confidence: ${Math.round(css.breakdown.confidence_score)}/100
-• Action Clarity: ${Math.round(css.breakdown.action_score)}/100
+• Confidence Level: ${Math.round(css.breakdown.confidence_score)}/100
+• Confidence Growth: ${Math.round(css.breakdown.confidence_growth)}/100
+• Action Commitment: ${Math.round(css.breakdown.action_score)}/100
 • Mindset Shift: ${Math.round(css.breakdown.mindset_score)}/100
 • Session Value: ${Math.round(css.breakdown.satisfaction_score)}/100
 

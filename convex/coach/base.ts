@@ -191,6 +191,84 @@ export function extractExistingContext(
 }
 
 /**
+ * Replace dynamic value placeholders in prompts with actual captured data
+ * Fixes Issue #2: Makes prompts personalized by substituting {initial_confidence}, etc.
+ * 
+ * @param prompt - The prompt text with placeholders like {initial_confidence}
+ * @param reflections - All reflections to extract values from
+ * @returns Prompt with placeholders replaced by actual values
+ */
+export function replaceDynamicValues(
+  prompt: string,
+  reflections: Array<{ step: string; payload: ReflectionPayload }>
+): string {
+  // Aggregate all captured data from reflections
+  const allData: Record<string, unknown> = {};
+  
+  for (const reflection of reflections) {
+    Object.assign(allData, reflection.payload);
+  }
+  
+  let result = prompt;
+  
+  // Replace numeric placeholders
+  const numericFields = [
+    'initial_confidence', 
+    'current_confidence', 
+    'final_confidence',
+    'initial_action_clarity', 
+    'final_action_clarity', 
+    'user_satisfaction',
+    'action_commitment_confidence',
+    'commitment_confidence'
+  ];
+  
+  for (const field of numericFields) {
+    const value = allData[field];
+    if (typeof value === 'number') {
+      const regex = new RegExp(`\\{${field}\\}`, 'g');
+      result = result.replace(regex, String(value));
+    }
+  }
+  
+  // Replace string placeholders
+  const stringFields = [
+    'initial_mindset_state',
+    'final_mindset_state',
+    'change_description',
+    'committed_action',
+    'action_day',
+    'action_time'
+  ];
+  
+  for (const field of stringFields) {
+    const value = allData[field];
+    if (typeof value === 'string' && value.length > 0) {
+      const regex = new RegExp(`\\{${field}\\}`, 'g');
+      result = result.replace(regex, value);
+    }
+  }
+  
+  // Calculate and replace derived values
+  const initial = allData['initial_confidence'] as number | undefined;
+  const final = allData['final_confidence'] as number | undefined;
+  const current = allData['current_confidence'] as number | undefined;
+  
+  if (typeof initial === 'number' && typeof final === 'number') {
+    const increase = final - initial;
+    result = result.replace(/\{increase\}/g, String(increase));
+    result = result.replace(/\{confidence_increase\}/g, String(increase));
+  }
+  
+  if (typeof initial === 'number' && typeof current === 'number') {
+    const increase = current - initial;
+    result = result.replace(/\{ownership_increase\}/g, String(increase));
+  }
+  
+  return result;
+}
+
+/**
  * Aggregate captured state from reflections (AGENT MODE)
  * FIXED: Now merges ALL reflections for current step, not just the latest one
  * This prevents fields from disappearing when AI extracts new fields in subsequent turns
@@ -832,7 +910,8 @@ export async function advanceToNextStep(
     }
   }
   
-  if (opener !== undefined) {
+  // 🔧 FIX: Only create opener reflection if it's not empty
+  if (opener !== undefined && opener.length > 0) {
     await ctx.runMutation(mutations.createReflection, {
       orgId: args.orgId,
       userId: args.userId,

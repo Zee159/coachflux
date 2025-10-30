@@ -70,21 +70,23 @@ export class COMPASSCoach implements FrameworkCoach {
       if (isHighConfidence) {
         // High-confidence path: 3 questions (confidence_source, personal_benefit, past_success)
         const hasConfidenceSource = typeof payload["confidence_source"] === "string" && payload["confidence_source"].length > 0;
-        const completedFields = [hasConfidenceSource, hasPersonalBenefit, hasPastSuccess].filter(Boolean).length;
-        return { shouldAdvance: completedFields >= 2 }; // At least 2 out of 3 fields
+        // 🔧 FIX: Require ALL 3 fields instead of 2 out of 3 to prevent premature advancement
+        return { shouldAdvance: hasConfidenceSource && hasPersonalBenefit && hasPastSuccess };
       } else {
         // Standard path: 7 questions (requires current_confidence, personal_benefit, and past_success)
-        const completedFields = [hasCurrentConfidence, hasPersonalBenefit, hasPastSuccess].filter(Boolean).length;
-        return { shouldAdvance: completedFields >= 2 }; // At least 2 out of 3 core fields
+        // 🔧 FIX: Require ALL 3 core fields instead of 2 out of 3 to prevent premature advancement
+        return { shouldAdvance: hasCurrentConfidence && hasPersonalBenefit && hasPastSuccess };
       }
     } else if (stepName === "mapping") {
-      // Requires committed_action, action_day, action_time
+      // Requires committed_action, action_day, action_time, and commitment_confidence >= 7
       const hasCommittedAction = typeof payload["committed_action"] === "string" && payload["committed_action"].length > 0;
       const hasActionDay = typeof payload["action_day"] === "string" && payload["action_day"].length > 0;
       const hasActionTime = typeof payload["action_time"] === "string" && payload["action_time"].length > 0;
+      const commitmentConfidence = payload["commitment_confidence"] as number | undefined;
+      const hasHighCommitment = typeof commitmentConfidence === "number" && commitmentConfidence >= 7;
 
-      const completedFields = [hasCommittedAction, hasActionDay, hasActionTime].filter(Boolean).length;
-      return { shouldAdvance: completedFields >= 2 }; // At least 2 out of 3 fields
+      // ✅ FIXED: Require ALL 3 action fields + commitment confidence 7+ for complete action plan
+      return { shouldAdvance: hasCommittedAction && hasActionDay && hasActionTime && hasHighCommitment };
     } else if (stepName === "practice") {
       // Requires CSS final measurements (5 mandatory fields)
       const hasActionCommitmentConfidence = typeof payload["action_commitment_confidence"] === "number" && payload["action_commitment_confidence"] >= 1 && payload["action_commitment_confidence"] <= 10;
@@ -129,7 +131,7 @@ export class COMPASSCoach implements FrameworkCoach {
       },
       openers: {
         clarity: "Let's get super clear on what's actually changing. In your day-to-day work, what will be different?",
-        ownership: "You're at [X]/10 confidence. Let's explore what's driving that and build it higher.",
+        ownership: "", // 🔧 FIX: Remove opener - let AI ask the first question based on context
         mapping: "With your confidence built, let's map out your specific action plan. What's the ONE action you want to commit to?",
         practice: "You've got your action plan. Now let's lock in your commitment and see how far you've come.",
         review: "Time to consolidate. Let's review your key takeaways and next actions.",
@@ -156,16 +158,29 @@ export class COMPASSCoach implements FrameworkCoach {
       if (typeof initialConfidence === 'number') {
         if (initialConfidence >= 8) {
           context += `\n\n🔀 HIGH-CONFIDENCE PATH ACTIVATED (initial_confidence: ${initialConfidence}/10)\n`;
-          context += `Use shortened Ownership flow (3 questions):\n`;
+          context += `⚠️ MANDATORY OVERRIDE: Use ONLY these 3 questions:\n`;
           context += `1. Confidence Source: "You're at ${initialConfidence}/10 - that's strong! What's giving you that confidence?"\n`;
           context += `2. Personal Benefit: "What could you gain personally if you adapt well to this change?"\n`;
           context += `3. Past Success: "Tell me about a time you successfully handled change before."\n`;
-          context += `Then fast-track to MAPPING stage.\n`;
+          context += `\n⚠️ DO NOT ask the standard 7 questions. This user already has strong confidence.\n`;
+          context += `⚠️ IMMEDIATELY advance to MAPPING after these 3 questions are answered.\n`;
+          context += `⚠️ You do NOT need to ask "where's your confidence now?" - they're already at ${initialConfidence}/10.\n`;
         } else {
           context += `\n\n⚡ STANDARD PATH (initial_confidence: ${initialConfidence}/10)\n`;
-          context += `Use full Ownership flow (7 questions) to build confidence from ${initialConfidence}/10 to 6-7/10.\n`;
+          context += `Use full 7-question Ownership flow to build confidence from ${initialConfidence}/10 to 6-7/10.\n`;
+          context += `START by asking: "You're at ${initialConfidence}/10. What's making you feel unconfident or worried?"\n`;
           context += `Focus on fear exploration, reframing, and past success activation.\n`;
         }
+        
+        // 🔧 FIX: Add explicit warning about data extraction
+        context += `\n\n⚠️ CRITICAL OWNERSHIP RULES:\n`;
+        context += `1. You MUST ask each question and WAIT for the user to answer before extracting any fields.\n`;
+        context += `2. DO NOT infer or auto-fill personal_benefit - the user must explicitly state what THEY could gain.\n`;
+        context += `3. DO NOT advance to mapping until you have explicitly asked for and received:\n`;
+        context += `   - current_confidence (asked and answered)\n`;
+        context += `   - personal_benefit (user's own words about what they could gain)\n`;
+        context += `   - past_success (user's actual story of handling change before)\n`;
+        context += `4. If you only have the opener message and user says "ok", ask the FIRST QUESTION now.\n`;
       }
     }
 

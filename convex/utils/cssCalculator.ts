@@ -2,6 +2,7 @@ export type MindsetState = "resistant" | "neutral" | "open" | "engaged";
 
 export interface Weights {
   confidence: number;
+  confidence_growth: number;
   action: number;
   mindset: number;
   satisfaction: number;
@@ -32,6 +33,7 @@ export interface CSSInput {
 
 export interface CSSBreakdown {
   confidence_score: number; // 0-100
+  confidence_growth: number; // 0-100 (raw growth from initial to final)
   action_score: number; // 0-100
   mindset_score: number; // 0-100
   satisfaction_score: number; // 0-100
@@ -117,7 +119,13 @@ export interface CalculateOptions {
   version?: string;
 }
 
-const DEFAULT_WEIGHTS: Weights = { confidence: 0.4, action: 0.3, mindset: 0.2, satisfaction: 0.1 };
+const DEFAULT_WEIGHTS: Weights = { 
+  confidence: 0.3, 
+  confidence_growth: 0.1, 
+  action: 0.3, 
+  mindset: 0.2, 
+  satisfaction: 0.1 
+};
 const DEFAULT_THRESHOLDS: Thresholds = { excellent: 85, good: 70, fair: 50, marginal: 30 };
 const DEFAULT_VERSION = "1.0";
 
@@ -144,8 +152,16 @@ export function calculateCSS(input: CSSInput, options: CalculateOptions = {}): C
   // Satisfaction dimension (user experience)
   const satisfaction_score = normalize10(input.userSatisfaction);
 
+  // Confidence growth (raw change from initial to final)
+  const confidence_growth = clamp(
+    normalize10(input.finalConfidence) - normalize10(input.initialConfidence) + 50,
+    0,
+    100
+  );
+
   const breakdown: CSSBreakdown = {
     confidence_score: Math.round(confidence_score),
+    confidence_growth: Math.round(confidence_growth),
     action_score: Math.round(action_score),
     mindset_score: Math.round(mindset_score),
     satisfaction_score: Math.round(satisfaction_score),
@@ -153,6 +169,7 @@ export function calculateCSS(input: CSSInput, options: CalculateOptions = {}): C
 
   const composite_success_score = Math.round(
     breakdown.confidence_score * weights.confidence +
+      breakdown.confidence_growth * weights.confidence_growth +
       breakdown.action_score * weights.action +
       breakdown.mindset_score * weights.mindset +
       breakdown.satisfaction_score * weights.satisfaction

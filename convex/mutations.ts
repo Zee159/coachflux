@@ -89,6 +89,7 @@ export const createCSSScore = mutation({
     ),
     breakdown: v.object({
       confidence_score: v.number(),
+      confidence_growth: v.number(),
       action_score: v.number(),
       mindset_score: v.number(),
       satisfaction_score: v.number(),
@@ -98,6 +99,7 @@ export const createCSSScore = mutation({
     calculation_metadata: v.optional(v.object({
       dimension_weights: v.object({
         confidence: v.number(),
+        confidence_growth: v.number(),
         action: v.number(),
         mindset: v.number(),
         satisfaction: v.number(),
@@ -331,7 +333,16 @@ export const closeSession = mutation({
     sessionId: v.id("sessions"),
   },
   handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (session === null) {
+      throw new Error("Session not found");
+    }
+    
+    // Close the session
     await ctx.db.patch(args.sessionId, { closedAt: Date.now() });
+    
+    // Note: CSS score for COMPASS sessions is calculated in coach/index.ts
+    // during the PRACTICE step completion (lines 738-811)
   },
 });
 

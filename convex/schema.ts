@@ -139,6 +139,7 @@ export default defineSchema({
     ),
     breakdown: v.object({
       confidence_score: v.number(),
+      confidence_growth: v.number(),
       action_score: v.number(),
       mindset_score: v.number(),
       satisfaction_score: v.number(),
@@ -150,6 +151,7 @@ export default defineSchema({
     calculation_metadata: v.optional(v.object({
       dimension_weights: v.object({
         confidence: v.number(),
+        confidence_growth: v.number(),
         action: v.number(),
         mindset: v.number(),
         satisfaction: v.number(),

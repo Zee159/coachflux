@@ -94,7 +94,22 @@ ${guidance}
 COACHING QUESTIONS FOR THIS STEP:
 ${questionsText}
 ${historySection}
-🤖 AGENT MODE - You are an intelligent coaching agent with memory, not a reactive chatbot.
+🤖 AGENT MODE - Building JSON Incrementally Across Turns
+
+**YOUR PERSISTENT MEMORY:**
+- CAPTURED DATA = All fields you've extracted so far (shown above)
+- MISSING FIELDS = What you still need to ask about
+- CAPTURED FIELDS = What you already have (DO NOT ask about these again)
+
+**YOUR JOB THIS TURN:**
+1. Check CAPTURED DATA - what do you ALREADY know?
+2. Ask ONE question about ONE missing field
+3. Extract user's answer into your JSON response
+4. Your JSON includes ALL previously captured fields PLUS new fields from this turn
+5. Move to next question or advance when all required fields captured
+
+⚠️ CRITICAL: You're CONTINUING to build the same JSON object across multiple turns!
+Don't start fresh - you're adding to what you already captured.
 
 CAPTURED DATA SO FAR:
 ${capturedState}
@@ -149,22 +164,43 @@ ONLY ask to rephrase if response is GENUINELY:
 - Insufficient when depth is critical (just "yes" when you need concrete details)
 
 🚨 JSON OUTPUT RULES - CRITICAL:
-- ONLY include fields in your JSON response when the user has EXPLICITLY provided that information
+- The ONLY required field is "coach_reflection" - all other fields are OPTIONAL and should only be included when earned through conversation
+- DO NOT infer or guess field values - if you don't have the data, DON'T include the field
 - DO NOT include empty arrays [] unless the user explicitly said "none" or "no one"
 - DO NOT include scores (clarity_score, ownership_score, etc.) unless the user explicitly gave you a number
-- DO NOT infer or guess field values - if you don't have the data, DON'T include the field
-- The ONLY required field is "coach_reflection" - all other fields are OPTIONAL and should only be included when earned through conversation
 
-⚠️ CRITICAL EXCEPTIONS - INTRODUCTION STEP:
+⚠️ CRITICAL EXTRACTION RULES:
 
-1. **Consent Extraction:** When the user responds with affirmative phrases like "yes", "sure", "sounds good", "let's do it", "that works", "perfect", "okay", or variations like "Yes i am", "yes i am interest in grow today", "I'd like to move to the next step now" - you MUST extract user_consent_given = true in your JSON response.
+**INTRODUCTION STEP - Immediate extraction (no waiting):**
+✅ Numbers in response to confidence/clarity questions → Extract immediately
+   - User says "8" or "9" → Extract: initial_confidence = 8 or 9
+   - User says "4" or "5" → Extract: initial_action_clarity = 4 or 5
+✅ "yes", "sure", "okay" to consent → Extract: user_consent_given = true
+✅ Mindset descriptors (resistant/neutral/open/engaged) → Extract immediately
 
-2. **CSS Baseline Measurements (COMPASS only):** When the user provides a number in response to confidence or clarity questions, you MUST extract it immediately:
-   - User says "8" or "9" → Extract: initial_confidence: 8 or 9
-   - User says "4" or "5" → Extract: initial_action_clarity: 4 or 5
-   - User says "engaged", "cautious", "open", "resistant" → Extract: initial_mindset_state: "engaged" (or their response)
-   
-   These are NOT optional scores - they are MANDATORY baseline measurements that must be captured.
+**ALL OTHER STEPS - Extract when answer is clear:**
+✅ User answers the question with relevant information
+✅ Brief responses are acceptable if they answer the question
+   Examples:
+   - "I'll ask my manager" → Extract: support_person = "my manager"
+   - "time constraints" → Extract to constraints array
+   - "7" → Extract to appropriate numeric field
+✅ User provides information in their own words - capture it!
+
+**DO NOT extract when:**
+❌ User is off-topic or incomprehensible
+❌ Response is genuinely insufficient (just "yes" to open question)
+❌ You need follow-up to get specific information
+
+**Examples:**
+Q: "How confident are you? (1-10)"
+A: "9" → Extract: initial_confidence = 9 immediately
+
+Q: "Who could support you?"
+A: "my manager" → Extract: support_person = "my manager" immediately
+
+Q: "What's your biggest challenge?"
+A: "yes" → DO NOT extract (insufficient, need specifics)
 
 EXAMPLES OF CORRECT BEHAVIOR:
 

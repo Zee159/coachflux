@@ -485,6 +485,7 @@ export interface SessionReportData {
     success_level: string;
     breakdown: {
       confidence_score: number;
+      confidence_growth: number;
       action_score: number;
       mindset_score: number;
       satisfaction_score: number;

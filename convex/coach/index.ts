@@ -28,6 +28,7 @@ import {
   createActionsFromPayload,
   advanceToNextStep,
   extractExistingContext,
+  replaceDynamicValues,
   type CoachMutations,
   type CoachQueries
 } from "./base";
@@ -426,6 +427,10 @@ export const nextStep = action({
     if (frameworkCoach.generateAIContext !== undefined) {
       aiContext = frameworkCoach.generateAIContext(step.name, sessionReflections, args.userTurn);
     }
+    
+    // 🔧 FIX Issue #2: Replace dynamic value placeholders with actual captured data
+    // This ensures AI says "You're at 3/10" instead of "You're at {initial_confidence}/10"
+    aiContext = replaceDynamicValues(aiContext, sessionReflections);
     
     // ⚠️ FIX P0-1: Inject extracted context to prevent re-asking questions
     if (Object.keys(extractedFields).length > 0 || messageCount > 3) {
