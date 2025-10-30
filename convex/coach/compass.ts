@@ -50,11 +50,23 @@ export class COMPASSCoach implements FrameworkCoach {
       const completedFields = [hasInitialConfidence, hasInitialActionClarity, hasInitialMindsetState].filter(Boolean).length;
       return { shouldAdvance: completedFields >= 2 }; // At least 2 out of 3 CSS baseline fields
     } else if (stepName === "clarity") {
-      // Requires change_description and sphere_of_control
+      // Requires change_description, sphere_of_control, AND meaningful conversation
       const hasChangeDescription = typeof payload["change_description"] === "string" && payload["change_description"].length > 0;
       const hasSphereOfControl = typeof payload["sphere_of_control"] === "string" && payload["sphere_of_control"].length > 0;
+      
+      // Check if sphere_of_control is meaningful (not just resignation like "accept my fate")
+      const sphereOfControl = payload["sphere_of_control"] as string | undefined;
+      const isMeaningfulControl = typeof sphereOfControl === "string" &&
+        sphereOfControl.length > 15 && // More than just a short phrase
+        !sphereOfControl.toLowerCase().includes("accept") && // Not resignation
+        !sphereOfControl.toLowerCase().includes("nothing") && // Not helplessness
+        !sphereOfControl.toLowerCase().includes("can't control"); // Not pure negativity
+      
+      // Also check if we have at least 2 reflections in this step (ensures conversation happened)
+      const clarityReflections = reflections.filter(r => r.step === 'clarity');
+      const hasMinimumConversation = clarityReflections.length >= 2;
 
-      return { shouldAdvance: hasChangeDescription && hasSphereOfControl };
+      return { shouldAdvance: hasChangeDescription && hasSphereOfControl && isMeaningfulControl && hasMinimumConversation };
     } else if (stepName === "ownership") {
       // High-confidence branching: requires fewer fields if initial_confidence >= 8
       // Get initial_confidence from introduction step (not current payload)
