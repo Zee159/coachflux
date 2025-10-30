@@ -231,6 +231,13 @@ IF "Nothing" or "I can't control anything" or "accept my fate":
 → WAIT for them to identify at least ONE area of control
 → THEN extract their answer as sphere_of_control
 
+⚠️ CRITICAL: DO NOT extract the reframe suggestions as sphere_of_control!
+- If you suggest: "You can control your response and attitude"
+- And user says: "I guess so" or "okay"
+- DO NOT extract: sphere_of_control = "my response and attitude"
+- ASK AGAIN: "Which of those feels most relevant to you? Or is there something else you can control?"
+- ONLY extract when user EXPLICITLY identifies what THEY can control in THEIR words
+
 CONFIDENCE BOOST:
 "Great. So you're clear on:
 - What's changing: {change_description}
