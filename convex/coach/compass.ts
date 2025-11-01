@@ -77,17 +77,31 @@ export class COMPASSCoach implements FrameworkCoach {
 
       const hasCurrentConfidence = typeof payload["current_confidence"] === "number" && payload["current_confidence"] >= 1 && payload["current_confidence"] <= 10;
       const hasPersonalBenefit = typeof payload["personal_benefit"] === "string" && payload["personal_benefit"].length > 0;
-      const hasPastSuccess = typeof payload["past_success"] === "object" && payload["past_success"] !== null;
+      
+      // Strengthen past_success validation - must have both achievement and strategy
+      const pastSuccessObj = payload["past_success"] as Record<string, unknown> | null | undefined;
+      const hasPastSuccess = 
+        typeof pastSuccessObj === "object" && 
+        pastSuccessObj !== null &&
+        typeof pastSuccessObj["achievement"] === "string" && 
+        pastSuccessObj["achievement"].length > 0 &&
+        typeof pastSuccessObj["strategy"] === "string" && 
+        pastSuccessObj["strategy"].length > 0;
+      
+      // Check minimum conversation count to ensure proper coaching happened
+      const ownershipReflections = reflections.filter(r => r.step === 'ownership');
 
       if (isHighConfidence) {
         // High-confidence path: 3 questions (confidence_source, personal_benefit, past_success)
         const hasConfidenceSource = typeof payload["confidence_source"] === "string" && payload["confidence_source"].length > 0;
-        // 🔧 FIX: Require ALL 3 fields instead of 2 out of 3 to prevent premature advancement
-        return { shouldAdvance: hasConfidenceSource && hasPersonalBenefit && hasPastSuccess };
+        const hasMinConversationHigh = ownershipReflections.length >= 3; // At least 3 exchanges for high-confidence path
+        // 🔧 FIX: Require ALL 3 fields + minimum conversation to prevent premature advancement
+        return { shouldAdvance: hasConfidenceSource && hasPersonalBenefit && hasPastSuccess && hasMinConversationHigh };
       } else {
-        // Standard path: 7 questions (requires current_confidence, personal_benefit, and past_success)
-        // 🔧 FIX: Require ALL 3 core fields instead of 2 out of 3 to prevent premature advancement
-        return { shouldAdvance: hasCurrentConfidence && hasPersonalBenefit && hasPastSuccess };
+        // Standard path: 8 questions (requires current_confidence, personal_benefit, past_success, and meaningful conversation)
+        const hasMinConversationStandard = ownershipReflections.length >= 5; // At least 5 exchanges for standard path
+        // 🔧 FIX: Require ALL 3 core fields + minimum conversation to prevent premature advancement
+        return { shouldAdvance: hasCurrentConfidence && hasPersonalBenefit && hasPastSuccess && hasMinConversationStandard };
       }
     } else if (stepName === "mapping") {
       // Requires committed_action, action_day, action_time, and commitment_confidence >= 7
@@ -143,7 +157,7 @@ export class COMPASSCoach implements FrameworkCoach {
       },
       openers: {
         clarity: "Let's get super clear on what's actually changing. In your day-to-day work, what will be different?",
-        ownership: "", // 🔧 FIX: Remove opener - let AI ask the first question based on context
+        ownership: "Great! You've clarified the change. Now let's build your confidence.",
         mapping: "With your confidence built, let's map out your specific action plan. What's the ONE action you want to commit to?",
         practice: "You've got your action plan. Now let's lock in your commitment and see how far you've come.",
         review: "Time to consolidate. Let's review your key takeaways and next actions.",
@@ -188,11 +202,15 @@ export class COMPASSCoach implements FrameworkCoach {
         context += `\n\n⚠️ CRITICAL OWNERSHIP RULES:\n`;
         context += `1. You MUST ask each question and WAIT for the user to answer before extracting any fields.\n`;
         context += `2. DO NOT infer or auto-fill personal_benefit - the user must explicitly state what THEY could gain.\n`;
-        context += `3. DO NOT advance to mapping until you have explicitly asked for and received:\n`;
+        context += `3. DO NOT extract personal_benefit until you have ASKED Q5 and the user has ANSWERED it.\n`;
+        context += `4. DO NOT extract past_success until you have ASKED Q6 and the user has ANSWERED it.\n`;
+        context += `5. Opportunistic extraction is ONLY allowed if the user EXPLICITLY mentions benefits or past success in their response.\n`;
+        context += `6. If you extract personal_benefit opportunistically, you MUST acknowledge it and SKIP Q5.\n`;
+        context += `7. DO NOT advance to mapping until you have explicitly asked for and received:\n`;
         context += `   - current_confidence (asked and answered)\n`;
         context += `   - personal_benefit (user's own words about what they could gain)\n`;
         context += `   - past_success (user's actual story of handling change before)\n`;
-        context += `4. If you only have the opener message and user says "ok", ask the FIRST QUESTION now.\n`;
+        context += `8. If you only have the opener message and user says "ok", ask the FIRST QUESTION now.\n`;
       }
     }
 
