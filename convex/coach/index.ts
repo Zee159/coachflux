@@ -410,6 +410,7 @@ export const nextStep = action({
         coach_reflection: `${transitionMessage}\n\n💡 I can see we've covered a lot of ground here. Let's keep the momentum going.`
       };
       
+      // @ts-ignore - Convex type instantiation depth limitation
       await ctx.runMutation(api.mutations.createReflection, {
         orgId: args.orgId,
         userId: args.userId,
@@ -431,6 +432,48 @@ export const nextStep = action({
     // 🔧 FIX Issue #2: Replace dynamic value placeholders with actual captured data
     // This ensures AI says "You're at 3/10" instead of "You're at {initial_confidence}/10"
     aiContext = replaceDynamicValues(aiContext, sessionReflections);
+    
+    // 📚 Vector Embeddings: Inject cross-session context for continuity and pattern recognition
+    // Only fetch if user input is substantial (>20 chars) to avoid unnecessary API calls
+    // NOTE: This will work properly once user authentication is implemented
+    // For now, test sessions may see each other's context (same test userId)
+    if (session.userId !== undefined && args.userTurn.length > 20) {
+      try {
+        // @ts-ignore - Convex type instantiation depth limitation
+        const crossSessionContext = await ctx.runAction(
+          api.embeddings.getCrossSessionContext,
+          {
+            userId: session.userId,
+            currentStep: step.name,
+            framework: session.framework,
+            limit: 2 // Keep it minimal to avoid overwhelming the AI
+          }
+        );
+        
+        if (crossSessionContext.length > 0) {
+          aiContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚 RELEVANT PAST CONTEXT (from similar sessions):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${crossSessionContext.map((ctx, i) => 
+  `${i + 1}. ${ctx.content.substring(0, 200)}... (${ctx.framework} session, ${(ctx.relevance * 100).toFixed(0)}% relevant)`
+).join('\n\n')}
+
+💡 Use this context to:
+- Reference patterns from past sessions ("I notice this is similar to...")
+- Avoid repeating advice already given
+- Build on previous insights and progress
+- Show continuity in their coaching journey
+
+⚠️ IMPORTANT: Only reference past context if directly relevant to current discussion.
+Don't force it if the connection isn't clear.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+        }
+      } catch (error) {
+        // Silently fail - cross-session context is nice-to-have, not critical
+        console.error("Failed to fetch cross-session context:", error);
+      }
+    }
     
     // ⚠️ FIX P0-1: Inject extracted context to prevent re-asking questions
     if (Object.keys(extractedFields).length > 0 || messageCount > 3) {

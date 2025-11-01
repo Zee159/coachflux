@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 
 export const createOrg = mutation({
   args: {
@@ -340,6 +342,14 @@ export const closeSession = mutation({
     
     // Close the session
     await ctx.db.patch(args.sessionId, { closedAt: Date.now() });
+    
+    // Generate vector embedding asynchronously for semantic search
+    /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+    // @ts-ignore - Convex type instantiation depth limitation
+    await ctx.scheduler.runAfter(0, internal.embeddings.generateSessionEmbedding, {
+      sessionId: args.sessionId,
+    });
+    /* eslint-enable @typescript-eslint/no-unsafe-member-access */
     
     // Note: CSS score for COMPASS sessions is calculated in coach/index.ts
     // during the PRACTICE step completion (lines 738-811)

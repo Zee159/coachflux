@@ -37,7 +37,7 @@ const ALLOWED_WORKAROUNDS = [
     // Convex type recursion workaround in coach module
     files: ['convex/coach/base.ts', 'convex/coach/index.ts'],
     reason: 'Necessary workaround for Convex generated type deep recursion',
-    patterns: ['Type annotation "any"', '@ts-expect-error directive', 'eslint-disable directive']
+    patterns: ['Type annotation "any"', '@ts-expect-error directive', '@ts-ignore directive', 'eslint-disable directive']
   },
   {
     // Non-null assertion for guaranteed fallback
@@ -53,7 +53,7 @@ const ALLOWED_WORKAROUNDS = [
   },
   {
     // Vector embeddings Convex type depth workaround
-    files: ['convex/embeddings.ts', 'convex/embeddingsInternal.ts'],
+    files: ['convex/embeddings.ts', 'convex/embeddingsInternal.ts', 'convex/mutations.ts'],
     reason: 'Necessary workaround for Convex generated type instantiation depth limitation with vector search',
     patterns: ['@ts-ignore directive', 'eslint-disable directive']
   }
