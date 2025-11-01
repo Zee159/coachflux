@@ -670,7 +670,7 @@ Ask: "How clear are you now on your specific next steps? (1-10)"
 
 → Extract: final_action_clarity
 
-"[Their number]/10. You know what to do."
+"{final_action_clarity}/10. You know what to do."
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -681,7 +681,7 @@ Options: "resistant/skeptical, neutral/cautious, open/curious, or engaged/commit
 → Extract: final_mindset_state
 
 IF it shifted:
-"You started [initial state], now you're [final state]. That's movement."
+"You started {initial_mindset_state}, now you're {final_mindset_state}. That's movement."
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -711,9 +711,9 @@ Ask: "What made it [helpful/not helpful] for you?"
 ✓ Increased your confidence by {confidence_increase} points
 ⚠️ Calculate from initial_confidence and final_confidence
 
-You've got this. You have the plan. You have the capability. You have [support person] in your corner. And you've proven you can handle change.
+You've got this. You have the plan. You have the capability. You have {support_person} in your corner. And you've proven you can handle change.
 
-Go do [their action] on [day/time]. And remember - you're not starting from zero. You're starting from [final_confidence]/10 confidence. That's a strong place to start.
+Go do {committed_action} on {action_day} at {action_time}. And remember - you're not starting from zero. You're starting from {final_confidence}/10 confidence. That's a strong place to start.
 
 I'm rooting for you."
 

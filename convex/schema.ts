@@ -175,5 +175,64 @@ export default defineSchema({
     notes: v.optional(v.string()),
     createdAt: v.number(),
   }).index("bySession", ["sessionId"]).index("byUser", ["userId"]),
-});
 
+  // === Vector Embeddings for Semantic Search & RAG ===
+  
+  // Session-level embeddings for cross-session context and similarity search
+  sessionEmbeddings: defineTable({
+    sessionId: v.id("sessions"),
+    userId: v.id("users"),
+    orgId: v.id("orgs"),
+    framework: v.string(), // "GROW" | "COMPASS" etc.
+    embedding: v.array(v.float64()), // 1536-dim vector from OpenAI
+    // Summary text used to generate embedding (for debugging/transparency)
+    embeddedText: v.string(),
+    createdAt: v.number(),
+  })
+    .index("bySession", ["sessionId"])
+    .index("byUser", ["userId"])
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: 1536, // OpenAI text-embedding-3-small
+      filterFields: ["userId", "framework"], // Filter by user and framework type
+    }),
+
+  // Reflection-level embeddings for granular context retrieval
+  reflectionEmbeddings: defineTable({
+    reflectionId: v.id("reflections"),
+    sessionId: v.id("sessions"),
+    userId: v.id("users"),
+    orgId: v.id("orgs"),
+    step: v.string(), // "goal" | "reality" | "options" | "will"
+    framework: v.string(),
+    embedding: v.array(v.float64()),
+    embeddedText: v.string(), // The reflection content
+    createdAt: v.number(),
+  })
+    .index("byReflection", ["reflectionId"])
+    .index("bySession", ["sessionId"])
+    .index("byUser", ["userId"])
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: 1536,
+      filterFields: ["userId", "step", "framework"],
+    }),
+
+  // Knowledge base embeddings (for Management Bible, frameworks, etc.)
+  knowledgeEmbeddings: defineTable({
+    source: v.string(), // "management_bible" | "grow_framework" | "compass_framework"
+    category: v.string(), // "performance_management" | "conflict_resolution" etc.
+    title: v.string(), // Scenario or topic title
+    content: v.string(), // The actual knowledge/advice
+    embedding: v.array(v.float64()),
+    metadata: v.optional(v.any()), // Additional structured data
+    createdAt: v.number(),
+  })
+    .index("bySource", ["source"])
+    .index("byCategory", ["category"])
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: 1536,
+      filterFields: ["source", "category"],
+    }),
+});

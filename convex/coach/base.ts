@@ -238,7 +238,8 @@ export function replaceDynamicValues(
     'change_description',
     'committed_action',
     'action_day',
-    'action_time'
+    'action_time',
+    'support_person'
   ];
   
   for (const field of stringFields) {

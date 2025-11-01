@@ -50,6 +50,12 @@ const ALLOWED_WORKAROUNDS = [
     files: ['convex/frameworks/registry.ts'],
     reason: 'Type compatibility between FrameworkDefinition and LegacyFramework for migration',
     patterns: ['Double assertion "as unknown as"']
+  },
+  {
+    // Vector embeddings Convex type depth workaround
+    files: ['convex/embeddings.ts', 'convex/embeddingsInternal.ts'],
+    reason: 'Necessary workaround for Convex generated type instantiation depth limitation with vector search',
+    patterns: ['@ts-ignore directive', 'eslint-disable directive']
   }
 ];
 

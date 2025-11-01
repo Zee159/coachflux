@@ -10,7 +10,7 @@
  * - Practice (2 min): Lock in commitment, CSS final measurements, celebrate transformation
  * 
  * North Star: "Will this increase the user's confidence?"
- * Target: +4 point confidence increase (e.g., 3/10 → 7/10)
+ * Target: +3 point confidence increase (e.g., 3/10 → 6/10)
  */
 
 import type { FrameworkDefinition } from './types';
@@ -22,7 +22,7 @@ import type { FrameworkDefinition } from './types';
 export const compassFramework: FrameworkDefinition = {
   id: 'COMPASS',
   name: 'COMPASS Change Navigation',
-  description: 'AI coaching framework for navigating organizational change with confidence',
+  description: 'AI coaching framework for navigating organisational change with confidence',
   duration_minutes: 20,
   challenge_types: ['change_leadership', 'complex_situation'], // Simplified to match existing types
   
@@ -424,7 +424,7 @@ PROGRESSIVE QUESTIONING FLOW:
 1. "On a scale of 1-10, how confident are you that you'll take this action?"
    - If below 8: "What would make it a 10?" (calendar block, text support person, etc.)
 2. "After you complete this action, what will you have learned or proven to yourself?"
-3. "Let's check in: When we started, your confidence was [X]/10. Where is it now?"
+3. "Let's check in: When we started, your confidence was {initial_confidence}/10. Where is it now?"
    → Celebrate the increase!
 4. "What's the one thing you're taking away from our conversation today?"
 
@@ -518,7 +518,7 @@ User has 10/10 action commitment and recognizes their confidence increased signi
         'On a scale of 1-10, how confident are you that you\'ll do this?',
         'What would make it a 10?',
         'After you complete this action, what will you have proven to yourself?',
-        'When we started, confidence was [X]/10. Where is it now?',
+        'When we started, confidence was {initial_confidence}/10. Where is it now?',
         'What\'s the one thing you\'re taking away from today?'
       ],
 

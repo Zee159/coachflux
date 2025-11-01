@@ -217,9 +217,9 @@ const getFramework = (frameworkId: string = 'GROW'): Framework => {
  * NOTE: @ts-expect-error and 'any' are documented workarounds for Convex's deep type recursion.
  * This is whitelisted in scripts/safety-check.js
  */
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/ban-ts-comment */
 function createMutations(): CoachMutations {
-  // @ts-expect-error - Convex generated types cause deep recursion; runtime types are correct
+  // @ts-ignore - Convex generated types cause deep recursion; runtime types are correct
   const m: any = api.mutations;
   return {
     markSessionEscalated: m.markSessionEscalated,
@@ -861,12 +861,11 @@ export const generateReviewAnalysis = action({
       return { ok: false, message: "No reflections found" };
     }
 
-    // Extract data from each step
-    const goalReflection = reflections.find((r) => r.step === "goal");
-    const realityReflection = reflections.find((r) => r.step === "reality");
-    const optionsReflection = reflections.find((r) => r.step === "options");
-    const willReflection = reflections.find((r) => r.step === "will");
-    const reviewReflections = reflections.filter((r) => r.step === "review");
+    const goalReflection = reflections.find((r: { step: string }) => r.step === "goal");
+    const realityReflection = reflections.find((r: { step: string }) => r.step === "reality");
+    const optionsReflection = reflections.find((r: { step: string }) => r.step === "options");
+    const willReflection = reflections.find((r: { step: string }) => r.step === "will");
+    const reviewReflections = reflections.filter((r: { step: string }) => r.step === "review");
     const reviewReflection = reviewReflections[reviewReflections.length - 1];
 
     const goalPayload = goalReflection?.payload as Record<string, unknown> | undefined;
@@ -976,7 +975,7 @@ ${reviewData}
       };
 
       // Create a new reflection with complete data
-      const existingReview = reflections.find((r) => r.step === "review");
+      const existingReview = reflections.find((r: { step: string }) => r.step === "review");
       if (existingReview !== undefined && existingReview !== null) {
         await ctx.runMutation(api.mutations.createReflection, {
           orgId: args.orgId,
