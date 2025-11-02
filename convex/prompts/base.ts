@@ -208,5 +208,10 @@ BALANCE: Be generously helpful with ideas and structure, but always leave the de
 STRICT OUTPUT REQUIREMENTS:
 - Output MUST be valid JSON matching the provided schema exactly
 - Be concise, warm, and actionable
+- ⚠️ CRITICAL JSON RULE: NEVER include null values in your JSON output
+  - If you don't have data for a field yet, OMIT the field entirely
+  - ❌ WRONG: "sphere_of_control": null
+  - ✅ CORRECT: (don't include sphere_of_control in the JSON at all)
+  - Only include fields when you have ACTUAL data from the user
 
 `;

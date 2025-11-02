@@ -68,10 +68,10 @@ export const compassFramework: FrameworkDefinition = {
       },
       
       coaching_questions: [
-        'Does this framework feel right for what you\'re facing today?',
+        'Does this framework feel right for what you want to work on today?',
         'On a scale of 1-10, how confident do you feel about navigating this change successfully?',
-        'How clear are you on your specific next steps? (1-10)', // ONLY if confidence >= 8
-        'How would you describe your current mindset? (resistant/neutral/open/engaged)'
+        'How clear are you on your specific next steps? (1-10 - only if confidence >= 8)',
+        'How would you describe your current mindset about this change?'
       ],
       
       guardrails: [
@@ -134,8 +134,18 @@ Move to Ownership when clarity is established.`,
             type: 'string',
             maxLength: 300
           },
+          supporters: {
+            type: 'array',
+            items: { type: 'string' },
+            maxItems: 10
+          },
+          resistors: {
+            type: 'array',
+            items: { type: 'string' },
+            maxItems: 10
+          },
           clarity_score: { 
-            type: 'integer', 
+            type: 'integer',
             minimum: 1, 
             maximum: 5
           },
@@ -145,14 +155,14 @@ Move to Ownership when clarity is established.`,
             maxLength: 300
           }
         },
-        required: ['change_description', 'sphere_of_control', 'coach_reflection'],
+        required: ['change_description', 'coach_reflection'],
         additionalProperties: false
       },
 
       coaching_questions: [
         'What specific change are you dealing with?',
         'On a scale of 1-5, how well do you understand what\'s happening and why?',
-        'What\'s most confusing or unclear about this change?',
+        'Who seems to be supporting this change, and who might be resisting it?',
         'What parts of this can you control vs. what\'s beyond your control?'
       ],
 
@@ -165,9 +175,9 @@ Move to Ownership when clarity is established.`,
 
       transition_rules: [
         { 
-          condition: 'change_description_captured',
+          condition: 'all_clarity_fields_captured',
           nextStep: 'ownership', 
-          action: 'Transition to Ownership stage - build confidence and commitment'
+          action: 'Transition to Ownership - all 4 Clarity questions answered (change_description, clarity_score, supporters/resistors, sphere_of_control)'
         }
       ]
     },

@@ -17,6 +17,9 @@ import { ConfidenceTracker } from "./ConfidenceTracker";
 import { YesNoSelector } from "./YesNoSelector";
 import { OptionsSelector } from "./OptionsSelector";
 import { ActionValidator } from "./ActionValidator";
+import { ConfidenceScaleSelector } from "./ConfidenceScaleSelector";
+import { MindsetSelector } from "./MindsetSelector";
+import { UnderstandingScaleSelector } from "./UnderstandingScaleSelector";
 
 type StepName = "introduction" | "goal" | "reality" | "options" | "will" | "review" | "clarity" | "ownership" | "mapping" | "practice";
 
@@ -255,7 +258,9 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
     title: "Welcome",
     questions: [
       "Does this framework feel right for what you want to work on today?",
-      "Are you ready to begin?"
+      "On a scale of 1-10, how confident do you feel about navigating this change successfully?",
+      "How clear are you on your specific next steps? (1-10 - only if confidence >= 8)",
+      "How would you describe your current mindset about this change?"
     ]
   },
   goal: {
@@ -310,7 +315,7 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
     questions: [
       "What specific change are you dealing with?",
       "On a scale of 1-5, how well do you understand what's happening and why?",
-      "What's most confusing or unclear about this change?",
+      "Who seems to be supporting this change, and who might be resisting it?",
       "What parts of this can you control vs. what's beyond your control?"
     ]
   },
@@ -342,7 +347,7 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
       "On a scale of 1-10, how confident are you that you'll do this?",
       "What would make it a 10?",
       "After you complete this action, what will you have proven to yourself?",
-      "When we started, confidence was [X]/10. Where is it now?",
+      "When we started, confidence was {initial_confidence}/10. Where is it now?",
       "What's the one thing you're taking away from today?"
     ]
   }
@@ -1098,28 +1103,250 @@ export function SessionView() {
                           </div>
 
                           {/* Yes/No Buttons for Introduction Step */}
-                          {reflection.step === 'introduction' && isLastReflection && !isSessionComplete && (
-                            <div className="mt-4">
-                              <YesNoSelector
-                                question="Ready to begin?"
-                                yesLabel="Yes, let's begin"
-                                noLabel="No, close session"
-                                onYes={() => {
-                                  // Send "yes" to trigger AI to advance to Goal and ask first question
-                                  void nextStepAction({
-                                    orgId: session.orgId,
-                                    userId: session.userId,
-                                    sessionId: session._id,
-                                    stepName: 'introduction',
-                                    userTurn: 'yes',
-                                  });
-                                }}
-                                onNo={() => {
-                                  navigate('/dashboard');
-                                }}
-                              />
-                            </div>
-                          )}
+                          {reflection.step === 'introduction' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const userConsentGiven = payload['user_consent_given'];
+                            
+                            // Hide buttons if user already gave consent (COMPASS continues with confidence questions)
+                            if (userConsentGiven === true) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <YesNoSelector
+                                  question="Ready to begin?"
+                                  yesLabel="Yes, let's begin"
+                                  noLabel="No, close session"
+                                  onYes={() => {
+                                    // Send "yes" to trigger AI to advance to Goal and ask first question
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'introduction',
+                                      userTurn: 'yes',
+                                    });
+                                  }}
+                                  onNo={() => {
+                                    navigate('/dashboard');
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Initial Confidence Scale (COMPASS Introduction Q1) */}
+                          {reflection.step === 'introduction' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const userConsentGiven = payload['user_consent_given'];
+                            const initialConfidence = payload['initial_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: consent given, confidence not yet captured, AI is asking for it
+                            if (userConsentGiven !== true || initialConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for confidence (look for "1-10" or "confident" in coach message)
+                            const isAskingForConfidence = coachReflection.includes('1-10') || 
+                                                         coachReflection.toLowerCase().includes('how confident');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident do you feel?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident at all"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'introduction',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Initial Action Clarity Scale (COMPASS Introduction Q2 - CONDITIONAL) */}
+                          {reflection.step === 'introduction' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const initialConfidence = payload['initial_confidence'];
+                            const initialActionClarity = payload['initial_action_clarity'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: high confidence (>=8), action clarity not yet captured, AI is asking for it
+                            if (typeof initialConfidence !== 'number' || initialConfidence < 8 || initialActionClarity !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for action clarity
+                            const isAskingForClarity = coachReflection.toLowerCase().includes('clear are you') || 
+                                                      coachReflection.toLowerCase().includes('next steps');
+                            
+                            if (!isAskingForClarity) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="How clear are you on your specific next steps?"
+                                  colorScheme="clarity"
+                                  minLabel="Very unclear"
+                                  maxLabel="Crystal clear"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'introduction',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Initial Mindset State (COMPASS Introduction Q3) */}
+                          {reflection.step === 'introduction' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const userConsentGiven = payload['user_consent_given'];
+                            const initialMindsetState = payload['initial_mindset_state'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: consent given, mindset not yet captured, AI is asking for it
+                            if (userConsentGiven !== true || initialMindsetState !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for mindset
+                            const isAskingForMindset = coachReflection.toLowerCase().includes('mindset') || 
+                                                      coachReflection.toLowerCase().includes('resistant') ||
+                                                      coachReflection.toLowerCase().includes('neutral') ||
+                                                      coachReflection.toLowerCase().includes('open') ||
+                                                      coachReflection.toLowerCase().includes('engaged');
+                            
+                            if (!isAskingForMindset) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <MindsetSelector
+                                  question="How would you describe your current mindset about this change?"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'introduction',
+                                      userTurn: value,
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Understanding/Clarity Score (COMPASS Clarity Step) */}
+                          {reflection.step === 'clarity' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const clarityScore = payload['clarity_score'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: clarity score not yet captured, AI is asking for it
+                            if (clarityScore !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for understanding/clarity (1-5 scale)
+                            const isAskingForClarity = (coachReflection.includes('1-5') || coachReflection.includes('scale of 1-5')) &&
+                                                      (coachReflection.toLowerCase().includes('understand') ||
+                                                       coachReflection.toLowerCase().includes('clear'));
+                            
+                            if (!isAskingForClarity) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <UnderstandingScaleSelector
+                                  question="On a scale of 1-5, how well do you understand what's happening?"
+                                  minLabel="Very confused"
+                                  maxLabel="Crystal clear"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'clarity',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Current Confidence Scale (COMPASS Ownership Step) */}
+                          {reflection.step === 'ownership' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const currentConfidence = payload['current_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Check if AI is asking for confidence (1-10 scale)
+                            // Triggers for both initial question and final re-check ("Where's your confidence now")
+                            const isAskingForConfidence = (coachReflection.includes('1-10') || coachReflection.includes('/10') || coachReflection.toLowerCase().includes('where')) &&
+                                                         (coachReflection.toLowerCase().includes('confident') ||
+                                                          coachReflection.toLowerCase().includes('confidence'));
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            // Show selector if asking for initial confidence OR final re-check
+                            // For initial: current_confidence should be undefined
+                            // For final: current_confidence exists, but we're asking "where's your confidence now"
+                            const isInitialQuestion = currentConfidence === undefined;
+                            const isFinalRecheck = currentConfidence !== undefined && 
+                                                  (coachReflection.toLowerCase().includes('where') || 
+                                                   coachReflection.toLowerCase().includes('now'));
+                            
+                            if (!isInitialQuestion && !isFinalRecheck) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question={isFinalRecheck ? "Where's your confidence now? (1-10)" : "On a scale of 1-10, how confident do you feel?"}
+                                  colorScheme="confidence"
+                                  minLabel="Not confident at all"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'ownership',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
 
                           {/* Options Selector for Options Step */}
                           {reflection.step === 'options' && isLastReflection && !isSessionComplete && (() => {
@@ -1305,6 +1532,88 @@ export function SessionView() {
                                         });
                                       }
                                     })();
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Final Confidence Scale (COMPASS Practice Step) */}
+                          {reflection.step === 'practice' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const finalConfidence = payload['final_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: final confidence not yet captured, AI is asking for it
+                            if (finalConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for final confidence
+                            const isAskingForFinalConfidence = (coachReflection.includes('1-10') || coachReflection.includes('/10')) &&
+                                                               (coachReflection.toLowerCase().includes('where') || 
+                                                                coachReflection.toLowerCase().includes('confidence now'));
+                            
+                            if (!isAskingForFinalConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="Where is your confidence now? (1-10)"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident at all"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'practice',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Final Action Clarity Scale (COMPASS Practice Step) */}
+                          {reflection.step === 'practice' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const finalActionClarity = payload['final_action_clarity'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: final action clarity not yet captured, AI is asking for it
+                            if (finalActionClarity !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for action clarity
+                            const isAskingForActionClarity = (coachReflection.includes('1-10') || coachReflection.includes('/10')) &&
+                                                            (coachReflection.toLowerCase().includes('clear') || 
+                                                             coachReflection.toLowerCase().includes('next steps'));
+                            
+                            if (!isAskingForActionClarity) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="How clear are you on your next steps? (1-10)"
+                                  colorScheme="clarity"
+                                  minLabel="Very unclear"
+                                  maxLabel="Crystal clear"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'practice',
+                                      userTurn: String(value),
+                                    });
                                   }}
                                 />
                               </div>

@@ -343,6 +343,10 @@ ONLY ask to rephrase if response is GENUINELY:
 - DO NOT infer or guess field values - if you don't have the data, DON'T include the field
 - DO NOT include empty arrays [] unless the user explicitly said "none" or "no one"
 - DO NOT include scores (clarity_score, ownership_score, etc.) unless the user explicitly gave you a number
+- ⚠️ NEVER SEND NULL VALUES - If you don't have data for a field, OMIT IT ENTIRELY from the JSON
+  - ❌ WRONG: "sphere_of_control": null
+  - ✅ CORRECT: (don't include sphere_of_control field at all)
+- ONLY include fields when you have ACTUAL DATA from the user
 
 ⚠️ CRITICAL EXTRACTION RULES:
 

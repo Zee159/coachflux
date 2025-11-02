@@ -32,7 +32,6 @@ import type * as prompts_base from "../prompts/base.js";
 import type * as prompts_compass from "../prompts/compass.js";
 import type * as prompts_grow from "../prompts/grow.js";
 import type * as prompts_index from "../prompts/index.js";
-import type * as prompts from "../prompts.js";
 import type * as queries from "../queries.js";
 import type * as reports_base from "../reports/base.js";
 import type * as reports_compass from "../reports/compass.js";
@@ -73,7 +72,6 @@ declare const fullApi: ApiFromModules<{
   "prompts/compass": typeof prompts_compass;
   "prompts/grow": typeof prompts_grow;
   "prompts/index": typeof prompts_index;
-  prompts: typeof prompts;
   queries: typeof queries;
   "reports/base": typeof reports_base;
   "reports/compass": typeof reports_compass;

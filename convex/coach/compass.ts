@@ -156,8 +156,8 @@ export class COMPASSCoach implements FrameworkCoach {
         practice: "Well done! You're ready to take action. Your session is complete.",
       },
       openers: {
-        clarity: "Let's get super clear on what's actually changing. In your day-to-day work, what will be different?",
-        ownership: "Great! You've clarified the change. Now let's build your confidence.",
+        clarity: "What workplace change are you navigating right now, and what's making you feel uncertain about it?",
+        ownership: "Great! You've clarified the change. Now let's build your confidence. On a scale of 1-10, how confident do you feel about navigating this successfully?",
         mapping: "With your confidence built, let's map out your specific action plan. What's the ONE action you want to commit to?",
         practice: "You've got your action plan. Now let's lock in your commitment and see how far you've come.",
         review: "Time to consolidate. Let's review your key takeaways and next actions.",

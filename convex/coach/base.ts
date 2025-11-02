@@ -871,7 +871,7 @@ export async function advanceToNextStep(
   currentStep: { name: string },
   frameworkCoach: FrameworkCoach,
   args: { orgId: Id<"orgs">; userId: Id<"users">; sessionId: Id<"sessions"> },
-  reflections?: Array<{ step: string; payload: Record<string, unknown> }>
+  _reflections?: Array<{ step: string; payload: Record<string, unknown> }>
 ): Promise<string> {
   const order = framework.steps.map((s) => s.name);
   const idx = order.indexOf(currentStep.name);
@@ -907,35 +907,7 @@ export async function advanceToNextStep(
   });
   
   // Create step opener reflection
-  let opener = openers[nextStepName];
-  
-  // COMPASS: Replace [X] placeholder in ownership opener with actual initial_confidence
-  if (opener !== undefined && nextStepName === 'ownership' && reflections !== undefined) {
-    const introReflections = reflections.filter(r => r.step === 'introduction');
-    const latestIntro = introReflections[introReflections.length - 1];
-    const initialConfidence = latestIntro?.payload?.['initial_confidence'];
-    
-    console.log('🔍 Opener replacement debug:', {
-      hasOpener: opener !== undefined,
-      openerText: opener,
-      hasReflections: reflections !== undefined,
-      introReflectionsCount: introReflections.length,
-      latestIntroPayload: latestIntro?.payload,
-      initialConfidence,
-      hasPlaceholder: opener?.includes('[X]')
-    });
-    
-    if (typeof initialConfidence === 'number' && opener.includes('[X]')) {
-      opener = opener.replace('[X]', String(initialConfidence));
-      console.log('✅ Replaced [X] with', initialConfidence, '→', opener);
-    } else {
-      console.warn('⚠️ Could not replace [X]:', {
-        isNumber: typeof initialConfidence === 'number',
-        hasPlaceholder: opener.includes('[X]'),
-        initialConfidence
-      });
-    }
-  }
+  const opener = openers[nextStepName];
   
   // 🔧 FIX: Only create opener reflection if it's not empty
   if (opener !== undefined && opener.length > 0) {
