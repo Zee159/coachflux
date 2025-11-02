@@ -70,17 +70,26 @@ export const growFrameworkLegacy: LegacyFramework = {
             items: {
               type: "object",
               properties: {
+                id: { type: "string" },
                 label: { type: "string", minLength: 3, maxLength: 60 },
-                pros: { type: "array", items: { type: "string" }, maxItems: 5 },
-                cons: { type: "array", items: { type: "string" }, maxItems: 5 },
+                description: { type: "string", minLength: 10, maxLength: 200 },
+                pros: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 5 },
+                cons: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 5 },
+                recommended: { type: "boolean" },
                 feasibilityScore: { type: "integer", minimum: 1, maximum: 10 },
                 effortRequired: { type: "string" },
                 alignmentReason: { type: "string", maxLength: 200 }
               },
-              required: ["label"],
+              required: ["id", "label", "description", "pros", "cons"],
               additionalProperties: false
             },
-            minItems: 1,
+            minItems: 5,
+            maxItems: 5
+          },
+          selected_option_ids: {
+            type: "array",
+            items: { type: "string" },
+            minItems: 0,
             maxItems: 5
           },
           coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
@@ -91,34 +100,44 @@ export const growFrameworkLegacy: LegacyFramework = {
     },
     {
       name: "will",
-      system_objective: "Select 1-3 options and define SMART actions with accountability for each.",
+      system_objective: "Generate AI-suggested actions for each selected option, user validates with Accept/Modify/Skip.",
       required_fields_schema: {
         type: "object",
         properties: {
-          chosen_options: { 
-            type: "array", 
-            items: { type: "string" },
-            minItems: 1,
-            maxItems: 3
+          suggested_action: {
+            type: "object",
+            properties: {
+              action: { type: "string", minLength: 10, maxLength: 200 },
+              due_days: { type: "integer", minimum: 1, maximum: 365 },
+              owner: { type: "string", minLength: 2, maxLength: 50 },
+              accountability_mechanism: { type: "string", minLength: 5, maxLength: 200 },
+              support_needed: { type: "string", minLength: 2, maxLength: 200 }
+            },
+            required: ["action", "due_days", "owner", "accountability_mechanism", "support_needed"],
+            additionalProperties: false
           },
+          current_option_label: { type: "string" },
+          current_option_index: { type: "integer", minimum: 0 },
+          total_options: { type: "integer", minimum: 1 },
           actions: {
             type: "array",
             items: {
               type: "object",
               properties: {
-                title: { type: "string", minLength: 4, maxLength: 120 },
+                option_id: { type: "string" },
+                option_label: { type: "string" },
+                action: { type: "string", minLength: 10, maxLength: 200 },
+                due_days: { type: "integer", minimum: 1, maximum: 365 },
                 owner: { type: "string" },
-                due_days: { type: "integer", minimum: 1 },
-                support_needed: { type: "string", minLength: 2, maxLength: 200 },
-                accountability_mechanism: { type: "string", minLength: 5, maxLength: 200 }
+                accountability_mechanism: { type: "string" },
+                support_needed: { type: "string" }
               },
-              required: ["title"],
+              required: ["action", "due_days"],
               additionalProperties: false
             },
-            minItems: 1,
-            maxItems: 3
+            minItems: 0,
+            maxItems: 5
           },
-          action_plan_timeframe: { type: "string", minLength: 2, maxLength: 100 },
           coach_reflection: { type: "string", minLength: 20, maxLength: 300 }
         },
         required: ["coach_reflection"],
@@ -327,34 +346,55 @@ export const growFramework: FrameworkDefinition = {
       required_fields_schema: {
         type: 'object',
         properties: {
-          chosen_options: { 
+          // NEW: Button-based flow fields
+          selected_option_ids: { 
             type: 'array', 
             items: { type: 'string' },
             minItems: 1,
-            maxItems: 3
+            maxItems: 5
+          },
+          current_option_index: { type: 'integer', minimum: 0 },
+          current_option_label: { type: 'string' },
+          total_options: { type: 'integer', minimum: 1 },
+          suggested_action: {
+            type: 'object',
+            properties: {
+              action: { type: 'string', minLength: 4, maxLength: 200 },
+              due_days: { type: 'integer', minimum: 1, maximum: 365 },
+              owner: { type: 'string', minLength: 1, maxLength: 100 },
+              accountability_mechanism: { type: 'string', minLength: 5, maxLength: 200 },
+              support_needed: { type: 'string', minLength: 2, maxLength: 200 }
+            },
+            required: ['action', 'due_days', 'owner', 'accountability_mechanism', 'support_needed'],
+            additionalProperties: false
           },
           actions: {
             type: 'array',
             items: {
               type: 'object',
               properties: {
-                title: { type: 'string', minLength: 4, maxLength: 120 },
+                option_id: { type: 'string' },
+                option_label: { type: 'string' },
+                action: { type: 'string', minLength: 4, maxLength: 200 },
+                due_days: { type: 'integer', minimum: 1, maximum: 365 },
                 owner: { type: 'string' },
-                due_days: { type: 'integer', minimum: 1 },
-                support_needed: { type: 'string', minLength: 2, maxLength: 200 },
-                accountability_mechanism: { type: 'string', minLength: 5, maxLength: 200 }
+                accountability_mechanism: { type: 'string', minLength: 5, maxLength: 200 },
+                support_needed: { type: 'string', minLength: 2, maxLength: 200 }
               },
-              required: ['title'],
+              required: ['action'],
               additionalProperties: false
             },
-            minItems: 1,
-            maxItems: 3
+            minItems: 0,
+            maxItems: 5
           },
-          action_plan_timeframe: { type: 'string', minLength: 2, maxLength: 100 },
-          coach_reflection: { type: 'string', minLength: 20, maxLength: 300 }
+          coach_reflection: { type: 'string', minLength: 20, maxLength: 300 },
+          options: { 
+            type: 'array',
+            items: { type: 'object' }
+          }
         },
         required: ['coach_reflection'],
-        additionalProperties: false
+        additionalProperties: true
       },
       system_prompt: 'You are a GROW coach. Help select an option and define SMART actions.',
       coaching_questions: [

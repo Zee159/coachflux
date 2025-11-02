@@ -17,7 +17,7 @@ export class GROWCoach implements FrameworkCoach {
       goal: ["goal", "why_now", "success_criteria", "timeframe"],
       reality: ["current_state", "constraints", "resources", "risks"],
       options: ["options"],
-      will: ["chosen_options", "actions"], // Support 1-3 chosen options with streamlined actions
+      will: ["suggested_action", "selected_option_ids", "current_option_index"], // Button-based flow
       review: ["key_takeaways", "immediate_step"],
     };
   }
@@ -130,121 +130,68 @@ export class GROWCoach implements FrameworkCoach {
 
   /**
    * Options step completion logic
-   * Simple validation matching GOAL/REALITY pattern
+   * NEW: Button-based flow - ONLY advances when user selects options via buttons
    */
   private checkOptionsCompletion(
     payload: ReflectionPayload,
-    skipCount: number,
-    loopDetected: boolean
+    _skipCount: number,
+    _loopDetected: boolean
   ): StepCompletionResult {
     const options = payload["options"];
+    const selectedOptionIds = payload["selected_option_ids"];
 
+    // CRITICAL: Options step uses button-based selection
+    // Only advance when user has selected options via OptionsSelector buttons
+    if (Array.isArray(selectedOptionIds) && selectedOptionIds.length > 0) {
+      // User selected options via buttons - advance to Will step
+      return { shouldAdvance: true };
+    }
+
+    // If no options array generated yet, DO NOT advance
     if (!Array.isArray(options) || options.length === 0) {
       return { shouldAdvance: false };
     }
 
-    // Count explored options (have pros AND cons)
-    const exploredOptions = options.filter((opt: unknown) => {
-      const option = opt as { pros?: unknown[]; cons?: unknown[] };
-      return Array.isArray(option.pros) && option.pros.length > 0 &&
-             Array.isArray(option.cons) && option.cons.length > 0;
-    });
-
-    const hasExploredOptions = exploredOptions.length >= 1;
-    const hasMultipleOptions = options.length >= 2;
-
-    // Progressive relaxation based on skip count and loop detection
-    if (loopDetected) {
-      // System stuck: 1 explored option is enough
-      return { shouldAdvance: hasExploredOptions };
-    } else if (skipCount >= 2) {
-      // User exhausted skips: 1 explored option is enough
-      return { shouldAdvance: hasExploredOptions };
-    } else if (skipCount === 1) {
-      // User used one skip: still need 2 options
-      return { shouldAdvance: hasMultipleOptions && hasExploredOptions };
-    } else {
-      // DEFAULT (no skips): Need 2+ options with 1+ explored
-      return { shouldAdvance: hasMultipleOptions && hasExploredOptions };
-    }
+    // If options exist but user hasn't selected yet, DO NOT advance
+    // (Wait for button click which will trigger structured input handler)
+    return { shouldAdvance: false };
   }
 
   /**
    * Will step completion logic
-   * STREAMLINED: Supports 1-3 chosen options with simplified action requirements
-   * NEW: Requires accountability_mechanism for each action
+   * NEW: Button-based flow - NEVER auto-advances
+   * Backend explicitly advances to Review after all options processed
    */
   private checkWillCompletion(
     payload: ReflectionPayload,
-    skipCount: number,
-    loopDetected: boolean
+    _skipCount: number,
+    _loopDetected: boolean
   ): StepCompletionResult {
-    const chosenOptions = payload["chosen_options"];
+    // CRITICAL: Will step uses button-based action validation
+    // The step NEVER auto-advances based on payload fields
+    // Backend explicitly advances to Review when all options are processed
+    
+    // Check if we're still processing options (has suggested_action)
+    const suggestedAction = payload["suggested_action"];
+    if (suggestedAction !== undefined && suggestedAction !== null) {
+      // Still showing ActionValidator buttons - DO NOT advance
+      return { shouldAdvance: false };
+    }
+    
+    // Check if backend has explicitly moved to Review
+    // (This happens in action_accepted/action_skipped handlers when no more options)
     const actions = payload["actions"];
-
-    // Must have at least 1 chosen option and matching actions
-    if (!Array.isArray(chosenOptions) || chosenOptions.length === 0) {
+    const selectedOptionIds = payload["selected_option_ids"];
+    
+    if (Array.isArray(actions) && Array.isArray(selectedOptionIds)) {
+      // If we have actions but no suggested_action, backend is done
+      // But we still don't auto-advance - backend handles Review transition
       return { shouldAdvance: false };
     }
-
-    if (!Array.isArray(actions) || actions.length === 0) {
-      return { shouldAdvance: false };
-    }
-
-    // Check for REQUIRED fields (streamlined: title, owner, due_days, support_needed, accountability_mechanism)
-    const completeActions = actions.filter((a: unknown) => {
-      const action = a as { 
-        title?: string; 
-        owner?: string; 
-        due_days?: number;
-        support_needed?: string;
-        accountability_mechanism?: string;
-      };
-      
-      const hasTitle = typeof action.title === "string" && action.title.length > 0;
-      const hasOwner = typeof action.owner === "string" && action.owner.length > 0;
-      const hasDueDate = typeof action.due_days === "number" && action.due_days > 0;
-      const hasSupport = typeof action.support_needed === "string" && action.support_needed.length > 0;
-      const hasAccountability = typeof action.accountability_mechanism === "string" && action.accountability_mechanism.length > 0;
-
-      return hasTitle && hasOwner && hasDueDate && hasSupport && hasAccountability;
-    });
-
-    // Progressive relaxation based on skip count and loop detection
-    if (loopDetected) {
-      // System stuck: Just need 1 action with basic fields (title + owner + due_days)
-      const basicActions = actions.filter((a: unknown) => {
-        const action = a as { title?: string; owner?: string; due_days?: number };
-        return typeof action.title === "string" && action.title.length > 0 &&
-               typeof action.owner === "string" && action.owner.length > 0 &&
-               typeof action.due_days === "number" && action.due_days > 0;
-      });
-      return { shouldAdvance: basicActions.length >= 1 };
-    } else if (skipCount >= 2) {
-      // User exhausted skips: Need 1 action with basic fields
-      const basicActions = actions.filter((a: unknown) => {
-        const action = a as { title?: string; owner?: string; due_days?: number };
-        return typeof action.title === "string" && action.title.length > 0 &&
-               typeof action.owner === "string" && action.owner.length > 0 &&
-               typeof action.due_days === "number" && action.due_days > 0;
-      });
-      return { shouldAdvance: basicActions.length >= 1 };
-    } else if (skipCount === 1) {
-      // User used one skip: Need actions matching number of chosen options (without support/accountability)
-      const basicActions = actions.filter((a: unknown) => {
-        const action = a as { title?: string; owner?: string; due_days?: number };
-        return typeof action.title === "string" && action.title.length > 0 &&
-               typeof action.owner === "string" && action.owner.length > 0 &&
-               typeof action.due_days === "number" && action.due_days > 0;
-      });
-      return { shouldAdvance: basicActions.length >= chosenOptions.length };
-    } else {
-      // DEFAULT (no skips): Need complete actions matching number of chosen options
-      // Each action must have: title, owner, due_days, support_needed, accountability_mechanism
-      return { 
-        shouldAdvance: completeActions.length >= chosenOptions.length
-      };
-    }
+    
+    // Default: DO NOT advance
+    // Backend controls all Will → Review transitions
+    return { shouldAdvance: false };
   }
 
   /**

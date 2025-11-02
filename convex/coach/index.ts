@@ -288,6 +288,277 @@ async function updateOptionsState(
 }
 
 // ============================================================================
+// STRUCTURED INPUT HANDLER (for button interactions)
+// ============================================================================
+
+async function handleStructuredInput(
+  ctx: ActionCtx,
+  _mutations: ReturnType<typeof createMutations>,
+  args: {
+    orgId: Id<"orgs">;
+    userId: Id<"users">;
+    sessionId: Id<"sessions">;
+    stepName: string;
+    userTurn: string;
+    structuredInput?: { type: string; data: unknown };
+  },
+  _session: { framework: string; step: string; _id: Id<"sessions"> }
+): Promise<CoachActionResult> {
+  
+  if (args.structuredInput === null || args.structuredInput === undefined) {
+    return { ok: false, message: "No structured input provided" };
+  }
+
+  const { type, data } = args.structuredInput;
+
+  switch (type) {
+    case 'options_selection': {
+      // User selected options via buttons
+      const { selected_option_ids } = data as { selected_option_ids: string[] };
+      
+      // Get the options from the last reflection to find labels
+      const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
+        sessionId: args.sessionId
+      });
+      
+      const lastReflection = sessionReflections[sessionReflections.length - 1];
+      const lastPayload = lastReflection?.payload as Record<string, unknown> | undefined;
+      const options = lastPayload?.['options'] as Array<{ id: string; label: string; description?: string }> | undefined;
+      
+      // Create reflection with selected options and advance to Will step
+      const selectedOptions = selected_option_ids.map(id => {
+        const option = options?.find(opt => opt.id === id);
+        return option?.label ?? id;
+      });
+      
+      // Create reflection with selected options (silent transition marker)
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: 'options',
+        userInput: args.userTurn,
+        payload: {
+          ...lastPayload,
+          selected_option_ids,
+          coach_reflection: `[OPTIONS_SELECTED:${selectedOptions.join(', ')}]`
+        }
+      });
+      
+      // Advance to Will step
+      await ctx.runMutation(api.mutations.updateSessionStep, {
+        sessionId: args.sessionId,
+        step: 'will'
+      });
+      
+      // Frontend will make a second call to trigger AI generation of first suggested action
+      return { ok: true };
+    }
+
+    case 'action_accepted': {
+      // User accepted AI-suggested action
+      const { option_id, action } = data as { option_id: string; action: Record<string, unknown> };
+      
+      // Get current state from last reflection
+      const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
+        sessionId: args.sessionId
+      });
+      
+      const lastReflection = sessionReflections[sessionReflections.length - 1];
+      const lastPayload = lastReflection?.payload as Record<string, unknown> | undefined;
+      
+      const selectedOptionIds = lastPayload?.['selected_option_ids'] as string[] | undefined ?? [];
+      const currentOptionIndex = (lastPayload?.['current_option_index'] as number | undefined) ?? 0;
+      const currentOptionLabel = lastPayload?.['current_option_label'] as string | undefined;
+      const existingActions = lastPayload?.['actions'] as Array<Record<string, unknown>> | undefined ?? [];
+      
+      // eslint-disable-next-line no-console
+      console.log('[ACTION_ACCEPTED] Debug:', {
+        selectedOptionIds,
+        currentOptionIndex,
+        totalOptions: selectedOptionIds.length,
+        existingActionsCount: existingActions.length
+      });
+      
+      // Add accepted action to actions array
+      const newAction = {
+        option_id,
+        option_label: currentOptionLabel,
+        ...action
+      };
+      const updatedActions = [...existingActions, newAction];
+      
+      // Check if more options to process
+      const nextIndex = currentOptionIndex + 1;
+      const hasMoreOptions = nextIndex < selectedOptionIds.length;
+      
+      // eslint-disable-next-line no-console
+      console.log('[ACTION_ACCEPTED] Next step:', {
+        nextIndex,
+        hasMoreOptions,
+        willAdvanceToReview: !hasMoreOptions
+      });
+      
+      // Store accepted action
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: 'will',
+        userInput: args.userTurn,
+        payload: {
+          ...lastPayload,
+          actions: updatedActions,
+          current_option_index: nextIndex,
+          coach_reflection: `[ACTION_ACCEPTED]`
+        }
+      });
+      
+      if (hasMoreOptions) {
+        // Frontend will make another call to generate next suggested action
+        return { ok: true };
+      } else {
+        // All options processed - advance to Review
+        // Remove suggested_action to prevent ActionValidator from showing
+        const finalPayload = { ...lastPayload };
+        delete finalPayload['suggested_action'];
+        delete finalPayload['current_option_label'];
+        
+        await ctx.runMutation(api.mutations.createReflection, {
+          orgId: args.orgId,
+          userId: args.userId,
+          sessionId: args.sessionId,
+          step: 'will',
+          userInput: args.userTurn,
+          payload: {
+            ...finalPayload,
+            actions: updatedActions,
+            coach_reflection: `Perfect! You've created ${updatedActions.length} action${updatedActions.length > 1 ? 's' : ''}. Let's review what you've accomplished.`
+          }
+        });
+        
+        // Advance to Review step
+        await ctx.runMutation(api.mutations.updateSessionStep, {
+          sessionId: args.sessionId,
+          step: 'review'
+        });
+        
+        // Create actions in database from Will step payload
+        const mutations = createMutations();
+        const queries = createQueries();
+        const willStep = { name: 'will' };
+        const willPayload = { ...finalPayload, actions: updatedActions };
+        await createActionsFromPayload(ctx, mutations, queries, willStep, willPayload, args);
+        
+        // Create initial Review reflection with first question
+        await ctx.runMutation(api.mutations.createReflection, {
+          orgId: args.orgId,
+          userId: args.userId,
+          sessionId: args.sessionId,
+          step: 'review',
+          userInput: '',
+          payload: {
+            coach_reflection: "What are your key takeaways from this session?"
+          }
+        });
+        
+        return { ok: true };
+      }
+    }
+
+    case 'action_skipped': {
+      // User skipped this option
+      const { option_id: _option_id } = data as { option_id: string };
+      
+      // Get current state from last reflection
+      const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
+        sessionId: args.sessionId
+      });
+      
+      const lastReflection = sessionReflections[sessionReflections.length - 1];
+      const lastPayload = lastReflection?.payload as Record<string, unknown> | undefined;
+      
+      const selectedOptionIds = lastPayload?.['selected_option_ids'] as string[] | undefined ?? [];
+      const currentOptionIndex = (lastPayload?.['current_option_index'] as number | undefined) ?? 0;
+      const existingActions = lastPayload?.['actions'] as Array<Record<string, unknown>> | undefined ?? [];
+      
+      // Check if more options to process
+      const nextIndex = currentOptionIndex + 1;
+      const hasMoreOptions = nextIndex < selectedOptionIds.length;
+      
+      // Store skip action
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: 'will',
+        userInput: args.userTurn,
+        payload: {
+          ...lastPayload,
+          current_option_index: nextIndex,
+          coach_reflection: `[ACTION_SKIPPED]`
+        }
+      });
+      
+      if (hasMoreOptions) {
+        // Frontend will make another call to generate next suggested action
+        return { ok: true };
+      } else {
+        // All options processed - advance to Review
+        // Remove suggested_action to prevent ActionValidator from showing
+        const finalPayload = { ...lastPayload };
+        delete finalPayload['suggested_action'];
+        delete finalPayload['current_option_label'];
+        
+        await ctx.runMutation(api.mutations.createReflection, {
+          orgId: args.orgId,
+          userId: args.userId,
+          sessionId: args.sessionId,
+          step: 'will',
+          userInput: args.userTurn,
+          payload: {
+            ...finalPayload,
+            coach_reflection: existingActions.length > 0 
+              ? `You've created ${existingActions.length} action${existingActions.length > 1 ? 's' : ''}. Let's review what you've accomplished.`
+              : `No actions created. Let's review your session and identify next steps.`
+          }
+        });
+        
+        // Advance to Review step
+        await ctx.runMutation(api.mutations.updateSessionStep, {
+          sessionId: args.sessionId,
+          step: 'review'
+        });
+        
+        // Create actions in database from Will step payload
+        const mutations = createMutations();
+        const queries = createQueries();
+        const willStep = { name: 'will' };
+        const willPayload = { ...finalPayload, actions: existingActions };
+        await createActionsFromPayload(ctx, mutations, queries, willStep, willPayload, args);
+        
+        // Create initial Review reflection with first question
+        await ctx.runMutation(api.mutations.createReflection, {
+          orgId: args.orgId,
+          userId: args.userId,
+          sessionId: args.sessionId,
+          step: 'review',
+          userInput: '',
+          payload: {
+            coach_reflection: "What are your key takeaways from this session?"
+          }
+        });
+        
+        return { ok: true };
+      }
+    }
+
+    default:
+      return { ok: false, message: `Unknown structured input type: ${type}` };
+  }
+}
+
+// ============================================================================
 // MAIN COACHING ACTION
 // ============================================================================
 
@@ -298,6 +569,10 @@ export const nextStep = action({
     sessionId: v.id("sessions"),
     stepName: v.string(),
     userTurn: v.string(),
+    structuredInput: v.optional(v.object({
+      type: v.string(),
+      data: v.any()
+    }))
   },
   handler: async (ctx, args): Promise<CoachActionResult> => {
     // Create mutations object (avoids TypeScript "excessively deep" errors)
@@ -353,6 +628,11 @@ export const nextStep = action({
     const safetyResult = await performSafetyChecks(args.userTurn, ctx, mutations, args);
     if (safetyResult !== null) {
       return safetyResult;
+    }
+
+    // Handle structured input from button interactions (bypass AI processing)
+    if (args.structuredInput !== null && args.structuredInput !== undefined) {
+      return await handleStructuredInput(ctx, mutations, args, session);
     }
 
     // Get organization and framework
@@ -427,6 +707,33 @@ export const nextStep = action({
     let aiContext = '';
     if (frameworkCoach.generateAIContext !== undefined) {
       aiContext = frameworkCoach.generateAIContext(step.name, sessionReflections, args.userTurn);
+    }
+    
+    // GROW Will step: Inject previous reflection payload so AI can access selected_option_ids
+    if (session.framework === 'GROW' && step.name === 'will' && sessionReflections.length > 0) {
+      const previousReflection = sessionReflections[sessionReflections.length - 1];
+      const previousPayload = previousReflection?.payload as Record<string, unknown> | undefined;
+      
+      if (previousPayload !== undefined && previousPayload !== null) {
+        const selectedOptionIds = previousPayload['selected_option_ids'];
+        const options = previousPayload['options'];
+        
+        if (selectedOptionIds !== undefined && selectedOptionIds !== null) {
+          aiContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 PREVIOUS STEP DATA (Options Selection)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SELECTED OPTION IDS: ${JSON.stringify(selectedOptionIds)}
+
+CRITICAL: You MUST include "selected_option_ids": ${JSON.stringify(selectedOptionIds)} in your JSON response.
+This is required for the system to track which options the user selected.
+
+${Array.isArray(options) ? `\nAVAILABLE OPTIONS:\n${JSON.stringify(options, null, 2)}` : ''}
+
+Generate a suggested action for the FIRST selected option (index 0).
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+        }
+      }
     }
     
     // 🔧 FIX Issue #2: Replace dynamic value placeholders with actual captured data
@@ -574,6 +881,54 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
 
     const { raw, payload } = responseResult;
 
+    // GROW Will step: Ensure selected_option_ids is in payload BEFORE validation
+    // This must happen before pre-validation to prevent missing field errors
+    if (session.framework === 'GROW' && step.name === 'will') {
+      // eslint-disable-next-line no-console
+      console.log('[WILL STEP] Checking for selected_option_ids. Total reflections:', sessionReflections.length);
+      
+      // Look through all reflections to find selected_option_ids (might be in Options step)
+      let selectedOptionIds: unknown = null;
+      let options: unknown = null;
+      
+      for (let i = sessionReflections.length - 1; i >= 0; i--) {
+        const reflection = sessionReflections[i];
+        const reflectionPayload = reflection?.payload as Record<string, unknown> | undefined;
+        
+        if (reflectionPayload?.['selected_option_ids'] !== undefined && reflectionPayload?.['selected_option_ids'] !== null) {
+          selectedOptionIds = reflectionPayload['selected_option_ids'];
+          // eslint-disable-next-line no-console
+          console.log('[WILL STEP] Found selected_option_ids in reflection', i, '(step:', reflection?.step, '):', selectedOptionIds);
+        }
+        
+        if (reflectionPayload?.['options'] !== undefined && reflectionPayload?.['options'] !== null) {
+          options = reflectionPayload['options'];
+        }
+        
+        if (selectedOptionIds !== null && options !== null) {
+          break;
+        }
+      }
+      
+      // Copy selected_option_ids if AI didn't include it
+      if (payload['selected_option_ids'] === undefined || payload['selected_option_ids'] === null) {
+        if (selectedOptionIds !== undefined && selectedOptionIds !== null) {
+          // eslint-disable-next-line no-console
+          console.log('[WILL STEP] AI forgot selected_option_ids, copying:', selectedOptionIds);
+          payload['selected_option_ids'] = selectedOptionIds;
+        } else {
+          console.warn('[WILL STEP] No selected_option_ids found in any reflection!');
+        }
+      }
+      
+      // Also copy options array if not present (needed to map IDs to labels)
+      if (payload['options'] === undefined || payload['options'] === null) {
+        if (options !== undefined && options !== null) {
+          payload['options'] = options;
+        }
+      }
+    }
+
     // Phase 2: Pre-validate response structure before sending to user
     const preValidation = preValidateResponse(payload, step.name, requiredFields);
     if (!preValidation.isValid) {
@@ -588,8 +943,26 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
     }
 
     // Validate response
-    const validation = await validateResponse(raw, step.required_fields_schema);
-    const { isValid, verdict, bannedHit } = validation;
+    // SKIP validator for GROW Will step - it hallucinates that selected_option_ids isn't in schema
+    // Pre-validation already checked required fields, and we have fallback to ensure selected_option_ids
+    const skipValidation = session.framework === 'GROW' && step.name === 'will';
+    
+    let isValid = true;
+    let verdict: { valid?: boolean; verdict?: string; reasons?: string[] } = { valid: true };
+    let bannedHit = false;
+    
+    if (!skipValidation) {
+      const validation = await validateResponse(raw, step.required_fields_schema);
+      isValid = validation.isValid;
+      verdict = validation.verdict;
+      bannedHit = validation.bannedHit;
+    } else {
+      // For Will step, just check banned terms manually
+      const lower = raw.toLowerCase();
+      const BANNED = ['placeholder', 'lorem ipsum', 'todo', 'tbd', 'xxx', 'n/a'];
+      bannedHit = BANNED.some(b => lower.includes(b));
+      isValid = !bannedHit;
+    }
 
     if (!isValid || bannedHit) {
       const reason = bannedHit 
@@ -924,7 +1297,22 @@ export const generateReviewAnalysis = action({
     const goalData = goalPayload !== undefined && goalPayload !== null ? JSON.stringify(goalPayload, null, 2) : 'Not captured';
     const realityData = realityPayload !== undefined && realityPayload !== null ? JSON.stringify(realityPayload, null, 2) : 'Not captured';
     const optionsData = optionsPayload !== undefined && optionsPayload !== null ? JSON.stringify(optionsPayload, null, 2) : 'Not captured';
-    const willData = willPayload !== undefined && willPayload !== null ? JSON.stringify(willPayload, null, 2) : 'Not captured';
+    
+    // Format Will data - extract action titles from action objects
+    let willData = 'Not captured';
+    if (willPayload !== undefined && willPayload !== null) {
+      const actions = willPayload['actions'];
+      if (Array.isArray(actions) && actions.length > 0) {
+        const actionTitles = actions.map((a: Record<string, unknown>) => {
+          const actionText = a['action'];
+          return typeof actionText === 'string' ? actionText : '[Invalid action]';
+        });
+        willData = JSON.stringify({ ...willPayload, actions: actionTitles }, null, 2);
+      } else {
+        willData = JSON.stringify(willPayload, null, 2);
+      }
+    }
+    
     const reviewData = reviewPayload !== undefined && reviewPayload !== null ? JSON.stringify(reviewPayload, null, 2) : 'Not captured';
 
     const allStepData = `

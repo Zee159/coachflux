@@ -786,27 +786,51 @@ export async function createActionsFromPayload(
   
   // GROW Framework: Create actions from "will" step
   if (step.name === "will" && Array.isArray(actions)) {
+    // eslint-disable-next-line no-console
+    console.log('[CREATE ACTIONS] Processing', actions.length, 'actions from Will step');
+    
     for (const a of actions) {
-      const action = a as { title: string; owner: string; due_days?: number };
+      // eslint-disable-next-line no-console
+      console.log('[CREATE ACTIONS] Action object:', JSON.stringify(a));
+      
+      const action = a as Record<string, unknown>;
+      
+      // Extract title from action field (GROW uses "action" field, not "title")
+      const title = typeof action['action'] === 'string' ? action['action'] : '';
+      
+      // eslint-disable-next-line no-console
+      console.log('[CREATE ACTIONS] Extracted title:', title);
+      
+      if (title.length === 0) {
+        console.warn('[CREATE ACTIONS] Skipping action with empty title');
+        continue; // Skip invalid actions
+      }
       
       // Check if this action already exists (by title)
       const isDuplicate = existingActions.some(
-        (existing: { title: string }) => existing.title === action.title
+        (existing: { title: string }) => existing.title === title
       );
       
-      if (isDuplicate === false) {
-        const due = action.due_days !== undefined && action.due_days !== null && action.due_days > 0 
-          ? Date.now() + action.due_days * 86400000 
-          : undefined;
-        await ctx.runMutation(mutations.createAction, {
-          orgId: args.orgId,
-          userId: args.userId,
-          sessionId: args.sessionId,
-          title: action.title,
-          dueAt: due,
-          status: "open"
-        });
+      if (isDuplicate) {
+        // eslint-disable-next-line no-console
+        console.log('[CREATE ACTIONS] Skipping duplicate action:', title);
+        continue;
       }
+      
+      const dueDays = typeof action['due_days'] === 'number' ? action['due_days'] : 0;
+      const due = dueDays > 0 ? Date.now() + dueDays * 86400000 : undefined;
+      
+      // eslint-disable-next-line no-console
+      console.log('[CREATE ACTIONS] Creating action:', { title, dueDays, due });
+      
+      await ctx.runMutation(mutations.createAction, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        title: title,
+        dueAt: due,
+        status: "open"
+      });
     }
   }
   

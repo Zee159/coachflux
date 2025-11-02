@@ -14,6 +14,9 @@ import { VoiceSettingsModal } from "./VoiceSettingsModal";
 import { CompactConfidenceDisplay } from "./ConfidenceMeter";
 import { NudgeIndicator } from "./NudgeDisplay";
 import { ConfidenceTracker } from "./ConfidenceTracker";
+import { YesNoSelector } from "./YesNoSelector";
+import { OptionsSelector } from "./OptionsSelector";
+import { ActionValidator } from "./ActionValidator";
 
 type StepName = "introduction" | "goal" | "reality" | "options" | "will" | "review" | "clarity" | "ownership" | "mapping" | "practice";
 
@@ -25,8 +28,15 @@ function formatReflectionDisplay(step: string, payload: Record<string, unknown>)
   
   // Filter out internal/debug fields that shouldn't be shown to users
   const internalFields = ['user_ready_to_proceed', 'options_state', 'ai_suggestion_count'];
+  
+  // Hide 'options' field in Options step (shown via OptionsSelector buttons instead)
+  // Hide 'selected_option_ids' field (internal state)
+  // Hide 'suggested_action' field in Will step (shown via ActionValidator buttons instead)
+  // Hide 'current_option_index', 'current_option_label', 'total_options' (internal state)
+  const buttonFields = ['options', 'selected_option_ids', 'suggested_action', 'current_option_index', 'current_option_label', 'total_options'];
+  
   const otherEntries = entries.filter(([key]) => 
-    key !== 'coach_reflection' && !internalFields.includes(key)
+    key !== 'coach_reflection' && !internalFields.includes(key) && !buttonFields.includes(key)
   );
   
   // Extract confidence tracking for COMPASS framework
@@ -48,13 +58,17 @@ function formatReflectionDisplay(step: string, payload: Record<string, unknown>)
     user_input?: string;
   } | undefined;
   
+  // Filter out system markers from display
+  const coachReflectionText = coachReflection !== undefined ? String(coachReflection[1]) : '';
+  const isSystemMarker = coachReflectionText.startsWith('[') && coachReflectionText.endsWith(']');
+  
   return (
     <div className="space-y-4">
       {/* Coach Reflection - displayed first with special styling */}
-      {coachReflection !== undefined && (
+      {coachReflection !== undefined && !isSystemMarker && (
         <div className="bg-white dark:bg-gray-700 border-l-4 border-indigo-600 dark:border-indigo-400 p-3 rounded-r-lg">
           <div className="text-sm text-gray-800 dark:text-gray-200 italic leading-relaxed whitespace-pre-line">
-            💬 {String(coachReflection[1])}
+            💬 {coachReflectionText}
           </div>
         </div>
       )}
@@ -1082,6 +1096,220 @@ export function SessionView() {
                           <div className="bg-gray-100 dark:bg-gray-700 rounded-lg rounded-tl-sm p-3 sm:p-4">
                             {formatReflectionDisplay(reflection.step, reflection.payload as Record<string, unknown>)}
                           </div>
+
+                          {/* Yes/No Buttons for Introduction Step */}
+                          {reflection.step === 'introduction' && isLastReflection && !isSessionComplete && (
+                            <div className="mt-4">
+                              <YesNoSelector
+                                question="Ready to begin?"
+                                yesLabel="Yes, let's begin"
+                                noLabel="No, close session"
+                                onYes={() => {
+                                  // Send "yes" to trigger AI to advance to Goal and ask first question
+                                  void nextStepAction({
+                                    orgId: session.orgId,
+                                    userId: session.userId,
+                                    sessionId: session._id,
+                                    stepName: 'introduction',
+                                    userTurn: 'yes',
+                                  });
+                                }}
+                                onNo={() => {
+                                  navigate('/dashboard');
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          {/* Options Selector for Options Step */}
+                          {reflection.step === 'options' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const options = payload['options'];
+                            
+                            if (!Array.isArray(options) || options.length === 0) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <OptionsSelector
+                                  options={options.map((opt: Record<string, unknown>) => ({
+                                    id: String(opt['id'] ?? ''),
+                                    label: String(opt['label'] ?? ''),
+                                    description: String(opt['description'] ?? ''),
+                                    pros: Array.isArray(opt['pros']) ? opt['pros'].map(String) : [],
+                                    cons: Array.isArray(opt['cons']) ? opt['cons'].map(String) : [],
+                                    recommended: Boolean(opt['recommended'])
+                                  }))}
+                                  onSubmit={(selectedIds) => {
+                                    // Send structured input to backend to store selection and advance step
+                                    void (async () => {
+                                      await nextStepAction({
+                                        orgId: session.orgId,
+                                        userId: session.userId,
+                                        sessionId: session._id,
+                                        stepName: 'options',
+                                        userTurn: `Selected options: ${selectedIds.join(', ')}`,
+                                        structuredInput: {
+                                          type: 'options_selection',
+                                          data: { selected_option_ids: selectedIds }
+                                        }
+                                      });
+                                      
+                                      // Trigger AI to generate first suggested action for Will step
+                                      void nextStepAction({
+                                        orgId: session.orgId,
+                                        userId: session.userId,
+                                        sessionId: session._id,
+                                        stepName: 'will',
+                                        userTurn: '', // Empty input - AI will generate suggested action
+                                      });
+                                    })();
+                                  }}
+                                  minSelections={1}
+                                  maxSelections={5}
+                                  coachMessage=""
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Action Validator for Will Step */}
+                          {reflection.step === 'will' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const suggestedAction = payload['suggested_action'] as Record<string, unknown> | undefined;
+                            const currentOptionLabel = payload['current_option_label'];
+                            
+                            if (suggestedAction === null || suggestedAction === undefined) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ActionValidator
+                                  optionLabel={String(currentOptionLabel ?? '')}
+                                  suggestedAction={{
+                                    action: String(suggestedAction['action'] ?? ''),
+                                    due_days: Number(suggestedAction['due_days'] ?? 7),
+                                    owner: String(suggestedAction['owner'] ?? 'Me'),
+                                    accountability_mechanism: String(suggestedAction['accountability_mechanism'] ?? ''),
+                                    support_needed: String(suggestedAction['support_needed'] ?? '')
+                                  }}
+                                  onAccept={() => {
+                                    // Accept suggested action (bypass AI processing)
+                                    const currentOptionIndex = Number(payload['current_option_index'] ?? 0);
+                                    const selectedOptionIds = payload['selected_option_ids'] as string[] | undefined;
+                                    const optionId = selectedOptionIds?.[currentOptionIndex] ?? '';
+                                    const totalOptions = selectedOptionIds?.length ?? 0;
+                                    const nextIndex = currentOptionIndex + 1;
+                                    const hasMoreOptions = nextIndex < totalOptions;
+                                    
+                                    void (async () => {
+                                      // Store accepted action
+                                      await nextStepAction({
+                                        orgId: session.orgId,
+                                        userId: session.userId,
+                                        sessionId: session._id,
+                                        stepName: 'will',
+                                        userTurn: 'Accepted suggested action',
+                                        structuredInput: {
+                                          type: 'action_accepted',
+                                          data: { 
+                                            option_id: optionId,
+                                            action: suggestedAction 
+                                          }
+                                        }
+                                      });
+                                      
+                                      // If more options, trigger AI to generate next suggested action
+                                      if (hasMoreOptions) {
+                                        void nextStepAction({
+                                          orgId: session.orgId,
+                                          userId: session.userId,
+                                          sessionId: session._id,
+                                          stepName: 'will',
+                                          userTurn: '', // Empty - AI generates next action
+                                        });
+                                      }
+                                    })();
+                                  }}
+                                  onModify={(modifiedAction) => {
+                                    // User modified the suggested action
+                                    const currentOptionIndex = Number(payload['current_option_index'] ?? 0);
+                                    const selectedOptionIds = payload['selected_option_ids'] as string[] | undefined;
+                                    const optionId = selectedOptionIds?.[currentOptionIndex] ?? '';
+                                    const totalOptions = selectedOptionIds?.length ?? 0;
+                                    const nextIndex = currentOptionIndex + 1;
+                                    const hasMoreOptions = nextIndex < totalOptions;
+                                    
+                                    void (async () => {
+                                      // Store modified action (same as accept, but with modified data)
+                                      await nextStepAction({
+                                        orgId: session.orgId,
+                                        userId: session.userId,
+                                        sessionId: session._id,
+                                        stepName: 'will',
+                                        userTurn: 'Modified and accepted action',
+                                        structuredInput: {
+                                          type: 'action_accepted',
+                                          data: { 
+                                            option_id: optionId,
+                                            action: modifiedAction
+                                          }
+                                        }
+                                      });
+                                      
+                                      // If more options, trigger AI to generate next suggested action
+                                      if (hasMoreOptions) {
+                                        void nextStepAction({
+                                          orgId: session.orgId,
+                                          userId: session.userId,
+                                          sessionId: session._id,
+                                          stepName: 'will',
+                                          userTurn: '', // Empty - AI generates next action
+                                        });
+                                      }
+                                    })();
+                                  }}
+                                  onSkip={() => {
+                                    // Skip this option (bypass AI processing)
+                                    const currentOptionIndex = Number(payload['current_option_index'] ?? 0);
+                                    const selectedOptionIds = payload['selected_option_ids'] as string[] | undefined;
+                                    const optionId = selectedOptionIds?.[currentOptionIndex] ?? '';
+                                    const totalOptions = selectedOptionIds?.length ?? 0;
+                                    const nextIndex = currentOptionIndex + 1;
+                                    const hasMoreOptions = nextIndex < totalOptions;
+                                    
+                                    void (async () => {
+                                      // Store skip action
+                                      await nextStepAction({
+                                        orgId: session.orgId,
+                                        userId: session.userId,
+                                        sessionId: session._id,
+                                        stepName: 'will',
+                                        userTurn: 'Skipped this option',
+                                        structuredInput: {
+                                          type: 'action_skipped',
+                                          data: { option_id: optionId }
+                                        }
+                                      });
+                                      
+                                      // If more options, trigger AI to generate next suggested action
+                                      if (hasMoreOptions) {
+                                        void nextStepAction({
+                                          orgId: session.orgId,
+                                          userId: session.userId,
+                                          sessionId: session._id,
+                                          stepName: 'will',
+                                          userTurn: '', // Empty - AI generates next action
+                                        });
+                                      }
+                                    })();
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
                           
                           {/* ⚠️ FIX P1-1: Display nudges used in this reflection */}
                           {(() => {
@@ -1314,14 +1542,22 @@ export function SessionView() {
                                                 </li>
                                               );
                                             }
-                                            // Format actions
-                                            if (typeof item === 'object' && item !== null && 'title' in item) {
-                                              const action = item as { title: string };
-                                              return (
-                                                <li key={idx} className="text-xs">
-                                                  {action.title.substring(0, 60)}{action.title.length > 60 ? '...' : ''}
-                                                </li>
-                                              );
+                                            // Format actions (GROW uses 'action' field, COMPASS uses 'title')
+                                            if (typeof item === 'object' && item !== null) {
+                                              const actionObj = item as Record<string, unknown>;
+                                              const actionText = typeof actionObj['action'] === 'string' 
+                                                ? actionObj['action'] 
+                                                : typeof actionObj['title'] === 'string' 
+                                                  ? actionObj['title'] 
+                                                  : null;
+                                              
+                                              if (actionText !== null) {
+                                                return (
+                                                  <li key={idx} className="text-xs">
+                                                    {actionText.substring(0, 60)}{actionText.length > 60 ? '...' : ''}
+                                                  </li>
+                                                );
+                                              }
                                             }
                                             // Simple strings
                                             const itemStr = String(item).substring(0, 60) + (String(item).length > 60 ? '...' : '');
