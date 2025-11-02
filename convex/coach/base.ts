@@ -705,7 +705,8 @@ export function preValidateResponse(
   // WILL-specific validation for GROW framework
   if (stepName === 'will') {
     const actions = payload["actions"] as Array<{
-      title?: string;
+      action?: string;  // GROW uses 'action' field
+      title?: string;   // COMPASS uses 'title' field
       owner?: string;
       due_days?: number;
       support_needed?: string;
@@ -714,9 +715,10 @@ export function preValidateResponse(
 
     if (Array.isArray(actions)) {
       actions.forEach((action, idx) => {
-        // Check 5 core fields
-        if (action.title === undefined || action.title === null || action.title.length === 0) {
-          errors.push(`Action ${idx + 1}: missing title`);
+        // Check 5 core fields (GROW uses 'action' field, not 'title')
+        const actionText = action.action ?? action.title;
+        if (actionText === undefined || actionText === null || actionText.length === 0) {
+          errors.push(`Action ${idx + 1}: missing action text`);
         }
         if (action.owner === undefined || action.owner === null || action.owner.length === 0) {
           errors.push(`Action ${idx + 1}: missing owner`);
