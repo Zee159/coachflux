@@ -16,6 +16,19 @@ import type { FrameworkCoach, CoachActionResult } from "./types";
 import { growCoach } from "./grow";
 import { compassCoach } from "./compass";
 import { getEmergencyResources } from "../safety";
+
+// Type for knowledge base search results
+interface KnowledgeEmbedding {
+  _id: Id<"knowledgeEmbeddings">;
+  _score: number;
+  source: string;
+  category: string;
+  title: string;
+  content: string;
+  embedding: number[];
+  metadata?: unknown;
+  createdAt: number;
+}
 import {
   aggregateStepState,
   performSafetyChecks,
@@ -758,11 +771,20 @@ Generate a suggested action for the FIRST selected option (index 0).
         );
         
         if (crossSessionContext.length > 0) {
-          aiContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          // Filter out any results with missing content
+          const validContext = crossSessionContext.filter(ctx => 
+            ctx.content !== null && 
+            ctx.content !== undefined && 
+            typeof ctx.content === 'string' && 
+            ctx.content.length > 0
+          );
+          
+          if (validContext.length > 0) {
+            aiContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📚 RELEVANT PAST CONTEXT (from similar sessions):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-${crossSessionContext.map((ctx, i) => 
+${validContext.map((ctx, i) => 
   `${i + 1}. ${ctx.content.substring(0, 200)}... (${ctx.framework} session, ${(ctx.relevance * 100).toFixed(0)}% relevant)`
 ).join('\n\n')}
 
@@ -775,10 +797,84 @@ ${crossSessionContext.map((ctx, i) =>
 ⚠️ IMPORTANT: Only reference past context if directly relevant to current discussion.
 Don't force it if the connection isn't clear.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+          }
         }
       } catch (error) {
         // Silently fail - cross-session context is nice-to-have, not critical
         console.error("Failed to fetch cross-session context:", error);
+      }
+    }
+    
+    // 📚 Knowledge Base: Inject relevant Management Bible scenarios
+    // Search using semantic similarity based on user's challenge description
+    // Only search if user input is substantial (>40 chars) and mentions management challenges
+    const managementKeywords = ['team', 'employee', 'manager', 'performance', 'feedback', 'conflict', 'change', 'deadline', 'underperform', 'difficult'];
+    const hasManagementContext = managementKeywords.some(keyword => args.userTurn.toLowerCase().includes(keyword));
+    
+    if (args.userTurn.length > 40 && hasManagementContext) {
+      try {
+        // Use OpenAI to generate embedding for semantic search
+        const OPENAI_API_KEY = process.env["OPENAI_API_KEY"];
+        if (OPENAI_API_KEY !== null && OPENAI_API_KEY !== undefined && OPENAI_API_KEY.trim() !== "") {
+          const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${OPENAI_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "text-embedding-3-small",
+              input: args.userTurn,
+            }),
+          });
+          
+          if (embeddingResponse.ok) {
+            const embeddingData = await embeddingResponse.json() as { data: Array<{ embedding: number[] }> };
+            const queryEmbedding = embeddingData.data[0]?.embedding;
+            
+            if (queryEmbedding !== null && queryEmbedding !== undefined) {
+              // Search knowledge base for relevant coaching scenarios
+              const knowledgeResults = await ctx.vectorSearch(
+                "knowledgeEmbeddings",
+                "by_embedding",
+                {
+                  vector: queryEmbedding,
+                  limit: 2, // Top 2 most relevant scenarios
+                }
+              );
+              
+              if (knowledgeResults.length > 0) {
+                // Filter results with good relevance (score > 0.75)
+                const relevantKnowledge = (knowledgeResults as KnowledgeEmbedding[]).filter(r => r._score > 0.75);
+                
+                if (relevantKnowledge.length > 0) {
+                  aiContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚 RELEVANT PROVEN APPROACHES (Management Bible):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${relevantKnowledge.map((k, i) => 
+  `${i + 1}. **${k.title}** (${k.category})
+
+${k.content.substring(0, 500)}${k.content.length > 500 ? '...' : ''}`
+).join('\n\n')}
+
+💡 Use these evidence-based approaches in your coaching:
+- Reference specific frameworks (e.g., "The SBIR model suggests...")
+- Cite proven techniques (e.g., "Research shows...")
+- Provide structured guidance based on these scenarios
+- Make it clear you're drawing from established best practices
+
+⚠️ IMPORTANT: Only reference if directly relevant to user's situation.
+Don't force it if the connection isn't clear.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        // Silently fail - knowledge base is nice-to-have, not critical
+        console.error("Failed to fetch knowledge base:", error);
       }
     }
     
@@ -1332,6 +1428,69 @@ REVIEW:
 ${reviewData}
 `;
 
+    // 📚 Search knowledge base for relevant frameworks
+    let knowledgeContext = '';
+    try {
+      const OPENAI_API_KEY = process.env["OPENAI_API_KEY"];
+      if (OPENAI_API_KEY !== null && OPENAI_API_KEY !== undefined && OPENAI_API_KEY.trim() !== "") {
+        // Create search query from goal + reality
+        const searchText = `${goalData} ${realityData}`.substring(0, 500);
+        
+        const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "text-embedding-3-small",
+            input: searchText,
+          }),
+        });
+        
+        if (embeddingResponse.ok) {
+          const embeddingData = await embeddingResponse.json() as { data: Array<{ embedding: number[] }> };
+          const queryEmbedding = embeddingData.data[0]?.embedding;
+          
+          if (queryEmbedding !== null && queryEmbedding !== undefined) {
+            const knowledgeResults = await ctx.vectorSearch(
+              "knowledgeEmbeddings",
+              "by_embedding",
+              {
+                vector: queryEmbedding,
+                limit: 3, // Top 3 most relevant
+              }
+            );
+            
+            if (knowledgeResults.length > 0) {
+              const relevantKnowledge = (knowledgeResults as KnowledgeEmbedding[]).filter(r => r._score > 0.7);
+              
+              if (relevantKnowledge.length > 0) {
+                knowledgeContext = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚 RELEVANT MANAGEMENT FRAMEWORKS (Use in your analysis):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${relevantKnowledge.map((k, i) => 
+  `${i + 1}. **${k.title}** (${k.category})
+${k.content.substring(0, 400)}...`
+).join('\n\n')}
+
+💡 Use these proven frameworks to enhance your analysis:
+- Reference specific models (e.g., "The SBIR model suggests...")
+- Cite proven techniques in unexplored_options
+- Identify risks based on these frameworks
+- Suggest pitfalls from management research
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // Silently fail - knowledge base is nice-to-have for reports
+      console.error("Failed to fetch knowledge base for report:", error);
+    }
+
     // Call AI to generate analysis
     const apiKey = process.env['ANTHROPIC_API_KEY'];
     if (apiKey === undefined || apiKey === null || apiKey.length === 0) {
@@ -1339,7 +1498,7 @@ ${reviewData}
     }
 
     const anthropic = new Anthropic({ apiKey });
-    const prompt = ANALYSIS_GENERATION_PROMPT(conversationHistory, allStepData);
+    const prompt = ANALYSIS_GENERATION_PROMPT(conversationHistory, allStepData + knowledgeContext);
 
     try {
       const response = await anthropic.messages.create({

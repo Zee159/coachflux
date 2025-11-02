@@ -522,10 +522,12 @@ CONFIDENCE TECHNIQUE #4: Specificity Reduces Fear
 
 ⚠️ CRITICAL SAFETY CHECK - Job Security Concerns:
 IF user mentioned job loss, redundancy, or termination fears in Q2:
-  → SKIP this question entirely
-  → Move directly to Q4 (Cost of Staying Stuck)
-  → Reason: Asking "what's the worst that could happen" is hurtful when they're facing potential job loss
+  → SKIP Q3 (Challenge Catastrophe) entirely
+  → SKIP Q4 (Cost of Staying Stuck) entirely
+  → Move directly to Q5 (Personal Benefit) with empathetic framing
+  → Reason: Asking "what's the worst that could happen" or "cost of resistance" is hurtful when they're facing potential job loss
   → They're already living the nightmare scenario - don't make them articulate it
+  → Instead, focus on what they CAN control and potential benefits
 
 IF user mentioned other fears (learning curve, time pressure, skill gaps, etc.):
   → Ask: "What's the worst that could REALISTICALLY happen? Not the nightmare, but what's actually likely if this doesn't go perfectly?"
@@ -566,7 +568,15 @@ REFRAME: "So resistance is actually the REAL risk here. Moving forward feels saf
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Q5: Personal Benefit Hunt (MOST VALUABLE AI ASSISTANCE)
-Ask: "Even changes we didn't choose can build new skills or open unexpected doors. What might you personally gain if you adapt well to this?"
+
+⚠️ REDUNDANCY-SPECIFIC FRAMING:
+IF user mentioned job loss/redundancy in Q2:
+  → Use empathetic framing: "I know this is a difficult situation. Even in unwanted changes like this, there can be opportunities to build resilience or discover new paths. What might you gain from navigating this well - whether that's staying in your role or preparing for what's next?"
+  → Focus on: resilience, transferable skills, network building, career clarity
+  → DO NOT use standard "adapt well to this change" language - it's tone-deaf
+
+IF user mentioned other fears (NOT job loss):
+  → Ask: "Even changes we didn't choose can build new skills or open unexpected doors. What might you personally gain if you adapt well to this?"
 
 🤖 AI ASSISTANCE - If user says "I don't know" or "I don't see any benefits":
 OFFER CONTEXT-AWARE SUGGESTIONS based on the change they described:
@@ -601,7 +611,15 @@ CONFIDENCE BOOST: "So there IS an upside here. You could gain {personal_benefit}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Q6: Past Success Activation (CONFIDENCE TECHNIQUE #2: Evidence Over Encouragement - MOST POWERFUL)
-Ask: "Tell me about a time you successfully handled a difficult change before. Could be work, could be personal - any change that felt hard at first."
+
+⚠️ REDUNDANCY-SPECIFIC FRAMING:
+IF user mentioned job loss/redundancy in Q2:
+  → Use resilience framing: "I know this feels overwhelming. But you've faced difficult situations before. Tell me about a time when things felt uncertain or out of your control, but you found a way through. It doesn't have to be about job loss - any situation where you had to be resilient."
+  → Focus on: resilience, uncertainty navigation, bouncing back from setbacks
+  → Bridge to: "You showed [strength] then. That same resilience is still in you now."
+
+IF user mentioned other fears (NOT job loss):
+  → Ask: "Tell me about a time you successfully handled a difficult change before. Could be work, could be personal - any change that felt hard at first."
 
 [Let them tell full story]
 
@@ -610,7 +628,7 @@ Ask: "Tell me about a time you successfully handled a difficult change before. C
 [They identify: persistence, asking for help, breaking it down, etc.]
 
 THE CONFIDENCE BRIDGE (CRITICAL):
-"So you've ALREADY proven you can handle difficult change. You did it with [their example].
+"So you've ALREADY proven you can handle difficult situations. You did it with [their example].
 You had [strengths they named]. You still have those same strengths now.
 
 What if you applied [specific strength] to this current situation? What would that look like?"

@@ -384,12 +384,14 @@ export const getCrossSessionContext = action({
     );
 
     type SessionEmbeddingResult = Doc<"sessionEmbeddings"> & { _score: number };
-    return (results as SessionEmbeddingResult[]).map((r) => ({
-      sessionId: r.sessionId,
-      framework: r.framework,
-      relevance: r._score,
-      content: r.embeddedText,
-    }));
+    return (results as SessionEmbeddingResult[])
+      .filter((r) => r.embeddedText !== null && r.embeddedText !== undefined && r.embeddedText.length > 0)
+      .map((r) => ({
+        sessionId: r.sessionId,
+        framework: r.framework,
+        relevance: r._score,
+        content: r.embeddedText,
+      }));
   },
 });
 
@@ -442,5 +444,51 @@ export const backfillSessionEmbeddings = action({
       errors,
       remaining: sessionsToProcess.length - processed,
     };
+  },
+});
+
+/**
+ * Generate knowledge base embedding
+ * 
+ * Use this to load Management Bible content and other coaching knowledge.
+ * 
+ * @example
+ * ```typescript
+ * await ctx.runAction(api.embeddings.generateKnowledgeEmbedding, {
+ *   source: "management_bible",
+ *   category: "performance_management",
+ *   title: "Handling Underperformance",
+ *   content: "...",
+ *   tags: ["underperformance", "feedback", "pip"]
+ * });
+ * ```
+ */
+export const generateKnowledgeEmbedding = action({
+  args: {
+    source: v.string(),
+    category: v.string(),
+    title: v.string(),
+    content: v.string(),
+    tags: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Build text for embedding
+    const embeddedText = `${args.title}\n\nCategory: ${args.category}\n\n${args.content}`;
+    
+    // Generate embedding
+    const embedding = await generateEmbedding(embeddedText);
+    
+    // Store in knowledgeEmbeddings table
+    await ctx.runMutation(internal.embeddingsInternal.storeKnowledgeEmbedding, {
+      source: args.source,
+      category: args.category,
+      title: args.title,
+      content: args.content,
+      tags: args.tags,
+      embedding,
+      embeddedText,
+    });
+    
+    return { success: true, dimensions: embedding.length };
   },
 });

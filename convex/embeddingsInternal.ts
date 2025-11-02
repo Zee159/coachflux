@@ -1,12 +1,13 @@
 /**
- * Internal embedding functions (queries and mutations)
+ * Internal embedding functions (queries, mutations, and actions)
  * 
- * These are called by the public embedding actions.
+ * These are called by the public embedding actions and scheduled tasks.
  * Not exposed directly to the client.
  */
 
-import { internalMutation, internalQuery } from "./_generated/server";
+import { internalMutation, internalQuery, internalAction } from "./_generated/server";
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 
 /**
  * Store session-level embedding
@@ -161,5 +162,46 @@ export const getSessionsWithoutEmbeddings = internalQuery({
     }
 
     return sessionsWithoutEmbeddings;
+  },
+});
+
+/**
+ * Internal action wrapper for generateSessionEmbedding
+ * This is needed because ctx.scheduler.runAfter can only schedule internal functions, not public actions
+ */
+export const generateSessionEmbedding = internalAction({
+  args: { sessionId: v.id("sessions") },
+  handler: async (ctx, args) => {
+    // Call the public action
+    await ctx.runAction(api.embeddings.generateSessionEmbedding, args);
+  },
+});
+
+/**
+ * Store knowledge base embedding
+ */
+export const storeKnowledgeEmbedding = internalMutation({
+  args: {
+    source: v.string(),
+    category: v.string(),
+    title: v.string(),
+    content: v.string(),
+    tags: v.array(v.string()),
+    embedding: v.array(v.float64()),
+    embeddedText: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("knowledgeEmbeddings", {
+      source: args.source,
+      category: args.category,
+      title: args.title,
+      content: args.content,
+      embedding: args.embedding,
+      metadata: {
+        tags: args.tags,
+        embeddedText: args.embeddedText,
+      },
+      createdAt: Date.now(),
+    });
   },
 });

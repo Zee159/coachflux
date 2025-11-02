@@ -405,6 +405,33 @@ export async function performSafetyChecks(
     };
   }
   
+  // Handle Level 1-3 safety concerns (anxiety, agitation, redundancy)
+  // These don't block the session but provide immediate empathetic response
+  if (safetyCheck.level === 'anxiety' || safetyCheck.level === 'agitation' || safetyCheck.level === 'redundancy') {
+    // Log incident for tracking (medium severity)
+    await ctx.runMutation(mutations.createSafetyIncident, {
+      orgId: args.orgId,
+      userId: args.userId,
+      sessionId: args.sessionId,
+      reason: `Safety concern: ${safetyCheck.level} - ${Array.isArray(safetyCheck.detected_keywords) ? safetyCheck.detected_keywords.join(', ') : 'emotional distress'}`,
+      llmOutput: userInput.substring(0, 500),
+      severity: "medium"
+    });
+    
+    const safetyResponse = safetyCheck.response ?? '';
+    
+    // Return the safety response directly to the user
+    if (safetyResponse.length > 0) {
+      return {
+        ok: true, // Session continues, but with safety response
+        message: safetyResponse,
+        hint: safetyCheck.level === 'redundancy' 
+          ? "I'm here to support you through this difficult situation."
+          : "Take your time. I'm here to support you."
+      };
+    }
+  }
+  
   // Legacy safety checks (for backward compatibility)
   const userInputLower = userInput.toLowerCase();
   const hasException = ESCALATION_EXCEPTIONS.some(exception => userInputLower.includes(exception));
