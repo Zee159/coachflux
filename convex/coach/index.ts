@@ -730,20 +730,39 @@ export const nextStep = action({
       if (previousPayload !== undefined && previousPayload !== null) {
         const selectedOptionIds = previousPayload['selected_option_ids'];
         const options = previousPayload['options'];
+        const currentOptionIndex = typeof previousPayload['current_option_index'] === 'number' 
+          ? previousPayload['current_option_index'] 
+          : 0;
         
-        if (selectedOptionIds !== undefined && selectedOptionIds !== null) {
+        if (selectedOptionIds !== undefined && selectedOptionIds !== null && Array.isArray(selectedOptionIds)) {
+          // Get the current option label from the options array
+          const currentOptionId: unknown = selectedOptionIds[currentOptionIndex];
+          const currentOptionIdStr = String(currentOptionId ?? '');
+          const currentOption = Array.isArray(options) 
+            ? (options as Array<Record<string, unknown>>).find((opt) => opt['id'] === currentOptionId)
+            : undefined;
+          const currentOptionLabel = currentOption !== undefined && currentOption !== null
+            ? String(currentOption['label'] ?? `Option ${currentOptionIndex + 1}`)
+            : `Option ${currentOptionIndex + 1}`;
+          
           aiContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 PREVIOUS STEP DATA (Options Selection)
+🎯 WILL STEP - ACTION GENERATION CONTEXT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 SELECTED OPTION IDS: ${JSON.stringify(selectedOptionIds)}
+CURRENT OPTION INDEX: ${currentOptionIndex} (processing option ${currentOptionIndex + 1} of ${selectedOptionIds.length})
+CURRENT OPTION ID: ${currentOptionIdStr}
+CURRENT OPTION LABEL: ${currentOptionLabel}
 
-CRITICAL: You MUST include "selected_option_ids": ${JSON.stringify(selectedOptionIds)} in your JSON response.
-This is required for the system to track which options the user selected.
+CRITICAL INSTRUCTIONS:
+1. You MUST include "selected_option_ids": ${JSON.stringify(selectedOptionIds)} in your JSON response
+2. You MUST set "current_option_index": ${currentOptionIndex}
+3. You MUST set "current_option_label": "${currentOptionLabel}"
+4. Generate a suggested action specifically for "${currentOptionLabel}" (option ${currentOptionIndex + 1})
 
-${Array.isArray(options) ? `\nAVAILABLE OPTIONS:\n${JSON.stringify(options, null, 2)}` : ''}
+${Array.isArray(options) ? `\nALL AVAILABLE OPTIONS:\n${JSON.stringify(options, null, 2)}` : ''}
 
-Generate a suggested action for the FIRST selected option (index 0).
+⚠️ IMPORTANT: Generate action for index ${currentOptionIndex} ("${currentOptionLabel}"), NOT index 0!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
         }
       }
