@@ -95,3 +95,43 @@ The `sphere_of_control` field is a critical part of the CLARITY step coaching fl
 3. Verify coach asks all 4 questions including sphere of control
 4. Confirm no pre-validation warnings in logs
 5. Verify step advances only after all required fields captured
+
+---
+
+## Additional Fix: Opportunistic Extraction for Control Signals
+
+**Date:** November 3, 2025 (11:10 PM)
+
+**Issue:**
+When asked Q3 (supporters/resistors), user responded with control-related information: "we dont know if we will have a job or not". AI didn't recognize this as `sphere_of_control` data and only extracted empty arrays for supporters/resistors, causing validation failure.
+
+**Root Cause:**
+AI wasn't applying opportunistic extraction when users answered with control/uncertainty information instead of stakeholder information.
+
+**Fix:**
+Added explicit control-related signal detection in Q3 guidance:
+
+```typescript
+CONTROL-RELATED SIGNALS:
+- "we don't know if..." → sphere_of_control: "job security is uncertain"
+- "I can't control..." → sphere_of_control: [what they said]
+- "it's out of my hands..." → sphere_of_control: [what they said]
+- "uncertain about..." → sphere_of_control: [what they said]
+- "no control over..." → sphere_of_control: [what they said]
+```
+
+**Behavior:**
+When user talks about control/uncertainty in Q3 response:
+1. Extract `sphere_of_control` from their statement
+2. Set `supporters = []`, `resistors = []` (they didn't answer Q3 yet)
+3. Acknowledge the control concern
+4. Re-ask Q3 about supporters/resistors
+5. Continue to Q4 if still needed
+
+**Files Modified:**
+- `convex/prompts/compass.ts` - Lines 273-287
+
+**Impact:**
+- AI now recognizes control-related responses even when asked about other topics
+- Better opportunistic extraction across question boundaries
+- Reduces validation failures from missing `sphere_of_control`
