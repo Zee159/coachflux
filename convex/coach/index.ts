@@ -825,16 +825,24 @@ Don't force it if the connection isn't clear.
     }
     
     // 📚 ALWAYS-ON RAG: Knowledge Base Integration
-    // Instead of keyword-triggered search, we search for ALL sessions with a goal
-    // This ensures AI always has relevant knowledge, not just for "management" topics
+    // Works for both GROW and COMPASS frameworks
+    // GROW uses 'goal', COMPASS uses 'change_description'
     
+    // GROW fields
     const goalText = typeof capturedState['goal'] === 'string' ? capturedState['goal'] : '';
     const realityText = typeof capturedState['current_state'] === 'string' ? capturedState['current_state'] : '';
     const constraintsText = typeof capturedState['constraints'] === 'string' ? capturedState['constraints'] : '';
     
-    // Search knowledge base for ANY session past introduction with a goal
-    // This makes knowledge always available, not just for management topics
-    const shouldSearchKnowledge = goalText.length > 0 && step.name !== 'introduction';
+    // COMPASS fields
+    const changeDescription = typeof capturedState['change_description'] === 'string' ? capturedState['change_description'] : '';
+    const sphereOfControl = typeof capturedState['sphere_of_control'] === 'string' ? capturedState['sphere_of_control'] : '';
+    
+    // Determine primary context based on framework
+    const primaryContext = goalText.length > 0 ? goalText : changeDescription;
+    
+    // Search knowledge base for ANY session past introduction with context
+    // This makes knowledge always available for both GROW and COMPASS
+    const shouldSearchKnowledge = primaryContext.length > 0 && step.name !== 'introduction';
     
     // Track if knowledge was actually provided (for validator)
     let knowledgeProvided = false;
@@ -842,18 +850,20 @@ Don't force it if the connection isn't clear.
     // Debug logging
     if (shouldSearchKnowledge) {
       // eslint-disable-next-line no-console
-      console.log(`[RAG] Searching knowledge for step: ${step.name}, goal: "${goalText.substring(0, 50)}..."`);
+      console.log(`[RAG] Searching knowledge for step: ${step.name}, context: "${primaryContext.substring(0, 50)}..."`);
     }
     
     if (shouldSearchKnowledge) {
       try {
-        // Build rich search context from goal + reality + current step
-        // This gives better semantic matches than just goal alone
+        // Build rich search context from both GROW and COMPASS fields
+        // This gives better semantic matches than just primary context alone
         const contextParts = [
-          goalText,
-          realityText,
-          constraintsText,
-          args.userTurn
+          goalText,           // GROW: goal
+          realityText,        // GROW: current_state
+          constraintsText,    // GROW: constraints
+          changeDescription,  // COMPASS: change_description
+          sphereOfControl,    // COMPASS: sphere_of_control
+          args.userTurn       // Current user input
         ].filter(part => part.length > 0);
         
         const searchText = contextParts.join(' ').substring(0, 500);
