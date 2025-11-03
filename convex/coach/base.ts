@@ -606,7 +606,8 @@ export async function generateCoachResponse(
  */
 export async function validateResponse(
   raw: string,
-  schema: Record<string, unknown>
+  schema: Record<string, unknown>,
+  knowledgeProvided?: boolean
 ): Promise<{ isValid: boolean; verdict: ValidationResult; bannedHit: boolean }> {
   const apiKey = process.env["ANTHROPIC_API_KEY"];
   if (apiKey === undefined || apiKey === null || apiKey === '') {
@@ -655,7 +656,42 @@ export async function validateResponse(
   const lower = raw.toLowerCase();
   const bannedHit = BANNED.some(b => lower.includes(b));
   
-  return { isValid, verdict, bannedHit };
+  // Check if knowledge was provided but not used
+  let knowledgeUsed = true;
+  if (knowledgeProvided === true) {
+    // Extract coach_reflection from JSON to check for knowledge usage
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const coachReflection = typeof parsed['coach_reflection'] === 'string' 
+        ? parsed['coach_reflection'].toLowerCase() 
+        : '';
+      
+      // Look for evidence of framework/research citations in the coach's message
+      const knowledgeIndicators = [
+        'research',
+        'framework',
+        'model',
+        'studies',
+        'evidence',
+        'proven approach',
+        'level',
+        'sbir',
+        'approach'
+      ];
+      
+      knowledgeUsed = knowledgeIndicators.some(indicator => coachReflection.includes(indicator));
+      
+      if (!knowledgeUsed) {
+        console.warn('[RAG] Knowledge provided but not used in coach_reflection');
+        console.warn('[RAG] coach_reflection:', coachReflection.substring(0, 200));
+      }
+    } catch {
+      // If JSON parsing fails, skip knowledge check (will fail schema validation anyway)
+      knowledgeUsed = true;
+    }
+  }
+  
+  return { isValid: isValid && knowledgeUsed, verdict, bannedHit };
 }
 
 /**

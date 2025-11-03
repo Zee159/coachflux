@@ -128,11 +128,11 @@ export const growFrameworkLegacy: LegacyFramework = {
                 option_label: { type: "string" },
                 action: { type: "string", minLength: 10, maxLength: 200 },
                 due_days: { type: "integer", minimum: 1, maximum: 365 },
-                owner: { type: "string" },
-                accountability_mechanism: { type: "string" },
-                support_needed: { type: "string" }
+                owner: { type: "string", minLength: 2, maxLength: 50 },
+                accountability_mechanism: { type: "string", minLength: 5, maxLength: 200 },
+                support_needed: { type: "string", minLength: 2, maxLength: 200 }
               },
-              required: ["action", "due_days"],
+              required: ["action", "due_days", "owner", "accountability_mechanism", "support_needed"],
               additionalProperties: false
             },
             minItems: 0,
@@ -152,6 +152,7 @@ export const growFrameworkLegacy: LegacyFramework = {
         properties: {
           key_takeaways: { type: "string", minLength: 10, maxLength: 500 },
           immediate_step: { type: "string", minLength: 5, maxLength: 300 },
+          confidence_level: { type: "integer", minimum: 1, maximum: 5 },
           summary: { type: "string", minLength: 16, maxLength: 400 },
           ai_insights: { type: "string", minLength: 20, maxLength: 400 },
           unexplored_options: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 4 },

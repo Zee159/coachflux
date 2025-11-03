@@ -602,10 +602,11 @@ export function SessionView() {
     let isReviewComplete = false;
     
     if (session.framework === 'GROW') {
-      // GROW: key_takeaways + immediate_step
+      // GROW: key_takeaways + immediate_step + confidence_level
       const hasKeyTakeaways = typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length > 0;
       const hasImmediateStep = typeof reviewPayload['immediate_step'] === 'string' && reviewPayload['immediate_step'].length > 0;
-      isReviewComplete = hasKeyTakeaways && hasImmediateStep;
+      const hasConfidenceLevel = typeof reviewPayload['confidence_level'] === 'number' && reviewPayload['confidence_level'] >= 1 && reviewPayload['confidence_level'] <= 5;
+      isReviewComplete = hasKeyTakeaways && hasImmediateStep && hasConfidenceLevel;
     } else if (session.framework === 'COMPASS') {
       // COMPASS: primary_barrier + next_actions + confidence_level
       const hasPrimaryBarrier = typeof reviewPayload['primary_barrier'] === 'string' && reviewPayload['primary_barrier'].length > 0;

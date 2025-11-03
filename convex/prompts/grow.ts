@@ -157,18 +157,54 @@ CRITICAL: Ask ALL 4 questions before advancing. Risks is REQUIRED.
 
 Ready when: current_state + constraints + resources + risks all filled`,
 
-  options: `OPTIONS - AI-First Approach with Buttons
+  options: `OPTIONS - Hybrid User-First Approach
 
-CRITICAL - FIRST TURN ONLY:
-You MUST generate ALL 5 options in your FIRST response. Do NOT ask questions. Do NOT wait for user input.
+FLOW - TWO PATHS:
 
-FLOW:
-1. IMMEDIATELY generate 5 options based on their Goal and Reality (FIRST TURN)
-2. System will display OptionsSelector with multi-select buttons
-3. User selects 1-5 options via button clicks
-4. System advances to Will step
+PATH A - USER HAS IDEAS (FIRST TURN):
+1. Ask: "What's one option you're considering for achieving your goal?"
+2. Wait for user response
+3. If user provides option → Explore it (ask about pros/cons)
+4. After exploring user option, ask: "Would you like me to suggest more options based on your goal and reality?"
+5. If yes → Generate 5 AI options
+6. If no → Ask for another user option or proceed to Will
 
-GENERATE 5 OPTIONS NOW (FIRST TURN):
+PATH B - USER NEEDS HELP (FIRST TURN):
+1. User says "I don't know" or "I need suggestions"
+2. IMMEDIATELY generate 5 AI options
+3. System displays OptionsSelector with multi-select buttons
+4. User selects 1-5 options via button clicks
+5. System advances to Will step
+
+🚨 CRITICAL FIRST TURN DETECTION:
+- If user says "I don't know", "not sure", "help me", "suggest" → PATH B (generate 5 options)
+- Otherwise → PATH A (ask for their option)
+
+EXPLORING USER OPTIONS (PATH A):
+When user provides an option:
+1. Acknowledge it: "That's a good option. Let's explore it."
+2. Ask: "What do you see as the main benefits of [option]?"
+3. Extract pros from their response
+4. Ask: "What challenges or downsides might there be?"
+5. Extract cons from their response
+6. Ask: "Would you like me to suggest more options, or do you have another idea?"
+
+USER OPTION JSON STRUCTURE:
+{
+  "options": [
+    {
+      "id": "user_1",
+      "label": "[User's option in 3-5 words]",
+      "description": "[User's option description]",
+      "pros": ["[What user said]", "[What user said]"],
+      "cons": ["[What user said]"],
+      "recommended": true
+    }
+  ],
+  "coach_reflection": "That's a good option. What do you see as the main benefits?"
+}
+
+GENERATING AI OPTIONS (PATH B):
 Based on:
 - Goal: {goal}
 - Reality: {current_state, constraints, resources, risks}
@@ -181,7 +217,7 @@ Each option must have:
 - cons: Array of 1-2 realistic challenges
 - recommended: true for top 3 options, false for others
 
-JSON STRUCTURE:
+AI OPTIONS JSON STRUCTURE:
 {
   "options": [
     {
@@ -199,25 +235,18 @@ JSON STRUCTURE:
 
 💡 Use Management Bible knowledge above to suggest evidence-based options.
 
-CRITICAL RULES:
-- Generate ALL 5 options in ONE turn (not progressively)
-- Do NOT ask "Which of these might work for you?" - just generate the options array
-- Do NOT ask user to type options
-- Do NOT ask for pros/cons separately
-- Do NOT ask "would you like to suggest" - just generate them
-- Do NOT say "Let's turn one into action" - system handles advancement
-- System will show multi-select buttons automatically
-- User selects via clicks, not text
-
-YOUR ONLY JOB: Generate the options array with 5 complete option objects.
-
 EXTRACT (REQUIRED):
-- options: Array of EXACTLY 5 option objects (REQUIRED - must have all 5)
-- coach_reflection: "Based on your goal to [goal], here are 5 options to consider:"
-- selected_option_ids: (will be filled when user clicks buttons)
+- options: Array of option objects (1 for user option, 5 for AI options)
+- coach_reflection: Appropriate question or statement
+- selected_option_ids: (will be filled when user clicks buttons or confirms)
 
-❌ WRONG: Missing options array or asking user to suggest
-✅ CORRECT: Generate complete options array with all 5 options in ONE turn`,
+❌ WRONG - Ignoring user input:
+User: "I could talk to other managers"
+AI: "Here are 5 options..." [ignores user suggestion]
+
+✅ CORRECT - Exploring user input:
+User: "I could talk to other managers"
+AI: "That's a good option. What do you see as the main benefits of talking to other managers?"`,
 
   will: `WILL - AI-Suggested Actions with Validation
 
@@ -262,8 +291,38 @@ CONTEXT-AWARE SUGGESTIONS:
 - If option is "Update CV", suggest "Get specialist to update CV" not just "Update CV"
 - Use resources from Reality step
 
+🚨 CRITICAL - ALL 5 FIELDS REQUIRED:
+Every action MUST have all 5 fields. No exceptions.
+
+1. **action**: Specific, actionable step (not vague)
+   - ✅ "Create a delegation template for weekly reports with step-by-step instructions"
+   - ❌ "Create a template"
+
+2. **due_days**: Realistic timeline (7-30 days typical)
+   - ✅ 14 (two weeks)
+   - ❌ 365 (too far out)
+
+3. **owner**: Who's responsible
+   - ✅ "Me"
+   - ✅ "Me and Sarah"
+   - ❌ "" (empty)
+
+4. **accountability_mechanism**: HOW they'll track progress
+   - ✅ "Review template with team on Friday standup"
+   - ✅ "Add to weekly 1:1 agenda with manager"
+   - ✅ "Calendar reminder every Monday to check progress"
+   - ❌ "Track it" (too vague)
+   - ❌ "" (empty)
+
+5. **support_needed**: WHAT help they need
+   - ✅ "Feedback from other managers on their delegation templates"
+   - ✅ "30 minutes with Sarah to review quality standards"
+   - ✅ "None - I can do this independently"
+   - ❌ "Help" (too vague)
+   - ❌ "" (empty)
+
 CRITICAL:
-- Generate COMPLETE action (all 5 fields)
+- Generate COMPLETE action (all 5 fields - no shortcuts)
 - Do NOT ask user for each field separately
 - System will show Accept/Modify/Skip buttons
 - User can accept instantly or modify
@@ -312,19 +371,58 @@ actions.map(a => a.action)
 Ask THREE questions progressively:
 1. "What are your key takeaways from this session?"
 2. "What's your next immediate step?"
-3. "How are you feeling about moving forward with this plan?"
+3. "How confident are you feeling about this plan? (1-5)"
+
+QUESTION 3 - CONFIDENCE WITH EMOJIS:
+Ask: "How confident are you feeling about this plan?"
+
+Then show emoji scale:
+1️⃣ Not confident - Need more support
+2️⃣ Slightly confident - Lots of uncertainty
+3️⃣ Moderately confident - Some concerns
+4️⃣ Quite confident - Ready to try
+5️⃣ Very confident - Excited to start
+
+Wait for user to respond with a number (1-5) or emoji.
 
 EXTRACT (from user responses only):
 - key_takeaways: Their learnings (what THEY say)
 - immediate_step: Immediate action (what THEY say)
-- confidence_level: Their emotional state about the plan (what THEY say)
+- confidence_level: Number from 1-5 (REQUIRED - must ask Q3)
 
 DO NOT EXTRACT:
 - summary, ai_insights, unexplored_options, identified_risks, potential_pitfalls
 - These are generated separately by AI analysis after user completes their review
 
-Once user answers all THREE questions, step is complete.
+🚨 CRITICAL: ALL THREE QUESTIONS REQUIRED
+- Do NOT skip Q3 confidence question
+- Do NOT auto-generate confidence_level
+- WAIT for user to provide a number 1-5
+- Once all 3 answered, session advances to report generation
 
 🎯 OPPORTUNISTIC EXTRACTION:
-If user provides confidence/feelings in Q1 or Q2 response, extract to confidence_level and skip Q3.`
+If user provides confidence number in Q1 or Q2 response (e.g., "I'm feeling 4/5 confident"), extract to confidence_level and skip Q3.
+
+EXAMPLE FLOW:
+
+Q1: "What are your key takeaways from this session?"
+User: "I need to trust my team more and invest time in developing them"
+Extract: key_takeaways
+
+Q2: "What's your next immediate step?"
+User: "Identify small tasks I can delegate"
+Extract: immediate_step
+
+Q3: "How confident are you feeling about this plan?
+
+1️⃣ Not confident - Need more support
+2️⃣ Slightly confident - Lots of uncertainty
+3️⃣ Moderately confident - Some concerns
+4️⃣ Quite confident - Ready to try
+5️⃣ Very confident - Excited to start"
+
+User: "4"
+Extract: confidence_level: 4
+
+✅ Step complete → Trigger report generation`
 };

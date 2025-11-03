@@ -5,6 +5,7 @@
  *   npx convex run seedPersonalDevelopment:seed
  */
 
+/* eslint-disable no-console */
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
 

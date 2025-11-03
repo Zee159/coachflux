@@ -836,8 +836,12 @@ Don't force it if the connection isn't clear.
     // This makes knowledge always available, not just for management topics
     const shouldSearchKnowledge = goalText.length > 0 && step.name !== 'introduction';
     
+    // Track if knowledge was actually provided (for validator)
+    let knowledgeProvided = false;
+    
     // Debug logging
     if (shouldSearchKnowledge) {
+      // eslint-disable-next-line no-console
       console.log(`[RAG] Searching knowledge for step: ${step.name}, goal: "${goalText.substring(0, 50)}..."`);
     }
     
@@ -854,6 +858,7 @@ Don't force it if the connection isn't clear.
         
         const searchText = contextParts.join(' ').substring(0, 500);
         
+        // eslint-disable-next-line no-console
         console.log(`[RAG] Search text (${searchText.length} chars): "${searchText.substring(0, 100)}..."`);
         
         const OPENAI_API_KEY = process.env["OPENAI_API_KEY"];
@@ -890,12 +895,15 @@ Don't force it if the connection isn't clear.
                 // Lower threshold = more knowledge available to AI
                 const relevantKnowledge = (knowledgeResults as KnowledgeEmbedding[]).filter(r => r._score > 0.6);
                 
+                // eslint-disable-next-line no-console
                 console.log(`[RAG] Found ${knowledgeResults.length} results, ${relevantKnowledge.length} above threshold (0.6)`);
                 if (relevantKnowledge.length > 0) {
+                  // eslint-disable-next-line no-console
                   console.log(`[RAG] Injecting: ${relevantKnowledge.map(k => `${k.title} (${k._score.toFixed(2)})`).join(', ')}`);
                 }
                 
                 if (relevantKnowledge.length > 0) {
+                  knowledgeProvided = true; // Flag for validator
                   aiContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📚 RELEVANT PROVEN APPROACHES (Management Bible):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1107,7 +1115,7 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
     let bannedHit = false;
     
     if (!skipValidation) {
-      const validation = await validateResponse(raw, step.required_fields_schema);
+      const validation = await validateResponse(raw, step.required_fields_schema, knowledgeProvided);
       isValid = validation.isValid;
       verdict = validation.verdict;
       bannedHit = validation.bannedHit;

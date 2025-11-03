@@ -56,6 +56,20 @@ const ALLOWED_WORKAROUNDS = [
     files: ['convex/embeddings.ts', 'convex/embeddingsInternal.ts', 'convex/mutations.ts'],
     reason: 'Necessary workaround for Convex generated type instantiation depth limitation with vector search',
     patterns: ['@ts-ignore directive', 'eslint-disable directive']
+  },
+  {
+    // Seed scripts need console logging for progress feedback
+    files: [
+      'convex/seedKnowledge.ts',
+      'convex/seedCareerDevelopment.ts',
+      'convex/seedFinance.ts',
+      'convex/seedHealth.ts',
+      'convex/seedPersonalDevelopment.ts',
+      'convex/seedProductivity.ts',
+      'convex/seedRelationships.ts'
+    ],
+    reason: 'Console logging required for seed script progress feedback',
+    patterns: ['eslint-disable directive']
   }
 ];
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Seed knowledge base with Management Bible content
  * 
