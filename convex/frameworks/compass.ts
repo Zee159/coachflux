@@ -155,7 +155,7 @@ Move to Ownership when clarity is established.`,
             maxLength: 300
           }
         },
-        required: ['change_description', 'coach_reflection'],
+        required: ['change_description', 'sphere_of_control', 'coach_reflection'],
         additionalProperties: false
       },
 

@@ -415,7 +415,7 @@ export async function performSafetyChecks(
       sessionId: args.sessionId,
       reason: `Safety concern: ${safetyCheck.level} - ${Array.isArray(safetyCheck.detected_keywords) ? safetyCheck.detected_keywords.join(', ') : 'emotional distress'}`,
       llmOutput: userInput.substring(0, 500),
-      severity: "medium"
+      severity: "med"
     });
     
     const safetyResponse = safetyCheck.response ?? '';
