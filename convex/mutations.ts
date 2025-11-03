@@ -384,6 +384,19 @@ export const createReflection = mutation({
   },
 });
 
+export const updateReflection = mutation({
+  args: {
+    reflectionId: v.id("reflections"),
+    payload: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const payload: Record<string, unknown> = args.payload as Record<string, unknown>;
+    await ctx.db.patch(args.reflectionId, {
+      payload,
+    });
+  },
+});
+
 export const createAction = mutation({
   args: {
     orgId: v.id("orgs"),

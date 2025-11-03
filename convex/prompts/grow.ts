@@ -35,7 +35,8 @@ export const GROW_COACHING_QUESTIONS: Record<string, string[]> = {
   ],
   review: [
     "What are the key takeaways from this conversation?",
-    "What's your next immediate step?"
+    "What's your next immediate step?",
+    "How are you feeling about moving forward with this plan?"
   ]
 };
 
@@ -112,6 +113,22 @@ EXTRACT:
 - constraints: Barriers/limitations (from Q2)
 - resources: What they have available (from Q3)
 - risks: What could derail them (from Q4)
+
+🎯 OPPORTUNISTIC EXTRACTION FOR CONSTRAINTS:
+Users often mention constraints in emotional/behavioral terms. Extract these as valid constraints:
+- "perfectionism" → constraint: "perfectionism"
+- "feeling of getting it right" → constraint: "need for perfection"
+- "not wanting to waste time training" → constraint: "time investment concerns"
+- "worried about quality" → constraint: "quality concerns"
+- "don't trust others" → constraint: "trust issues"
+
+✅ CORRECT - Extract emotional/behavioral barriers:
+User: "I find myself doing all the work because I get it right when I do it"
+Extract: constraints: ["perfectionism", "quality control concerns"]
+
+❌ WRONG - Ignoring behavioral patterns:
+User: "I find myself doing all the work because I get it right when I do it"
+Extract: constraints: [] (missed the perfectionism pattern)
 
 CRITICAL: Ask ALL 4 questions before advancing. Risks is REQUIRED.
 
@@ -290,17 +307,22 @@ If you reference actions in your coach_reflection, extract the action TEXT from 
 Each action object has an "action" field containing the text. Extract it like this:
 actions.map(a => a.action)
 
-Ask TWO questions:
+Ask THREE questions progressively:
 1. "What are your key takeaways from this session?"
 2. "What's your next immediate step?"
+3. "How are you feeling about moving forward with this plan?"
 
 EXTRACT (from user responses only):
 - key_takeaways: Their learnings (what THEY say)
 - immediate_step: Immediate action (what THEY say)
+- confidence_level: Their emotional state about the plan (what THEY say)
 
 DO NOT EXTRACT:
 - summary, ai_insights, unexplored_options, identified_risks, potential_pitfalls
 - These are generated separately by AI analysis after user completes their review
 
-Once user answers both questions, step is complete.`
+Once user answers all THREE questions, step is complete.
+
+🎯 OPPORTUNISTIC EXTRACTION:
+If user provides confidence/feelings in Q1 or Q2 response, extract to confidence_level and skip Q3.`
 };

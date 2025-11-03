@@ -18,7 +18,7 @@ export class GROWCoach implements FrameworkCoach {
       reality: ["current_state", "constraints", "resources", "risks"],
       options: ["options"],
       will: ["suggested_action", "selected_option_ids", "current_option_index"], // Button-based flow
-      review: ["key_takeaways", "immediate_step"],
+      review: ["key_takeaways", "immediate_step", "confidence_level"],
     };
   }
 

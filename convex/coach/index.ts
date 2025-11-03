@@ -807,13 +807,26 @@ Don't force it if the connection isn't clear.
     
     // 📚 Knowledge Base: Inject relevant Management Bible scenarios
     // Search using semantic similarity based on user's challenge description
-    // Only search if user input is substantial (>40 chars) and mentions management challenges
-    const managementKeywords = ['team', 'employee', 'manager', 'performance', 'feedback', 'conflict', 'change', 'deadline', 'underperform', 'difficult'];
+    // Search on: (1) current user input OR (2) captured goal if available
+    const managementKeywords = ['team', 'employee', 'manager', 'performance', 'feedback', 'conflict', 'change', 'deadline', 'underperform', 'difficult', 'delegate', 'delegation', 'staff', 'leadership', 'coaching'];
     const hasManagementContext = managementKeywords.some(keyword => args.userTurn.toLowerCase().includes(keyword));
     
-    if (args.userTurn.length > 40 && hasManagementContext) {
+    // Also check if goal contains management keywords (for early steps like Reality/Options)
+    const goalText = typeof capturedState['goal'] === 'string' ? capturedState['goal'] : '';
+    const goalHasManagementContext = managementKeywords.some(keyword => goalText.toLowerCase().includes(keyword));
+    
+    // Search if: (1) current input has keywords OR (2) goal has keywords and we're past introduction
+    const shouldSearchKnowledge = (args.userTurn.length > 40 && hasManagementContext) || 
+                                   (goalText.length > 0 && goalHasManagementContext && step.name !== 'introduction');
+    
+    if (shouldSearchKnowledge) {
       try {
         // Use OpenAI to generate embedding for semantic search
+        // Use goal + current input for better context (e.g., "delegate to team" + "perfectionism")
+        const searchText = goalText.length > 0 
+          ? `${goalText} ${args.userTurn}`.substring(0, 500)
+          : args.userTurn;
+        
         const OPENAI_API_KEY = process.env["OPENAI_API_KEY"];
         if (OPENAI_API_KEY !== null && OPENAI_API_KEY !== undefined && OPENAI_API_KEY.trim() !== "") {
           const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
@@ -824,7 +837,7 @@ Don't force it if the connection isn't clear.
             },
             body: JSON.stringify({
               model: "text-embedding-3-small",
-              input: args.userTurn,
+              input: searchText,
             }),
           });
           
@@ -1564,15 +1577,12 @@ ${k.content.substring(0, 400)}...`
         coach_reflection: finalMessage
       };
 
-      // Create a new reflection with complete data
-      const existingReview = reflections.find((r: { step: string }) => r.step === "review");
-      if (existingReview !== undefined && existingReview !== null) {
-        await ctx.runMutation(api.mutations.createReflection, {
-          orgId: args.orgId,
-          userId: args.userId,
-          sessionId: args.sessionId,
-          step: "review",
-          userInput: undefined,
+      // Update the LAST review reflection with complete analysis data
+      // This prevents duplicate reflections and ensures single report generation
+      const lastReviewReflection = reviewReflections[reviewReflections.length - 1];
+      if (lastReviewReflection !== undefined && lastReviewReflection !== null) {
+        await ctx.runMutation(api.mutations.updateReflection, {
+          reflectionId: lastReviewReflection._id,
           payload: finalPayload
         });
       }

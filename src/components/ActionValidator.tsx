@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Edit3, SkipForward, Save, X } from 'lucide-react';
+import { Check, Edit3, SkipForward, Save, X, Plus, Minus } from 'lucide-react';
 
 interface SuggestedAction {
   action: string;
@@ -113,18 +113,75 @@ export const ActionValidator: React.FC<ActionValidatorProps> = ({
                 Timeline (days)
               </label>
               {isEditing ? (
-                <input
-                  type="number"
-                  value={editedAction.due_days}
-                  onChange={(e) => {
-                    const parsed = parseInt(e.target.value);
-                    setEditedAction({ ...editedAction, due_days: isNaN(parsed) ? 7 : parsed });
-                  }}
-                  className="w-full px-3 py-2 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  min="1"
-                  max="365"
-                  aria-label="Timeline in days"
-                />
+                <div className="space-y-2">
+                  {/* Increment/Decrement Controls */}
+                  <div className="flex items-center gap-2">
+                    {/* Decrement Button */}
+                    <button
+                      type="button"
+                      onClick={() => setEditedAction({ 
+                        ...editedAction, 
+                        due_days: Math.max(1, editedAction.due_days - 1) 
+                      })}
+                      className="flex items-center justify-center w-9 h-9 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors duration-150 touch-manipulation"
+                      aria-label="Decrease days"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    
+                    {/* Days Display */}
+                    <div className="flex-1 text-center">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={editedAction.due_days}
+                        onChange={(e) => {
+                          const parsed = parseInt(e.target.value);
+                          if (!isNaN(parsed) && parsed >= 1 && parsed <= 365) {
+                            setEditedAction({ ...editedAction, due_days: parsed });
+                          }
+                        }}
+                        className="w-full px-2 py-2 text-center text-base font-semibold text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        min="1"
+                        max="365"
+                        aria-label="Timeline in days"
+                      />
+                    </div>
+                    
+                    {/* Increment Button */}
+                    <button
+                      type="button"
+                      onClick={() => setEditedAction({ 
+                        ...editedAction, 
+                        due_days: Math.min(365, editedAction.due_days + 1) 
+                      })}
+                      className="flex items-center justify-center w-9 h-9 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors duration-150 touch-manipulation"
+                      aria-label="Increase days"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Quick Preset Buttons */}
+                  <div className="flex gap-1">
+                    {[1, 7, 14, 30].map((days) => (
+                      <button
+                        key={days}
+                        type="button"
+                        onClick={() => setEditedAction({ ...editedAction, due_days: days })}
+                        className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-colors duration-150 touch-manipulation ${
+                          editedAction.due_days === days
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
+                        }`}
+                        aria-label={`Set to ${days} day${days > 1 ? 's' : ''}`}
+                      >
+                        {days}d
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ) : (
                 <p className="text-base text-gray-900 dark:text-gray-100">
                   {formatTimeline(currentAction.due_days)}
