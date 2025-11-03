@@ -824,27 +824,37 @@ Don't force it if the connection isn't clear.
       }
     }
     
-    // 📚 Knowledge Base: Inject relevant Management Bible scenarios
-    // Search using semantic similarity based on user's challenge description
-    // Search on: (1) current user input OR (2) captured goal if available
-    const managementKeywords = ['team', 'employee', 'manager', 'performance', 'feedback', 'conflict', 'change', 'deadline', 'underperform', 'difficult', 'delegate', 'delegation', 'staff', 'leadership', 'coaching'];
-    const hasManagementContext = managementKeywords.some(keyword => args.userTurn.toLowerCase().includes(keyword));
+    // 📚 ALWAYS-ON RAG: Knowledge Base Integration
+    // Instead of keyword-triggered search, we search for ALL sessions with a goal
+    // This ensures AI always has relevant knowledge, not just for "management" topics
     
-    // Also check if goal contains management keywords (for early steps like Reality/Options)
     const goalText = typeof capturedState['goal'] === 'string' ? capturedState['goal'] : '';
-    const goalHasManagementContext = managementKeywords.some(keyword => goalText.toLowerCase().includes(keyword));
+    const realityText = typeof capturedState['current_state'] === 'string' ? capturedState['current_state'] : '';
+    const constraintsText = typeof capturedState['constraints'] === 'string' ? capturedState['constraints'] : '';
     
-    // Search if: (1) current input has keywords OR (2) goal has keywords and we're past introduction
-    const shouldSearchKnowledge = (args.userTurn.length > 40 && hasManagementContext) || 
-                                   (goalText.length > 0 && goalHasManagementContext && step.name !== 'introduction');
+    // Search knowledge base for ANY session past introduction with a goal
+    // This makes knowledge always available, not just for management topics
+    const shouldSearchKnowledge = goalText.length > 0 && step.name !== 'introduction';
+    
+    // Debug logging
+    if (shouldSearchKnowledge) {
+      console.log(`[RAG] Searching knowledge for step: ${step.name}, goal: "${goalText.substring(0, 50)}..."`);
+    }
     
     if (shouldSearchKnowledge) {
       try {
-        // Use OpenAI to generate embedding for semantic search
-        // Use goal + current input for better context (e.g., "delegate to team" + "perfectionism")
-        const searchText = goalText.length > 0 
-          ? `${goalText} ${args.userTurn}`.substring(0, 500)
-          : args.userTurn;
+        // Build rich search context from goal + reality + current step
+        // This gives better semantic matches than just goal alone
+        const contextParts = [
+          goalText,
+          realityText,
+          constraintsText,
+          args.userTurn
+        ].filter(part => part.length > 0);
+        
+        const searchText = contextParts.join(' ').substring(0, 500);
+        
+        console.log(`[RAG] Search text (${searchText.length} chars): "${searchText.substring(0, 100)}..."`);
         
         const OPENAI_API_KEY = process.env["OPENAI_API_KEY"];
         if (OPENAI_API_KEY !== null && OPENAI_API_KEY !== undefined && OPENAI_API_KEY.trim() !== "") {
@@ -871,13 +881,19 @@ Don't force it if the connection isn't clear.
                 "by_embedding",
                 {
                   vector: queryEmbedding,
-                  limit: 2, // Top 2 most relevant scenarios
+                  limit: 5, // Top 5 scenarios for richer context
                 }
               );
               
               if (knowledgeResults.length > 0) {
-                // Filter results with good relevance (score > 0.75)
-                const relevantKnowledge = (knowledgeResults as KnowledgeEmbedding[]).filter(r => r._score > 0.75);
+                // Filter with moderate threshold (0.6) to cast wider net
+                // Lower threshold = more knowledge available to AI
+                const relevantKnowledge = (knowledgeResults as KnowledgeEmbedding[]).filter(r => r._score > 0.6);
+                
+                console.log(`[RAG] Found ${knowledgeResults.length} results, ${relevantKnowledge.length} above threshold (0.6)`);
+                if (relevantKnowledge.length > 0) {
+                  console.log(`[RAG] Injecting: ${relevantKnowledge.map(k => `${k.title} (${k._score.toFixed(2)})`).join(', ')}`);
+                }
                 
                 if (relevantKnowledge.length > 0) {
                   aiContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -890,14 +906,25 @@ ${relevantKnowledge.map((k, i) =>
 ${k.content.substring(0, 500)}${k.content.length > 500 ? '...' : ''}`
 ).join('\n\n')}
 
-💡 Use these evidence-based approaches in your coaching:
-- Reference specific frameworks (e.g., "The SBIR model suggests...")
-- Cite proven techniques (e.g., "Research shows...")
-- Provide structured guidance based on these scenarios
-- Make it clear you're drawing from established best practices
+💡 **YOU MUST ACTIVELY USE THIS KNOWLEDGE IN YOUR RESPONSE:**
 
-⚠️ IMPORTANT: Only reference if directly relevant to user's situation.
-Don't force it if the connection isn't clear.
+🎯 REQUIRED ACTIONS:
+1. **Reference frameworks by name** - e.g., "The SBIR model suggests..." or "Research on delegation shows..."
+2. **Quote specific techniques** - e.g., "One proven approach is..." or "Studies indicate..."
+3. **Connect to their situation** - e.g., "Given your perfectionism, the gradual delegation model recommends..."
+4. **Cite the source** - e.g., "Management research shows..." or "Evidence-based practice suggests..."
+
+✅ GOOD EXAMPLES:
+- "Research on delegation shows that perfectionism often stems from lack of trust. The SBIR model suggests starting with small, low-risk tasks..."
+- "Studies indicate that gradual delegation builds confidence. Given your quality concerns, you might start with..."
+- "Evidence-based practice recommends creating clear expectations before delegating. This addresses your worry about..."
+
+❌ WRONG - Don't ignore this knowledge:
+- Generic advice without citing frameworks
+- Missing the connection to proven approaches
+- Not mentioning the research/models provided
+
+⚠️ CRITICAL: This knowledge was specifically retrieved for THIS user's situation. Use it!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
                 }
               }

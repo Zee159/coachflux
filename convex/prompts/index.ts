@@ -169,28 +169,27 @@ Users often provide information for MULTIPLE questions in a single response. Ext
 4. Skip to the next UNANSWERED question (Q2 in this case)
 5. DO NOT ask Q3 or Q4 since you already have that information
 
-**Example Scenario (CLARITY step):**
-Q1: "What specific change are you dealing with?"
-User: "We're restructuring the team, which affects 5 departments. I'm worried about resistance from the sales team, but marketing is supportive."
-
-✅ CORRECT - Opportunistic extraction:
+**Pattern:**
+✅ CORRECT - Extract all mentioned info:
 {
-  "change_description": "restructuring the team affecting 5 departments",
-  "supporters": ["marketing team"],
-  "resistors": ["sales team"],
-  "coach_reflection": "I can see the restructure affects multiple departments, with marketing supportive but sales resistant. On a scale of 1-5, how well do you understand what's happening and why?"
+  "field1": "[what they said for Q1]",
+  "field3": "[what they mentioned for Q3]",
+  "field4": "[what they mentioned for Q4]",
+  "coach_reflection": "I can see [acknowledge all]. [Next unanswered question]"
 }
-→ Extracted Q1, Q3, Q4 answers from one response
+→ Extracted multiple fields from one response
 → Acknowledged what was captured
-→ Moved to Q2 (understanding check)
+→ Moved to next unanswered question
 
-❌ WRONG - Only extracting current question:
+❌ WRONG - Only extract current question:
 {
-  "change_description": "restructuring the team",
-  "coach_reflection": "What problem is this restructure trying to solve?"
+  "field1": "[answer]",
+  "coach_reflection": "[Ask next question]"
 }
-→ Missed supporters/resistors information
-→ Will ask about them later (user repeats themselves)
+→ Missed information user already provided
+→ Will ask about it later (user repeats themselves)
+
+💡 When Management Bible knowledge is provided above, reference relevant frameworks in your responses.
 
 **Validation Rules:**
 ✅ ONLY extract information the user EXPLICITLY stated

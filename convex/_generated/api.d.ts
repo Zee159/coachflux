@@ -41,7 +41,13 @@ import type * as reports_types from "../reports/types.js";
 import type * as reports from "../reports.js";
 import type * as safety from "../safety.js";
 import type * as seed from "../seed.js";
+import type * as seedCareerDevelopment from "../seedCareerDevelopment.js";
+import type * as seedFinance from "../seedFinance.js";
+import type * as seedHealth from "../seedHealth.js";
 import type * as seedKnowledge from "../seedKnowledge.js";
+import type * as seedPersonalDevelopment from "../seedPersonalDevelopment.js";
+import type * as seedProductivity from "../seedProductivity.js";
+import type * as seedRelationships from "../seedRelationships.js";
 import type * as types from "../types.js";
 import type * as utils_cssCalculator from "../utils/cssCalculator.js";
 
@@ -82,7 +88,13 @@ declare const fullApi: ApiFromModules<{
   reports: typeof reports;
   safety: typeof safety;
   seed: typeof seed;
+  seedCareerDevelopment: typeof seedCareerDevelopment;
+  seedFinance: typeof seedFinance;
+  seedHealth: typeof seedHealth;
   seedKnowledge: typeof seedKnowledge;
+  seedPersonalDevelopment: typeof seedPersonalDevelopment;
+  seedProductivity: typeof seedProductivity;
+  seedRelationships: typeof seedRelationships;
   types: typeof types;
   "utils/cssCalculator": typeof utils_cssCalculator;
 }>;

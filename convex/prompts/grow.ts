@@ -83,20 +83,14 @@ EXTRACT:
 AUTO-EXTRACT SUCCESS CRITERIA:
 Look for measurable outcomes in the goal statement and extract them as success criteria.
 
-Examples:
-- Goal: "I want to save $10,000" → success_criteria: ["Have $10,000 saved"]
-- Goal: "Get promoted to senior engineer" → success_criteria: ["Achieve senior engineer position"]
-- Goal: "Lose 20 pounds" → success_criteria: ["Lose 20 pounds", "Reach target weight"]
-- Goal: "Launch my product" → success_criteria: ["Product launched and live"]
-- Goal: "Improve team morale" → success_criteria: ["Team satisfaction score improved", "Positive team feedback"]
-- Goal: "Learn Python" → success_criteria: ["Complete Python course", "Build working Python project"]
-
 RULES:
 - Extract 1-3 measurable success criteria from the goal
-- Use specific numbers/metrics if mentioned (e.g., "$10,000", "20 pounds", "senior position")
+- Use specific numbers/metrics if mentioned 
 - If goal is vague, create reasonable success criteria that would indicate achievement
 - Make criteria observable and verifiable
 - Don't ask user to define success criteria separately - AUTO-EXTRACT from goal
+
+💡 Reference relevant frameworks from the Management Bible knowledge base when appropriate.
 
 Ready when: goal + why_now filled`,
 
@@ -158,29 +152,23 @@ Each option must have:
 - cons: Array of 1-2 realistic challenges
 - recommended: true for top 3 options, false for others
 
-EXAMPLE OUTPUT:
+JSON STRUCTURE:
 {
   "options": [
     {
       "id": "1",
-      "label": "Update CV/Resume",
-      "description": "Work with specialist to highlight CFO skills and AI/analytics expertise",
-      "pros": ["Professional quality", "Highlights strengths", "Quick turnaround"],
-      "cons": ["Costs money", "Takes 2-3 days"],
-      "recommended": true
-    },
-    {
-      "id": "2",
-      "label": "Share with Recruiters",
-      "description": "Connect with executive recruiters on LinkedIn who specialize in CFO placements",
-      "pros": ["Access to hidden jobs", "Expert guidance", "Faster placement"],
-      "cons": ["Requires networking", "May take time"],
+      "label": "Short descriptive label",
+      "description": "One sentence explaining the option",
+      "pros": ["Benefit 1", "Benefit 2", "Benefit 3"],
+      "cons": ["Challenge 1", "Challenge 2"],
       "recommended": true
     }
-    // ... 3 more options
+    // ... 4 more options (5 total)
   ],
-  "coach_reflection": "Based on your goal to [goal], here are some options to consider. Select the ones you'd like to pursue:"
+  "coach_reflection": "Based on your goal to [goal], here are 5 options to consider:"
 }
+
+💡 Use Management Bible knowledge above to suggest evidence-based options.
 
 CRITICAL RULES:
 - Generate ALL 5 options in ONE turn (not progressively)
@@ -199,21 +187,8 @@ EXTRACT (REQUIRED):
 - coach_reflection: "Based on your goal to [goal], here are 5 options to consider:"
 - selected_option_ids: (will be filled when user clicks buttons)
 
-WRONG EXAMPLE (DO NOT DO THIS):
-coach_reflection: "Which of these might work for you?"
-(Missing options array)
-
-CORRECT EXAMPLE:
-{
-  "options": [
-    { "id": "1", "label": "...", "description": "...", "pros": [...], "cons": [...], "recommended": true },
-    { "id": "2", ... },
-    { "id": "3", ... },
-    { "id": "4", ... },
-    { "id": "5", ... }
-  ],
-  "coach_reflection": "Based on your goal to save $10, here are 5 options to consider:"
-}`,
+❌ WRONG: Missing options array or asking user to suggest
+✅ CORRECT: Generate complete options array with all 5 options in ONE turn`,
 
   will: `WILL - AI-Suggested Actions with Validation
 
@@ -276,26 +251,24 @@ EXTRACT (REQUIRED FOR FIRST TURN):
 
 CRITICAL: selected_option_ids MUST be copied from the previous reflection. Look for the reflection with coach_reflection containing "[OPTIONS_SELECTED:...]"
 
-WRONG EXAMPLE (DO NOT DO THIS):
-coach_reflection: "What will you actually do?"
-(Missing suggested_action)
-
-CORRECT EXAMPLE:
+JSON STRUCTURE:
 {
   "suggested_action": {
-    "action": "Get specialist to update CV highlighting CFO skills",
+    "action": "Specific, actionable step",
     "due_days": 7,
     "owner": "Me",
-    "accountability_mechanism": "Share draft with wife for feedback",
-    "support_needed": "Professional CV writer specialist"
+    "accountability_mechanism": "How to track progress",
+    "support_needed": "What help is needed"
   },
-  "current_option_label": "Update CV/Resume",
+  "current_option_label": "Option label",
   "current_option_index": 0,
   "total_options": 3,
   "selected_option_ids": ["1", "2", "4"],
   "actions": [],
-  "coach_reflection": "For Update CV/Resume, I suggest:"
-}`,
+  "coach_reflection": "For [option_label], I suggest:"
+}
+
+💡 Use Management Bible knowledge above to suggest evidence-based actions.`,
 
   review: `REVIEW - Wrap Up (User Questions Only)
 
