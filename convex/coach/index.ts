@@ -1104,17 +1104,24 @@ Don't force it if the connection isn't clear.
                 
                 if (relevantKnowledge.length > 0) {
                   knowledgeProvided = true; // Flag for validator
-                  aiContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📚 RELEVANT PROVEN APPROACHES (Management Bible):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                  
+                  // Context-aware RAG instructions based on step
+                  const ragInstructions = step.name === 'options'
+                    ? `💡 **WHEN TO USE THIS KNOWLEDGE:**
+- ONLY when user asks for suggestions ("I don't know", "suggest options", "help me")
+- ONLY when generating AI options (PATH B)
+- NOT when exploring user's own options (PATH A - ask about pros/cons first)
 
-${relevantKnowledge.map((k, i) => 
-  `${i + 1}. **${k.title}** (${k.category})
+🎯 IF USER PROVIDED THEIR OWN OPTION:
+- Follow PATH A: Ask about benefits/challenges of THEIR option
+- Do NOT generate AI suggestions yet
+- Wait until they ask for more options
 
-${k.content.substring(0, 500)}${k.content.length > 500 ? '...' : ''}`
-).join('\n\n')}
-
-💡 **YOU MUST ACTIVELY USE THIS KNOWLEDGE IN YOUR RESPONSE:**
+🎯 IF USER ASKS FOR SUGGESTIONS:
+- Use this knowledge to generate evidence-based options
+- Reference frameworks: "Research shows...", "The [model] suggests..."
+- Connect to their specific situation`
+                    : `💡 **USE THIS KNOWLEDGE IN YOUR RESPONSE:**
 
 🎯 REQUIRED ACTIONS:
 1. **Reference frameworks by name** - e.g., "The SBIR model suggests..." or "Research on delegation shows..."
@@ -1125,14 +1132,19 @@ ${k.content.substring(0, 500)}${k.content.length > 500 ? '...' : ''}`
 ✅ GOOD EXAMPLES:
 - "Research on delegation shows that perfectionism often stems from lack of trust. The SBIR model suggests starting with small, low-risk tasks..."
 - "Studies indicate that gradual delegation builds confidence. Given your quality concerns, you might start with..."
-- "Evidence-based practice recommends creating clear expectations before delegating. This addresses your worry about..."
+- "Evidence-based practice recommends creating clear expectations before delegating. This addresses your worry about..."`;
+                  
+                  aiContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚 RELEVANT PROVEN APPROACHES (Management Bible):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-❌ WRONG - Don't ignore this knowledge:
-- Generic advice without citing frameworks
-- Missing the connection to proven approaches
-- Not mentioning the research/models provided
+${relevantKnowledge.map((k, i) => 
+  `${i + 1}. **${k.title}** (${k.category})
 
-⚠️ CRITICAL: This knowledge was specifically retrieved for THIS user's situation. Use it!
+${k.content.substring(0, 500)}${k.content.length > 500 ? '...' : ''}`
+).join('\n\n')}
+
+${ragInstructions}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
                 }
               }
