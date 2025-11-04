@@ -9,6 +9,7 @@ import type { ReflectionPayload } from "../types";
  */
 export interface StepCompletionResult {
   shouldAdvance: boolean;
+  awaitingConfirmation?: boolean; // Step complete, waiting for user to proceed/amend
   reason?: string;
   capturedFields?: string[];
   missingFields?: string[];

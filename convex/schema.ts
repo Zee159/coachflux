@@ -35,6 +35,14 @@ export default defineSchema({
     )),
     ai_suggestion_count: v.optional(v.number()), // Track AI suggestion rounds (0-3)
     
+    // User-controlled step transitions with amendment system
+    awaiting_confirmation: v.optional(v.boolean()), // Step complete, waiting for proceed/amend
+    amendment_mode: v.optional(v.object({
+      active: v.boolean(),
+      step: v.string(),  // Which step is being amended
+      from_review: v.boolean()  // True if amending from review step
+    })),
+    
     startedAt: v.number(),
     closedAt: v.optional(v.number()),
     escalated: v.optional(v.boolean()), // Session flagged for escalation to HR/specialist

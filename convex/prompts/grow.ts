@@ -15,8 +15,7 @@ export const GROW_COACHING_QUESTIONS: Record<string, string[]> = {
     "What timeframe are you working with?"
   ],
   reality: [
-    "What's the current situation?",
-    "What's getting in the way?",
+    "What's your current situation, and what constraints are you facing?",
     "What resources do you have?",
     "What could derail your progress or put this at risk?"
   ],
@@ -125,17 +124,44 @@ Ready when: goal + why_now + success_criteria filled (success_criteria auto-gene
 
   reality: `REALITY - What's happening now?
 
-Ask 4 questions progressively:
-1. "What's the current situation?"
-2. "What's getting in the way?"
-3. "What resources do you have?"
-4. "What could derail your progress or put this at risk?"
+Ask 3 questions progressively:
+1. "What's your current situation, and what constraints are you facing?" → current_state + constraints (COMBINED)
+2. "What resources do you have?" → resources (ASSETS/SUPPORT)
+3. "What could derail your progress or put this at risk?" → risks (FUTURE THREATS)
 
 EXTRACT:
-- current_state: Their description (from Q1)
-- constraints: Barriers/limitations (from Q2)
-- resources: What they have available (from Q3)
-- risks: What could derail them (from Q4)
+- current_state: Factual description of where they are now
+- constraints: Specific barriers/obstacles blocking progress
+- resources: What they have available
+- risks: What could derail them
+
+🚨 CRITICAL - Q1 INTELLIGENT GAP FILLING:
+
+**Q1 asks for BOTH elements in one sentence:**
+"What's your current situation, and what constraints are you facing?"
+
+**User responses fall into 3 patterns:**
+
+**PATTERN 1 - User provides BOTH (most common):**
+User: "I have too much work to do, I don't know where to start with writing an implementation plan"
+Extract:
+- current_state: "Overwhelmed with workload, unclear on implementation plan starting point"
+- constraints: ["too much work", "lack of clarity on where to start"]
+Coach: "I can see you're dealing with a heavy workload and uncertainty. What resources do you have available?" (Move to Q2)
+
+**PATTERN 2 - User provides ONLY current state:**
+User: "I'm in the middle of a BI data strategy implementation"
+Extract:
+- current_state: "In the middle of a BI data strategy implementation"
+- constraints: [] (empty - user didn't mention barriers)
+Coach: "Got it. What specific constraints are you facing right now?" (Ask follow-up for constraints)
+
+**PATTERN 3 - User provides ONLY constraints:**
+User: "I'm blocked by lack of resources and unclear requirements"
+Extract:
+- current_state: "" (empty - user didn't describe situation)
+- constraints: ["lack of resources", "unclear requirements"]
+Coach: "I can see those barriers. Can you describe your current situation - where are you in this process?" (Ask follow-up for current_state)
 
 🎯 OPPORTUNISTIC EXTRACTION FOR CONSTRAINTS:
 Users often mention constraints in emotional/behavioral terms. Extract these as valid constraints:
@@ -144,16 +170,23 @@ Users often mention constraints in emotional/behavioral terms. Extract these as 
 - "not wanting to waste time training" → constraint: "time investment concerns"
 - "worried about quality" → constraint: "quality concerns"
 - "don't trust others" → constraint: "trust issues"
+- "too much work" → constraint: "workload overload"
+- "don't know where to start" → constraint: "lack of clarity"
+- "overwhelmed" → constraint: "feeling overwhelmed"
 
 ✅ CORRECT - Extract emotional/behavioral barriers:
 User: "I find myself doing all the work because I get it right when I do it"
-Extract: constraints: ["perfectionism", "quality control concerns"]
+Extract: 
+- current_state: "Doing all the work myself"
+- constraints: ["perfectionism", "quality control concerns"]
 
 ❌ WRONG - Ignoring behavioral patterns:
 User: "I find myself doing all the work because I get it right when I do it"
-Extract: constraints: [] (missed the perfectionism pattern)
+Extract: 
+- current_state: "Doing all the work"
+- constraints: [] (missed the perfectionism pattern)
 
-CRITICAL: Ask ALL 4 questions before advancing. Risks is REQUIRED.
+CRITICAL: Ask ALL 3 questions before advancing. Both current_state AND constraints are REQUIRED before moving to Q2.
 
 Ready when: current_state + constraints + resources + risks all filled`,
 

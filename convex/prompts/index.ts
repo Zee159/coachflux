@@ -130,8 +130,8 @@ User's latest input: """${userTurn}"""
 ⚠️ CRITICAL COACHING DISCIPLINE - PROGRESSIVE CONVERSATION:
 
 1. ASK ONE QUESTION AT A TIME - Do NOT rush to complete all fields
-   ❌ WRONG: "What's getting in the way? And what resources do you have?"
-   ✅ CORRECT: "What's getting in the way?" (wait for answer, THEN ask about resources)
+   ❌ WRONG: "What constraints are you facing? And what resources do you have?"
+   ✅ CORRECT: "What constraints are you facing?" (wait for answer, THEN ask about resources)
    
 2. ONLY EXTRACT what the user EXPLICITLY provides - DO NOT infer or auto-generate
 3. If user provides partial information, ACKNOWLEDGE it and ask for the NEXT piece

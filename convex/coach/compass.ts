@@ -66,7 +66,14 @@ export class COMPASSCoach implements FrameworkCoach {
       const clarityReflections = reflections.filter(r => r.step === 'clarity');
       const hasMinimumConversation = clarityReflections.length >= 2;
 
-      return { shouldAdvance: hasChangeDescription && hasSphereOfControl && isMeaningfulControl && hasMinimumConversation };
+      const isComplete = hasChangeDescription && hasSphereOfControl && isMeaningfulControl && hasMinimumConversation;
+      
+      // NEW: Instead of auto-advancing, set awaiting confirmation
+      if (isComplete) {
+        return { shouldAdvance: false, awaitingConfirmation: true };
+      }
+      
+      return { shouldAdvance: false };
     } else if (stepName === "ownership") {
       // High-confidence branching: requires fewer fields if initial_confidence >= 8
       // Get initial_confidence from introduction step (not current payload)
@@ -95,13 +102,23 @@ export class COMPASSCoach implements FrameworkCoach {
         // High-confidence path: 3 questions (confidence_source, personal_benefit, past_success)
         const hasConfidenceSource = typeof payload["confidence_source"] === "string" && payload["confidence_source"].length > 0;
         const hasMinConversationHigh = ownershipReflections.length >= 3; // At least 3 exchanges for high-confidence path
-        // 🔧 FIX: Require ALL 3 fields + minimum conversation to prevent premature advancement
-        return { shouldAdvance: hasConfidenceSource && hasPersonalBenefit && hasPastSuccess && hasMinConversationHigh };
+        const isComplete = hasConfidenceSource && hasPersonalBenefit && hasPastSuccess && hasMinConversationHigh;
+        
+        // NEW: Instead of auto-advancing, set awaiting confirmation
+        if (isComplete) {
+          return { shouldAdvance: false, awaitingConfirmation: true };
+        }
+        return { shouldAdvance: false };
       } else {
         // Standard path: 8 questions (requires current_confidence, personal_benefit, past_success, and meaningful conversation)
         const hasMinConversationStandard = ownershipReflections.length >= 5; // At least 5 exchanges for standard path
-        // 🔧 FIX: Require ALL 3 core fields + minimum conversation to prevent premature advancement
-        return { shouldAdvance: hasCurrentConfidence && hasPersonalBenefit && hasPastSuccess && hasMinConversationStandard };
+        const isComplete = hasCurrentConfidence && hasPersonalBenefit && hasPastSuccess && hasMinConversationStandard;
+        
+        // NEW: Instead of auto-advancing, set awaiting confirmation
+        if (isComplete) {
+          return { shouldAdvance: false, awaitingConfirmation: true };
+        }
+        return { shouldAdvance: false };
       }
     } else if (stepName === "mapping") {
       // Requires committed_action, action_day, action_time, and commitment_confidence >= 7
@@ -112,7 +129,14 @@ export class COMPASSCoach implements FrameworkCoach {
       const hasHighCommitment = typeof commitmentConfidence === "number" && commitmentConfidence >= 7;
 
       // ✅ FIXED: Require ALL 3 action fields + commitment confidence 7+ for complete action plan
-      return { shouldAdvance: hasCommittedAction && hasActionDay && hasActionTime && hasHighCommitment };
+      const isComplete = hasCommittedAction && hasActionDay && hasActionTime && hasHighCommitment;
+      
+      // NEW: Instead of auto-advancing, set awaiting confirmation
+      if (isComplete) {
+        return { shouldAdvance: false, awaitingConfirmation: true };
+      }
+      
+      return { shouldAdvance: false };
     } else if (stepName === "practice") {
       // Requires CSS final measurements (5 mandatory fields)
       const hasActionCommitmentConfidence = typeof payload["action_commitment_confidence"] === "number" && payload["action_commitment_confidence"] >= 1 && payload["action_commitment_confidence"] <= 10;
@@ -132,7 +156,14 @@ export class COMPASSCoach implements FrameworkCoach {
       ].filter(Boolean).length;
 
       // Require at least 4 out of 6 CSS final fields (strict for session completion)
-      return { shouldAdvance: completedFields >= 4 };
+      const isComplete = completedFields >= 4;
+      
+      // NEW: Instead of auto-advancing, set awaiting confirmation
+      if (isComplete) {
+        return { shouldAdvance: false, awaitingConfirmation: true };
+      }
+      
+      return { shouldAdvance: false };
     } else if (stepName === "review") {
       // Review never auto-advances
       return { shouldAdvance: false };

@@ -20,6 +20,8 @@ import { ActionValidator } from "./ActionValidator";
 import { ConfidenceScaleSelector } from "./ConfidenceScaleSelector";
 import { MindsetSelector } from "./MindsetSelector";
 import { UnderstandingScaleSelector } from "./UnderstandingScaleSelector";
+import { StepConfirmationButtons } from "./StepConfirmationButtons";
+import { AmendmentModal } from "./AmendmentModal";
 
 type StepName = "introduction" | "goal" | "reality" | "options" | "will" | "review" | "clarity" | "ownership" | "mapping" | "practice";
 
@@ -461,6 +463,11 @@ export function SessionView() {
   const incrementSkip = useMutation(api.mutations.incrementSkipCount);
   const submitRating = useMutation(api.mutations.submitSessionRating);
 
+  // Step confirmation and amendment state
+  const awaitingConfirmation = session?.awaiting_confirmation === true;
+  const amendmentMode = session?.amendment_mode;
+  const [showStepSelector, setShowStepSelector] = useState(false);
+
   // Keep mutation references stable for effects to avoid dependency array size changes
   const closeSessionRef = useRef(closeSession);
   useEffect(() => {
@@ -692,6 +699,70 @@ export function SessionView() {
   );
   const isSessionComplete = (currentStep === "review" && isReviewComplete) || 
     (session.closedAt !== null && session.closedAt !== undefined);
+
+  // Helper: Extract fields for amendment modal
+  const extractFieldsForAmendment = (
+    step: string,
+    reflections: Array<{ step: string; payload: Record<string, unknown> }>
+  ): Array<{ key: string; label: string; value: unknown; type: 'string' | 'number' | 'array' }> => {
+    const stepReflections = reflections.filter(r => r.step === step);
+    const latestReflection = stepReflections[stepReflections.length - 1];
+    const payload = (latestReflection?.payload !== null && latestReflection?.payload !== undefined) ? latestReflection.payload : {};
+    
+    const fields: Array<{ key: string; label: string; value: unknown; type: 'string' | 'number' | 'array' }> = [];
+    
+    // Skip internal fields
+    const skipFields = ['coach_reflection', 'options', 'selected_option_ids', 'suggested_action', 
+                        'current_option_index', 'current_option_label', 'total_options', 'actions'];
+    
+    for (const [key, value] of Object.entries(payload)) {
+      if (skipFields.includes(key)) {
+        continue;
+      }
+      if (key.startsWith('_')) {
+        continue;
+      }
+      
+      fields.push({
+        key,
+        label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        value,
+        type: Array.isArray(value) ? 'array' : typeof value === 'number' ? 'number' : 'string'
+      });
+    }
+    
+    return fields;
+  };
+
+  // Helper: Get next step name for confirmation buttons
+  const getNextStepName = (currentStep: string): string => {
+    if (session?.framework === 'GROW') {
+      const steps: Record<string, string> = { 
+        goal: 'Reality', 
+        reality: 'Options', 
+        options: 'Will', 
+        will: 'Review' 
+      };
+      return steps[currentStep] ?? 'Review';
+    } else {
+      const steps: Record<string, string> = { 
+        clarity: 'Ownership', 
+        ownership: 'Mapping', 
+        mapping: 'Practice', 
+        practice: 'Review' 
+      };
+      return steps[currentStep] ?? 'Review';
+    }
+  };
+
+  // Helper: Get steps for framework (for review step selector)
+  const getStepsForFramework = (framework: string): string[] => {
+    if (framework === 'GROW') {
+      return ['goal', 'reality', 'options', 'will'];
+    } else {
+      return ['clarity', 'ownership', 'mapping', 'practice'];
+    }
+  };
 
   async function handleSubmit(skipText?: string): Promise<void> {
     const inputText = skipText ?? text;
@@ -1694,6 +1765,43 @@ export function SessionView() {
                             
                             return null;
                           })()}
+
+                          {/* Step Confirmation Buttons - NEW */}
+                          {awaitingConfirmation && isLastReflection && !isSessionComplete && (
+                            <div className="mt-4">
+                              <StepConfirmationButtons
+                                stepName={reflection.step}
+                                nextStepName={getNextStepName(reflection.step)}
+                                onProceed={() => {
+                                  void nextStepAction({
+                                    orgId: session.orgId,
+                                    userId: session.userId,
+                                    sessionId: session._id,
+                                    stepName: reflection.step,
+                                    userTurn: '',
+                                    structuredInput: {
+                                      type: 'step_confirmation',
+                                      data: { action: 'proceed' }
+                                    }
+                                  });
+                                }}
+                                onAmend={() => {
+                                  void nextStepAction({
+                                    orgId: session.orgId,
+                                    userId: session.userId,
+                                    sessionId: session._id,
+                                    stepName: reflection.step,
+                                    userTurn: '',
+                                    structuredInput: {
+                                      type: 'step_confirmation',
+                                      data: { action: 'amend' }
+                                    }
+                                  });
+                                }}
+                                isLoading={submitting}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                       
@@ -2143,6 +2251,82 @@ export function SessionView() {
 
       {/* Feedback Widget - Only show when session is complete */}
       {isSessionComplete && <FeedbackWidget sessionId={session._id} />}
+
+      {/* Amendment Modal - NEW */}
+      {amendmentMode?.active === true && reflections !== undefined && (
+        <AmendmentModal
+          stepName={amendmentMode.step}
+          fields={extractFieldsForAmendment(amendmentMode.step, reflections)}
+          onSave={(amendments) => {
+            void nextStepAction({
+              orgId: session.orgId,
+              userId: session.userId,
+              sessionId: session._id,
+              stepName: amendmentMode.step,
+              userTurn: '',
+              structuredInput: {
+                type: 'amendment_complete',
+                data: { action: 'save', amendments }
+              }
+            });
+          }}
+          onCancel={() => {
+            void nextStepAction({
+              orgId: session.orgId,
+              userId: session.userId,
+              sessionId: session._id,
+              stepName: amendmentMode.step,
+              userTurn: '',
+              structuredInput: {
+                type: 'amendment_complete',
+                data: { action: 'cancel' }
+              }
+            });
+          }}
+          isLoading={submitting}
+        />
+      )}
+
+      {/* Step Selector Modal for Review - NEW */}
+      {showStepSelector && session !== undefined && session !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-md mx-4 shadow-2xl">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
+              Select Step to Amend
+            </h3>
+            <div className="space-y-2">
+              {getStepsForFramework(session.framework).map(step => (
+                <button
+                  key={step}
+                  onClick={() => {
+                    setShowStepSelector(false);
+                    void nextStepAction({
+                      orgId: session.orgId,
+                      userId: session.userId,
+                      sessionId: session._id,
+                      stepName: 'review',
+                      userTurn: '',
+                      structuredInput: {
+                        type: 'review_amendment_selection',
+                        data: { step }
+                      }
+                    });
+                  }}
+                  className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-gray-900 dark:text-gray-100 rounded-lg text-left font-medium transition-colors"
+                >
+                  {step.charAt(0).toUpperCase() + step.slice(1)}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowStepSelector(false)}
+              className="mt-4 w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

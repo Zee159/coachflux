@@ -70,6 +70,7 @@ export class GROWCoach implements FrameworkCoach {
 
   /**
    * Goal step completion logic
+   * NEW: Returns awaitingConfirmation instead of auto-advancing
    */
   private checkGoalCompletion(
     payload: ReflectionPayload,
@@ -94,11 +95,19 @@ export class GROWCoach implements FrameworkCoach {
       requiredFields = 3; // User used one skip, require 3/4 fields
     }
 
-    return { shouldAdvance: completedFields >= requiredFields };
+    const isComplete = completedFields >= requiredFields;
+    
+    // NEW: Instead of auto-advancing, set awaiting confirmation
+    if (isComplete) {
+      return { shouldAdvance: false, awaitingConfirmation: true };
+    }
+    
+    return { shouldAdvance: false };
   }
 
   /**
    * Reality step completion logic
+   * NEW: Returns awaitingConfirmation instead of auto-advancing
    */
   private checkRealityCompletion(
     payload: ReflectionPayload,
@@ -123,14 +132,19 @@ export class GROWCoach implements FrameworkCoach {
     }
 
     // Risks is ALWAYS required, plus current_state and additional exploration
-    return {
-      shouldAdvance: hasCurrentState && hasRisks && additionalExplorationCount >= requiredAdditionalExploration
-    };
+    const isComplete = hasCurrentState && hasRisks && additionalExplorationCount >= requiredAdditionalExploration;
+    
+    // NEW: Instead of auto-advancing, set awaiting confirmation
+    if (isComplete) {
+      return { shouldAdvance: false, awaitingConfirmation: true };
+    }
+    
+    return { shouldAdvance: false };
   }
 
   /**
    * Options step completion logic
-   * NEW: Button-based flow - ONLY advances when user selects options via buttons
+   * NEW: Button-based flow - triggers confirmation when options are generated
    */
   private checkOptionsCompletion(
     payload: ReflectionPayload,
@@ -140,11 +154,9 @@ export class GROWCoach implements FrameworkCoach {
     const options = payload["options"];
     const selectedOptionIds = payload["selected_option_ids"];
 
-    // CRITICAL: Options step uses button-based selection
-    // Only advance when user has selected options via OptionsSelector buttons
+    // If user has selected options via buttons, trigger confirmation
     if (Array.isArray(selectedOptionIds) && selectedOptionIds.length > 0) {
-      // User selected options via buttons - advance to Will step
-      return { shouldAdvance: true };
+      return { shouldAdvance: false, awaitingConfirmation: true };
     }
 
     // If no options array generated yet, DO NOT advance
@@ -209,7 +221,7 @@ export class GROWCoach implements FrameworkCoach {
       },
       openers: {
         goal: "What goal or challenge would you like to work on today?",
-        reality: "We clarified your goal and success criteria. Now let's map the current reality — facts, constraints, resources and risks — so your options are grounded and aligned with your success criteria. After this we'll explore options together. What's the current situation you're facing?",
+        reality: "We clarified your goal and success criteria. Now let's map the current reality — facts, constraints, resources and risks — so your options are grounded and aligned with your success criteria. After this we'll explore options together. What's your current situation, and what constraints are you facing?",
         options: "With your reality on the table, let's generate possibilities that directly contribute to your success criteria. First share one option, then we'll explore pros and cons. When you're ready we'll commit to action in Will. What's one option you're considering for achieving your success criteria?",
         will: "You've considered options aligned with your success criteria. Now let's commit to action: choose the approach and define specific steps with owner and timeline that will help you achieve your success criteria. Next we'll review takeaways. Which option feels right for you for achieving your success criteria?",
         review: "Time to consolidate. Summarise key takeaways and your next immediate step; I'll add concise insights to close the session. What stands out most for you in terms of achieving your success criteria?",

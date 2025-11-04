@@ -566,9 +566,167 @@ async function handleStructuredInput(
       }
     }
 
+    case 'step_confirmation': {
+      // User clicked Proceed or Amend on step confirmation buttons
+      const { action } = data as { action: 'proceed' | 'amend' };
+      const session = await ctx.runQuery(api.queries.getSession, { sessionId: args.sessionId });
+      
+      if (session === null) {
+        return { ok: false, message: 'Session not found' };
+      }
+      
+      if (action === 'proceed') {
+        // Clear awaiting confirmation
+        await ctx.runMutation(api.mutations.setAwaitingConfirmation, {
+          sessionId: args.sessionId,
+          awaiting: false
+        });
+        
+        // Determine next step based on framework
+        const framework = session.framework;
+        const currentStep = session.step;
+        const nextStep = getNextStepForFramework(currentStep, framework);
+        
+        // Advance to next step
+        await ctx.runMutation(api.mutations.updateSessionStep, {
+          sessionId: args.sessionId,
+          step: nextStep
+        });
+        
+        // Get step transitions for opener message
+        const frameworkCoach = getFrameworkCoach(framework);
+        const transitions = frameworkCoach.getStepTransitions();
+        const openerMessage = transitions.openers[nextStep] ?? `Let's continue with ${nextStep}.`;
+        
+        // Create reflection with opener
+        await ctx.runMutation(api.mutations.createReflection, {
+          orgId: args.orgId,
+          userId: args.userId,
+          sessionId: args.sessionId,
+          step: nextStep,
+          userInput: '',
+          payload: {
+            coach_reflection: openerMessage
+          }
+        });
+        
+        return { ok: true, message: `Moving to ${nextStep}...`, nextStep };
+      } else if (action === 'amend') {
+        // Enter amendment mode for current step
+        await ctx.runMutation(api.mutations.enterAmendmentMode, {
+          sessionId: args.sessionId,
+          step: session.step,
+          from_review: false
+        });
+        
+        return { ok: true, message: 'Amendment mode activated' };
+      }
+      
+      return { ok: false, message: 'Invalid confirmation action' };
+    }
+
+    case 'amendment_complete': {
+      // User clicked Save or Cancel in amendment modal
+      const { action, amendments } = data as { 
+        action: 'save' | 'cancel'; 
+        amendments?: Record<string, unknown> 
+      };
+      
+      const session = await ctx.runQuery(api.queries.getSession, { sessionId: args.sessionId });
+      if (session === null) {
+        return { ok: false, message: 'Session not found' };
+      }
+      
+      const amendmentMode = session.amendment_mode;
+      if (amendmentMode?.active !== true) {
+        return { ok: false, message: 'Not in amendment mode' };
+      }
+      
+      if (action === 'save' && amendments !== null && amendments !== undefined) {
+        // Apply amendments
+        await ctx.runMutation(api.mutations.amendReflectionFields, {
+          sessionId: args.sessionId,
+          step: amendmentMode.step,
+          amendments
+        });
+      }
+      
+      // Exit amendment mode
+      await ctx.runMutation(api.mutations.exitAmendmentMode, {
+        sessionId: args.sessionId
+      });
+      
+      // If from review, trigger report generation
+      if (amendmentMode.from_review) {
+        // Close session
+        await ctx.runMutation(api.mutations.closeSession, {
+          sessionId: args.sessionId
+        });
+        
+        // Auto-trigger report generation (only for GROW framework)
+        if (session.framework === 'GROW') {
+          await ctx.runAction(api.coach.generateReviewAnalysis, {
+            orgId: args.orgId,
+            userId: args.userId,
+            sessionId: args.sessionId
+          });
+        }
+        
+        return {
+          ok: true,
+          message: 'Generating report...',
+          sessionClosed: true
+        };
+      }
+      
+      // Otherwise, set awaiting confirmation (loop back)
+      await ctx.runMutation(api.mutations.setAwaitingConfirmation, {
+        sessionId: args.sessionId,
+        awaiting: true
+      });
+      
+      return {
+        ok: true,
+        message: action === 'save' ? 'Changes saved' : 'Changes discarded'
+      };
+    }
+
+    case 'review_amendment_selection': {
+      // User selected which step to amend from review
+      const { step } = data as { step: string };
+      
+      // Enter amendment mode for selected step
+      await ctx.runMutation(api.mutations.enterAmendmentMode, {
+        sessionId: args.sessionId,
+        step,
+        from_review: true
+      });
+      
+      return {
+        ok: true,
+        message: `Amending ${step} step...`
+      };
+    }
+
     default:
       return { ok: false, message: `Unknown structured input type: ${type}` };
   }
+}
+
+/**
+ * Helper function to get next step based on framework
+ */
+function getNextStepForFramework(currentStep: string, framework: string): string {
+  if (framework === 'GROW') {
+    const steps = ['introduction', 'goal', 'reality', 'options', 'will', 'review'];
+    const idx = steps.indexOf(currentStep);
+    return steps[idx + 1] ?? 'review';
+  } else if (framework === 'COMPASS') {
+    const steps = ['introduction', 'clarity', 'ownership', 'mapping', 'practice', 'review'];
+    const idx = steps.indexOf(currentStep);
+    return steps[idx + 1] ?? 'review';
+  }
+  return 'review';
 }
 
 // ============================================================================

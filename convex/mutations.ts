@@ -538,3 +538,149 @@ export const submitSessionRating = mutation({
     });
   },
 });
+
+// ================================
+// Step Confirmation & Amendment System
+// ================================
+
+/**
+ * Set session to awaiting confirmation state
+ * Called when a step is complete and needs user confirmation to proceed
+ */
+export const setAwaitingConfirmation = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    awaiting: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      awaiting_confirmation: args.awaiting,
+    });
+  },
+});
+
+/**
+ * Enter amendment mode for a specific step
+ * Called when user clicks "Amend Response" button
+ */
+export const enterAmendmentMode = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    step: v.string(),
+    from_review: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      amendment_mode: {
+        active: true,
+        step: args.step,
+        from_review: args.from_review,
+      },
+      awaiting_confirmation: false, // Clear confirmation state
+    });
+  },
+});
+
+/**
+ * Exit amendment mode
+ * Called when user saves or cancels amendments
+ */
+export const exitAmendmentMode = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      amendment_mode: {
+        active: false,
+        step: "",
+        from_review: false,
+      },
+    });
+  },
+});
+
+/**
+ * Update a specific field in a reflection
+ * Called when user amends a field value
+ */
+export const amendReflectionField = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    step: v.string(),
+    field: v.string(),
+    value: v.any(),
+  },
+  handler: async (ctx, args) => {
+    // Find the latest reflection for this step
+    const reflections = await ctx.db
+      .query("reflections")
+      .withIndex("bySession", (q) => q.eq("sessionId", args.sessionId))
+      .collect();
+    
+    const stepReflections = reflections.filter(r => r.step === args.step);
+    if (stepReflections.length === 0) {
+      throw new Error(`No reflections found for step: ${args.step}`);
+    }
+    
+    // Get the latest reflection for this step
+    const latestReflection = stepReflections[stepReflections.length - 1];
+    if (latestReflection === undefined) {
+      throw new Error(`No reflection found for step: ${args.step}`);
+    }
+    
+    // Update the field in the payload
+    const payload = latestReflection.payload as Record<string, unknown>;
+    payload[args.field] = args.value;
+    
+    await ctx.db.patch(latestReflection._id, {
+      payload,
+    });
+    
+    return latestReflection._id;
+  },
+});
+
+/**
+ * Batch update multiple fields in a reflection
+ * Called when user saves multiple amendments at once
+ */
+export const amendReflectionFields = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    step: v.string(),
+    amendments: v.any(), // Record<string, unknown>
+  },
+  handler: async (ctx, args) => {
+    // Find the latest reflection for this step
+    const reflections = await ctx.db
+      .query("reflections")
+      .withIndex("bySession", (q) => q.eq("sessionId", args.sessionId))
+      .collect();
+    
+    const stepReflections = reflections.filter(r => r.step === args.step);
+    if (stepReflections.length === 0) {
+      throw new Error(`No reflections found for step: ${args.step}`);
+    }
+    
+    // Get the latest reflection for this step
+    const latestReflection = stepReflections[stepReflections.length - 1];
+    if (latestReflection === undefined) {
+      throw new Error(`No reflection found for step: ${args.step}`);
+    }
+    
+    // Update all amended fields in the payload
+    const payload = latestReflection.payload as Record<string, unknown>;
+    const amendments = args.amendments as Record<string, unknown>;
+    
+    for (const [field, value] of Object.entries(amendments)) {
+      payload[field] = value;
+    }
+    
+    await ctx.db.patch(latestReflection._id, {
+      payload,
+    });
+    
+    return latestReflection._id;
+  },
+});
