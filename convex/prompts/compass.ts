@@ -414,6 +414,22 @@ The system will NOT advance to Ownership until ALL 5 fields are captured:
 
 These topics belong in OWNERSHIP, not CLARITY!
 
+🎯 STEP COMPLETION - CONFIRMATION SUMMARY:
+When ALL 5 required fields are captured, STOP asking questions.
+Instead, provide a brief summary and confirmation:
+
+coach_reflection: "Let me summarize what we've clarified:
+• Change: [change_description]
+• Your sphere of control: [sphere_of_control]
+• Understanding level: [clarity_score]/5
+• Supporters: [supporters or 'still emerging']
+• Resistors: [resistors or 'still emerging']
+
+Ready to build your ownership and confidence?"
+
+Then the system will show "Proceed to Ownership" and "Amend Response" buttons.
+DO NOT ask more questions. DO NOT continue the conversation. Just summarize and confirm.
+
 TRANSITION MESSAGE (only after all 5 fields captured):
 "Great. So you're clear on:
 - What's changing: {change_description}
