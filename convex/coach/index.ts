@@ -1000,23 +1000,36 @@ Don't force it if the connection isn't clear.
     
     // 📚 ALWAYS-ON RAG: Knowledge Base Integration
     // Works for both GROW and COMPASS frameworks
-    // GROW uses 'goal', COMPASS uses 'change_description'
+    // Extract goal/change from previous reflections (not just current capturedState)
     
-    // GROW fields
-    const goalText = typeof capturedState['goal'] === 'string' ? capturedState['goal'] : '';
-    const realityText = typeof capturedState['current_state'] === 'string' ? capturedState['current_state'] : '';
-    const constraintsText = typeof capturedState['constraints'] === 'string' ? capturedState['constraints'] : '';
+    // Helper to extract field from any previous reflection
+    const extractFromReflections = (fieldName: string): string => {
+      for (const reflection of sessionReflections) {
+        const payload = reflection.payload as Record<string, unknown>;
+        const value = payload[fieldName];
+        if (typeof value === 'string' && value.length > 0) {
+          return value;
+        }
+      }
+      return '';
+    };
     
-    // COMPASS fields
-    const changeDescription = typeof capturedState['change_description'] === 'string' ? capturedState['change_description'] : '';
-    const sphereOfControl = typeof capturedState['sphere_of_control'] === 'string' ? capturedState['sphere_of_control'] : '';
+    // GROW fields - check current step AND previous reflections
+    const goalText = typeof capturedState['goal'] === 'string' ? capturedState['goal'] : extractFromReflections('goal');
+    const realityText = typeof capturedState['current_state'] === 'string' ? capturedState['current_state'] : extractFromReflections('current_state');
+    const constraintsText = typeof capturedState['constraints'] === 'string' ? capturedState['constraints'] : extractFromReflections('constraints');
+    
+    // COMPASS fields - check current step AND previous reflections
+    const changeDescription = typeof capturedState['change_description'] === 'string' ? capturedState['change_description'] : extractFromReflections('change_description');
+    const sphereOfControl = typeof capturedState['sphere_of_control'] === 'string' ? capturedState['sphere_of_control'] : extractFromReflections('sphere_of_control');
     
     // Determine primary context based on framework
     const primaryContext = goalText.length > 0 ? goalText : changeDescription;
     
-    // Search knowledge base for ANY session past introduction with context
-    // This makes knowledge always available for both GROW and COMPASS
-    const shouldSearchKnowledge = primaryContext.length > 0 && step.name !== 'introduction';
+    // Only search in steps where we provide suggestions/solutions
+    // GROW: Options, Will | COMPASS: Mapping, Practice
+    const ragEnabledSteps = ['options', 'will', 'mapping', 'practice'];
+    const shouldSearchKnowledge = primaryContext.length > 0 && ragEnabledSteps.includes(step.name);
     
     // Track if knowledge was actually provided (for validator)
     let knowledgeProvided = false;
@@ -1025,6 +1038,9 @@ Don't force it if the connection isn't clear.
     if (shouldSearchKnowledge) {
       // eslint-disable-next-line no-console
       console.log(`[RAG] Searching knowledge for step: ${step.name}, context: "${primaryContext.substring(0, 50)}..."`);
+    } else if (primaryContext.length > 0 && !ragEnabledSteps.includes(step.name)) {
+      // eslint-disable-next-line no-console
+      console.log(`[RAG] Disabled for step: ${step.name} (only enabled for: ${ragEnabledSteps.join(', ')})`);
     }
     
     if (shouldSearchKnowledge) {
