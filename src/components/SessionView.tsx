@@ -22,6 +22,7 @@ import { MindsetSelector } from "./MindsetSelector";
 import { UnderstandingScaleSelector } from "./UnderstandingScaleSelector";
 import { StepConfirmationButtons } from "./StepConfirmationButtons";
 import { AmendmentModal } from "./AmendmentModal";
+import { ReviewConfidenceSelector } from "./ReviewConfidenceSelector";
 
 type StepName = "introduction" | "goal" | "reality" | "options" | "will" | "review" | "clarity" | "ownership" | "mapping" | "practice";
 
@@ -1692,6 +1693,46 @@ export function SessionView() {
                             );
                           })()}
                           
+                          {/* Review Confidence Selector (GROW Review Step) */}
+                          {session.framework === 'GROW' && reflection.step === 'review' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const confidenceLevel = payload['confidence_level'];
+                            const hasKeyTakeaways = typeof payload['key_takeaways'] === 'string' && payload['key_takeaways'].length > 0;
+                            const hasImmediateStep = typeof payload['immediate_step'] === 'string' && payload['immediate_step'].length > 0;
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: Q1 and Q2 answered, confidence not yet captured, AI is asking for it
+                            if (confidenceLevel !== undefined || !hasKeyTakeaways || !hasImmediateStep) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for confidence
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('confident') &&
+                                                         coachReflection.toLowerCase().includes('plan');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ReviewConfidenceSelector
+                                  question="How confident are you feeling about this plan?"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'review',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                  isLoading={submitting}
+                                />
+                              </div>
+                            );
+                          })()}
+
                           {/* ⚠️ FIX P1-1: Display nudges used in this reflection */}
                           {(() => {
                             const payload = reflection.payload as Record<string, unknown> | undefined;

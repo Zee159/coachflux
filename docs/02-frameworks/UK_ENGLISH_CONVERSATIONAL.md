@@ -1,28 +1,28 @@
-# UK English & Conversational Style Implementation
+# Australian English & Conversational Style Implementation
 
 ## ✅ Changes Applied
 
-Your CoachFlux MVP now uses **UK English spelling** throughout and delivers coaching in a **warm, conversational style**.
+Your CoachFlux MVP now uses **Australian English spelling** throughout and delivers coaching in a **warm, conversational style**.
 
 ---
 
-## 🇬🇧 UK English Spelling
+## 🇦🇺 Australian English Spelling
 
 ### What Changed
 
 **System-wide spelling updates:**
 - ❌ American: "organization", "behavior", "judgment", "realize"
-- ✅ British: "organisation", "behaviour", "judgement", "realise"
+- ✅ Australian: "organisation", "behaviour", "judgment", "realise"
 
 **Files Updated:**
-1. **`convex/prompts.ts`** - All prompts use UK English
-2. **`convex/coach.ts`** - Schema descriptions updated (e.g., "Summarise" not "Summarize", "judgement" not "judgment")
+1. **`convex/prompts.ts`** - All prompts use Australian English
+2. **`convex/coach.ts`** - Schema descriptions updated (e.g., "Summarise" not "Summarize", "judgment" not "judgement")
 
 ### Explicit Instructions Added
 
 Added to system prompts:
 ```
-- Use UK English spelling throughout (e.g., realise, organisation, behaviour, summarise)
+- Use Australian English spelling throughout (e.g., realise, organisation, behaviour, summarise)
 ```
 
 This ensures Claude Sonnet 4 consistently uses British spelling in all responses.
@@ -175,7 +175,7 @@ GOAL
 }
 ```
 
-### After (Conversational, UK English)
+### After (Conversational, Australian English)
 ```
 💬 That's a meaningful goal - completing your MVP. What would success look like 
    for you and your early users?
@@ -207,7 +207,7 @@ Claude receives:
 - **Coaching philosophy** (evidence-based, non-judgmental)
 - **Step-specific guidance** (Goal phase: clarify and focus)
 - **Conversational style instructions** (warm, supportive, human)
-- **UK English requirement** (explicit spelling rules)
+- **Australian English requirement** (explicit spelling rules)
 - **Coach reflection template** (what to include)
 
 ### 3. Response Generation
@@ -234,7 +234,7 @@ UI shows:
 ### For Organisations
 - **Higher completion rates** - conversational style feels less formal
 - **Better insights** - users open up more with warm tone
-- **Cultural fit** - UK English for UK/Commonwealth users
+- **Cultural fit** - Australian English for Australian users
 - **Professional brand** - warm but professional tone
 
 ---
@@ -291,7 +291,7 @@ Teams work in separate bubbles, limited communication, duplicated work
 1. **`convex/prompts.ts`** (95 lines changed)
    - Added conversational style guidelines
    - Added coach reflection instructions per step
-   - Updated to UK English spelling
+   - Updated to Australian English spelling
 
 2. **`convex/coach.ts`** (26 lines changed)
    - Added `coach_reflection` field to all 5 step schemas
@@ -313,7 +313,7 @@ Teams work in separate bubbles, limited communication, duplicated work
 - Still validated for safety and schema
 - **BUT** delivered in warm, human tone
 
-### UK English Throughout
+### Australian English Throughout
 - All system prompts
 - All schema descriptions
 - All generated responses
@@ -329,11 +329,11 @@ Teams work in separate bubbles, limited communication, duplicated work
 
 ## 🚀 Result
 
-Your CoachFlux MVP now delivers **professional, evidence-based coaching** in a **warm, conversational style** using **UK English spelling**. 
+Your CoachFlux MVP now delivers **professional, evidence-based coaching** in a **warm, conversational style** using **Australian English spelling**. 
 
 Users experience:
 - 💬 Human-like coach responses
-- 🇬🇧 Familiar UK spelling
+- 🇦🇺 Familiar Australian spelling
 - 🎯 Clear structured outcomes
 - 💡 Thoughtful reflective questions
 - ✨ Engaging, professional experience

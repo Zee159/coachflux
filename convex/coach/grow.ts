@@ -43,8 +43,7 @@ export class GROWCoach implements FrameworkCoach {
     } else if (stepName === "will") {
       return this.checkWillCompletion(payload, skipCount, loopDetected);
     } else if (stepName === "review") {
-      // Review step never auto-advances (frontend triggers generateReviewAnalysis)
-      return { shouldAdvance: false };
+      return this.checkReviewCompletion(payload);
     }
 
     // Default: advance if coach_reflection exists
@@ -203,6 +202,25 @@ export class GROWCoach implements FrameworkCoach {
     
     // Default: DO NOT advance
     // Backend controls all Will → Review transitions
+    return { shouldAdvance: false };
+  }
+
+  /**
+   * Review step completion logic
+   * NEW: Returns awaitingConfirmation when all 3 questions answered
+   */
+  private checkReviewCompletion(payload: ReflectionPayload): StepCompletionResult {
+    const hasKeyTakeaways = typeof payload["key_takeaways"] === "string" && payload["key_takeaways"].length > 0;
+    const hasImmediateStep = typeof payload["immediate_step"] === "string" && payload["immediate_step"].length > 0;
+    const hasConfidenceLevel = typeof payload["confidence_level"] === "number" && payload["confidence_level"] >= 1 && payload["confidence_level"] <= 5;
+
+    const isComplete = hasKeyTakeaways && hasImmediateStep && hasConfidenceLevel;
+    
+    // NEW: Instead of auto-generating report, set awaiting confirmation
+    if (isComplete) {
+      return { shouldAdvance: false, awaitingConfirmation: true };
+    }
+    
     return { shouldAdvance: false };
   }
 

@@ -58,7 +58,7 @@ All project documentation is organized in the [`docs/`](./docs/) folder:
 - Full GROW framework implementation
 - Session reports with structured data
 - Safety escalation system
-- UK English conversational tone
+- Australian English conversational tone
 
 **Phase 1.5: COMPASS Confidence-Optimized** ✅ Complete
 - 4-stage confidence-focused model (67% more efficient)

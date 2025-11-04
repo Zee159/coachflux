@@ -422,30 +422,35 @@ JSON STRUCTURE:
 
   review: `REVIEW - Wrap Up (User Questions Only)
 
-CRITICAL - FORMATTING ACTIONS IN COACH REFLECTION:
-If you reference actions in your coach_reflection, extract the action TEXT from the action objects.
-- WRONG: "Actions: [object Object], [object Object]"
-- CORRECT: "Actions: Call Joe for help, Sell unused items, Apply for assistance"
+CRITICAL - SUMMARIZE ALL ACTIONS FROM WILL STEP:
+Before asking questions, provide a summary of what was accomplished:
 
-Each action object has an "action" field containing the text. Extract it like this:
-actions.map(a => a.action)
+"Great! You've identified that [key_takeaways summary], and your immediate step is to [immediate_step summary].
 
-Ask THREE questions progressively:
+Here are the actions you've committed to:
+• [Action 1] - [owner] by [due date]
+• [Action 2] - [owner] by [due date]
+• [Action 3] - [owner] by [due date]"
+
+Extract action details from the Will step reflections (look for "actions" array in previous reflections).
+Format each action as: [action text] - [owner] by [due_days] days
+
+Ask TWO questions progressively:
 1. "What are your key takeaways from this session?"
 2. "What's your next immediate step?"
-3. "How confident are you feeling about this plan? (1-5)"
 
-QUESTION 3 - CONFIDENCE WITH EMOJIS:
-Ask: "How confident are you feeling about this plan?"
+AFTER Q2 - CONFIDENCE BUTTONS (NO TEXT OUTPUT):
+DO NOT list the confidence options in your coach_reflection.
+Simply ask: "How confident are you feeling about this plan?"
 
-Then show emoji scale:
+The system will automatically show 5 buttons with:
 1️⃣ Not confident - Need more support
 2️⃣ Slightly confident - Lots of uncertainty
 3️⃣ Moderately confident - Some concerns
 4️⃣ Quite confident - Ready to try
 5️⃣ Very confident - Excited to start
 
-Wait for user to respond with a number (1-5) or emoji.
+User will click a button (no need to type).
 
 EXTRACT (from user responses only):
 - key_takeaways: Their learnings (what THEY say)
@@ -475,16 +480,22 @@ Q2: "What's your next immediate step?"
 User: "Identify small tasks I can delegate"
 Extract: immediate_step
 
-Q3: "How confident are you feeling about this plan?
-
-1️⃣ Not confident - Need more support
-2️⃣ Slightly confident - Lots of uncertainty
-3️⃣ Moderately confident - Some concerns
-4️⃣ Quite confident - Ready to try
-5️⃣ Very confident - Excited to start"
-
-User: "4"
+Q3: User clicks confidence button (e.g., 4️⃣ Quite confident)
 Extract: confidence_level: 4
 
-✅ Step complete → Trigger report generation`
+🎯 STEP COMPLETION - CONFIRMATION SUMMARY:
+When ALL 3 questions are answered (key_takeaways + immediate_step + confidence_level), STOP asking questions.
+Instead, provide a brief summary and confirmation:
+
+coach_reflection: "Great! Let me summarize your session:
+• Key takeaway: [their key_takeaways]
+• Next step: [their immediate_step]  
+• Confidence: [confidence_level]/5
+
+Ready to generate your full report?"
+
+Then the system will show "Generate Report" and "Amend a Step" buttons.
+DO NOT ask more questions. DO NOT continue the conversation. Just summarize and confirm.
+
+✅ Step complete → Show confirmation buttons`
 };

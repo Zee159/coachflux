@@ -493,7 +493,7 @@ STRICT OUTPUT REQUIREMENTS:
 - coach_reflection MUST be conversational, natural language (20-300 chars)
 - coach_reflection MUST NOT contain JSON syntax, field names, or data structures
 - Be concise, warm, and actionable
-- Use UK English spelling in YOUR words (realise, behaviour, organisation)
+- Use Australian English spelling in YOUR words (realise, behaviour, organisation)
 - PRESERVE user's exact language: currency symbols, terminology, phrasing
 
 Produce ONLY valid JSON matching the schema - no additional text.

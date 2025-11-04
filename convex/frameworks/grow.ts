@@ -45,7 +45,7 @@ export const growFrameworkLegacy: LegacyFramework = {
     },
     {
       name: "reality",
-      system_objective: "Surface current constraints, facts, and risks without judgement.",
+      system_objective: "Surface current constraints, facts, and risks without judgment.",
       required_fields_schema: {
         type: "object",
         properties: {

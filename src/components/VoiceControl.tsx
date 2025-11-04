@@ -108,7 +108,7 @@ export function VoiceControl({
     
     recognition.continuous = true;
     recognition.interimResults = true; // Enable interim results for better UX
-    recognition.lang = 'en-GB'; // UK English
+    recognition.lang = 'en-AU'; // Australian English
     
     // Mobile optimization: limit alternatives to reduce processing
     if ('maxAlternatives' in recognition) {
