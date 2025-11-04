@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as checkKnowledge from "../checkKnowledge.js";
 import type * as coach_base from "../coach/base.js";
 import type * as coach_compass from "../coach/compass.js";
 import type * as coach_grow from "../coach/grow.js";
@@ -60,6 +61,7 @@ import type * as utils_cssCalculator from "../utils/cssCalculator.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  checkKnowledge: typeof checkKnowledge;
   "coach/base": typeof coach_base;
   "coach/compass": typeof coach_compass;
   "coach/grow": typeof coach_grow;
