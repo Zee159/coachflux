@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Utility functions to check and manage knowledge base
  */
@@ -43,13 +42,9 @@ export const clearAll = mutation({
   handler: async (ctx) => {
     const all = await ctx.db.query("knowledgeEmbeddings").collect();
     
-    console.log(`🗑️  Deleting ${all.length} knowledge entries...`);
-    
     for (const item of all) {
       await ctx.db.delete(item._id);
     }
-    
-    console.log(`✅ Deleted ${all.length} entries`);
     
     return {
       deleted: all.length,
@@ -71,14 +66,9 @@ export const clearManagementBible = mutation({
       )
       .collect();
     
-    console.log(`🗑️  Deleting ${managementScenarios.length} Management Bible scenarios...`);
-    
     for (const item of managementScenarios) {
-      console.log(`   Deleting: ${item.title}`);
       await ctx.db.delete(item._id);
     }
-    
-    console.log(`✅ Deleted ${managementScenarios.length} Management Bible entries`);
     
     return {
       deleted: managementScenarios.length,
