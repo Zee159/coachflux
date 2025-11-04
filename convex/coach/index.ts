@@ -1421,9 +1421,20 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
       skipCount,
       loopDetected,
       shouldAdvance: completionResult.shouldAdvance,
+      awaitingConfirmation: completionResult.awaitingConfirmation,
       capturedFields: capturedFields.length,
       missingFields: missingFields.length
     });
+
+    // NEW: Handle awaiting confirmation state
+    if (completionResult.awaitingConfirmation === true) {
+      await ctx.runMutation(api.mutations.setAwaitingConfirmation, {
+        sessionId: args.sessionId,
+        awaiting: true
+      });
+      console.log("✅ Step complete - awaiting user confirmation");
+      return { ok: true };
+    }
 
     let nextStepName = step.name;
     let sessionClosed = false;
