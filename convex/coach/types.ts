@@ -80,6 +80,7 @@ export interface CoachActionResult {
   nextStep?: string;
   payload?: ReflectionPayload;
   sessionClosed?: boolean;
+  triggerReportGeneration?: boolean;
 }
 
 

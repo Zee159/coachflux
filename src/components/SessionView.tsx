@@ -577,89 +577,9 @@ export function SessionView() {
     };
   }, [reflections, autoPlayVoice, speak]);
 
-  // Detect review step completion and trigger report generation (framework-aware)
-  useEffect(() => {
-    if (session?.step !== 'review' || session === null || session === undefined || reflections === null || reflections === undefined) {
-      return;
-    }
-
-    // Check if session is already closed
-    if (session.closedAt !== null && session.closedAt !== undefined) {
-      return;
-    }
-
-    // Check if we're already generating
-    if (generatingReport) {
-      return;
-    }
-
-    // Find the LAST review reflection (in case there are multiple)
-    const reviewReflections = reflections.filter((r) => r.step === 'review');
-    const reviewReflection = reviewReflections[reviewReflections.length - 1];
-    if (reviewReflection === undefined || reviewReflection === null) {
-      return;
-    }
-
-    const reviewPayload = reviewReflection.payload as Record<string, unknown>;
-    
-    // Check if analysis is already complete (to prevent duplicate generation)
-    const hasSummary = typeof reviewPayload['summary'] === 'string';
-    const hasAnalysis = typeof reviewPayload['ai_insights'] === 'string' && reviewPayload['ai_insights'].length > 0;
-    
-    // Framework-specific completion detection
-    let isReviewComplete = false;
-    
-    if (session.framework === 'GROW') {
-      // GROW: key_takeaways + immediate_step + confidence_level
-      const hasKeyTakeaways = typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length > 0;
-      const hasImmediateStep = typeof reviewPayload['immediate_step'] === 'string' && reviewPayload['immediate_step'].length > 0;
-      const hasConfidenceLevel = typeof reviewPayload['confidence_level'] === 'number' && reviewPayload['confidence_level'] >= 1 && reviewPayload['confidence_level'] <= 5;
-      isReviewComplete = hasKeyTakeaways && hasImmediateStep && hasConfidenceLevel;
-    } else if (session.framework === 'COMPASS') {
-      // COMPASS: primary_barrier + next_actions + confidence_level
-      const hasPrimaryBarrier = typeof reviewPayload['primary_barrier'] === 'string' && reviewPayload['primary_barrier'].length > 0;
-      const hasNextActions = Array.isArray(reviewPayload['next_actions']) && reviewPayload['next_actions'].length > 0;
-      const hasConfidenceLevel = typeof reviewPayload['confidence_level'] === 'number';
-      isReviewComplete = hasPrimaryBarrier && hasNextActions && hasConfidenceLevel;
-    }
-
-    // If review complete but no summary/analysis yet, trigger completion
-    if (isReviewComplete && !hasSummary && !hasAnalysis && !generatingReport) {
-      const closeSessionMutation = closeSessionRef.current;
-      const completeSession = async () => {
-        setGeneratingReport(true);
-
-        try {
-          if (session.framework === 'GROW') {
-            // GROW: Generate full AI analysis
-            const analysisResult = await generateReviewAnalysisAction({
-              sessionId: session._id,
-              orgId: session.orgId,
-              userId: session.userId
-            });
-
-            if (analysisResult.ok) {
-              setNotification({ type: "success", message: "🎉 Coaching session complete! Your report is now ready." });
-              // Voice synthesis will be triggered automatically by the useEffect when the new reflection arrives
-            } else {
-              setNotification({ type: "error", message: `Report generation failed: ${analysisResult.message ?? 'Unknown error'}` });
-            }
-          } else if (session.framework === 'COMPASS' && closeSessionMutation !== undefined) {
-            // COMPASS: Just close the session (no AI analysis needed)
-            await closeSessionMutation({ sessionId: session._id });
-            setNotification({ type: "success", message: "🎉 COMPASS session complete! Your report is now ready." });
-          }
-        } catch (error: unknown) {
-          console.error("Session completion error:", error);
-          setNotification({ type: "error", message: "Failed to complete session. Please try again." });
-        } finally {
-          setGeneratingReport(false);
-        }
-      };
-
-      void completeSession();
-    }
-  }, [session, reflections, generatingReport, generateReviewAnalysisAction]);
+  // NOTE: Report generation is now ONLY triggered by button click (handleGenerateReport)
+  // This useEffect was removed because it was auto-triggering report generation
+  // when all review questions were answered, bypassing the awaiting confirmation state
 
 
 
@@ -1814,17 +1734,42 @@ export function SessionView() {
                                 stepName={reflection.step}
                                 nextStepName={getNextStepName(reflection.step)}
                                 onProceed={() => {
-                                  void nextStepAction({
-                                    orgId: session.orgId,
-                                    userId: session.userId,
-                                    sessionId: session._id,
-                                    stepName: reflection.step,
-                                    userTurn: '',
-                                    structuredInput: {
-                                      type: 'step_confirmation',
-                                      data: { action: 'proceed' }
+                                  void (async () => {
+                                    const result = await nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: reflection.step,
+                                      userTurn: '',
+                                      structuredInput: {
+                                        type: 'step_confirmation',
+                                        data: { action: 'proceed' }
+                                      }
+                                    });
+                                    
+                                    // Check if backend signaled to trigger report generation (GROW review step)
+                                    if (result !== null && result !== undefined && 'triggerReportGeneration' in result && result.triggerReportGeneration === true) {
+                                      setGeneratingReport(true);
+                                      try {
+                                        const analysisResult = await generateReviewAnalysisAction({
+                                          sessionId: session._id,
+                                          orgId: session.orgId,
+                                          userId: session.userId
+                                        });
+                                        
+                                        if (analysisResult.ok) {
+                                          setNotification({ type: "success", message: "🎉 Coaching session complete! Your report is now ready." });
+                                        } else {
+                                          setNotification({ type: "error", message: `Report generation failed: ${analysisResult.message ?? 'Unknown error'}` });
+                                        }
+                                      } catch (error: unknown) {
+                                        console.error("Report generation error:", error);
+                                        setNotification({ type: "error", message: "Failed to generate report. Please try again." });
+                                      } finally {
+                                        setGeneratingReport(false);
+                                      }
                                     }
-                                  });
+                                  })();
                                 }}
                                 onAmend={() => {
                                   void nextStepAction({

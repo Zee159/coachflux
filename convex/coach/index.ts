@@ -582,9 +582,25 @@ async function handleStructuredInput(
           awaiting: false
         });
         
-        // Determine next step based on framework
         const framework = session.framework;
         const currentStep = session.step;
+        
+        // Special handling for review step - trigger report generation instead of advancing
+        if (currentStep === 'review') {
+          if (framework === 'GROW') {
+            // GROW: Generate full AI analysis via the generateReviewAnalysis action
+            // This will be called from the frontend after this returns
+            return { ok: true, message: 'Review confirmed, ready for report generation', triggerReportGeneration: true };
+          } else if (framework === 'COMPASS') {
+            // COMPASS: Just close the session (no AI analysis needed)
+            await ctx.runMutation(api.mutations.closeSession, {
+              sessionId: args.sessionId
+            });
+            return { ok: true, message: 'COMPASS session complete!' };
+          }
+        }
+        
+        // For non-review steps, advance to next step
         const nextStep = getNextStepForFramework(currentStep, framework);
         
         // Advance to next step
