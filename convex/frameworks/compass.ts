@@ -68,7 +68,7 @@ export const compassFramework: FrameworkDefinition = {
       },
       
       coaching_questions: [
-        'Does this framework feel right for what you want to work on today?',
+        'Does this framework feel right for what you want to explore in this session?',
         'On a scale of 1-10, how confident do you feel about navigating this change successfully?',
         'How clear are you on your specific next steps? (1-10 - only if confidence >= 8)',
         'How would you describe your current mindset about this change?'

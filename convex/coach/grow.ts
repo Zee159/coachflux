@@ -238,7 +238,7 @@ export class GROWCoach implements FrameworkCoach {
         will: "Perfect! You've committed to specific actions that contribute to your success criteria. Let's review everything together.",
       },
       openers: {
-        goal: "What goal or challenge would you like to work on today?",
+        goal: "What goal or challenge would you like to explore in this session?",
         reality: "We clarified your goal and success criteria. Now let's map the current reality — facts, constraints, resources and risks — so your options are grounded and aligned with your success criteria. After this we'll explore options together. What's your current situation, and what constraints are you facing?",
         options: "With your reality on the table, let's generate possibilities that directly contribute to your success criteria. First share one option, then we'll explore pros and cons. When you're ready we'll commit to action in Will. What's one option you're considering for achieving your success criteria?",
         will: "You've considered options aligned with your success criteria. Now let's commit to action: choose the approach and define specific steps with owner and timeline that will help you achieve your success criteria. Next we'll review takeaways. Which option feels right for you for achieving your success criteria?",

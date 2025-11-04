@@ -6,7 +6,7 @@
 
 export const GROW_COACHING_QUESTIONS: Record<string, string[]> = {
   introduction: [
-    "Does this framework feel right for what you want to work on today?"
+    "Does this framework feel right for what you want to explore in this session?"
   ],
   goal: [
     "What outcomes would you like to achieve from this conversation?",

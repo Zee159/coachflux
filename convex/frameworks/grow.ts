@@ -194,7 +194,7 @@ export const growFramework: FrameworkDefinition = {
       },
       system_prompt: 'You are a GROW coach. Welcome the user and explain the framework.',
       coaching_questions: [
-        'Does this framework feel right for what you want to work on today?'
+        'Does this framework feel right for what you want to explore in this session?'
       ],
       guardrails: [
         'DO NOT start Goal phase without user consent',
