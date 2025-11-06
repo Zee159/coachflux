@@ -1603,15 +1603,22 @@ export function SessionView() {
                             );
                           })()}
 
-                          {/* Current Confidence Scale (COMPASS Ownership Step) */}
+                          {/* Ownership Confidence Scale (COMPASS Ownership Step - Final Re-check Only) */}
                           {reflection.step === 'ownership' && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
-                            const currentConfidence = payload['current_confidence'];
+                            const ownershipConfidence = payload['ownership_confidence'];
                             const coachReflection = String(payload['coach_reflection'] ?? '');
                             
-                            // Check if AI is asking for confidence (1-10 scale)
-                            // Triggers for both initial question and final re-check ("Where's your confidence now")
-                            const isAskingForConfidence = (coachReflection.includes('1-10') || coachReflection.includes('/10') || coachReflection.toLowerCase().includes('where')) &&
+                            // Only show if: ownership_confidence not yet captured AND AI is asking for it
+                            if (ownershipConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for confidence re-check (final question in Ownership)
+                            // This is Q7 in the Standard Path - "Where's your confidence now?"
+                            const isAskingForConfidence = (coachReflection.includes('1-10') || coachReflection.includes('/10')) &&
+                                                         (coachReflection.toLowerCase().includes('where') || 
+                                                          coachReflection.toLowerCase().includes('now')) &&
                                                          (coachReflection.toLowerCase().includes('confident') ||
                                                           coachReflection.toLowerCase().includes('confidence'));
                             
@@ -1619,22 +1626,10 @@ export function SessionView() {
                               return null;
                             }
                             
-                            // Show selector if asking for initial confidence OR final re-check
-                            // For initial: current_confidence should be undefined
-                            // For final: current_confidence exists, but we're asking "where's your confidence now"
-                            const isInitialQuestion = currentConfidence === undefined;
-                            const isFinalRecheck = currentConfidence !== undefined && 
-                                                  (coachReflection.toLowerCase().includes('where') || 
-                                                   coachReflection.toLowerCase().includes('now'));
-                            
-                            if (!isInitialQuestion && !isFinalRecheck) {
-                              return null;
-                            }
-                            
                             return (
                               <div className="mt-4">
                                 <ConfidenceScaleSelector
-                                  question={isFinalRecheck ? "Where's your confidence now? (1-10)" : "On a scale of 1-10, how confident do you feel?"}
+                                  question="Where's your confidence now? (1-10)"
                                   colorScheme="confidence"
                                   minLabel="Not confident at all"
                                   maxLabel="Very confident"
@@ -2001,19 +1996,19 @@ export function SessionView() {
                             }
                             
                             const initialConf = payload['initial_confidence'];
-                            const currentConf = payload['current_confidence'];
+                            const ownershipConf = payload['ownership_confidence'];
                             const finalConf = payload['final_confidence'];
                             
-                            // Ownership stage: Show current confidence vs initial
+                            // Ownership stage: Show ownership confidence vs initial
                             if (reflection.step === 'ownership' && 
                                 typeof initialConf === 'number' &&
-                                typeof currentConf === 'number' &&
-                                currentConf > initialConf) {
+                                typeof ownershipConf === 'number' &&
+                                ownershipConf > initialConf) {
                               return (
                                 <div className="mt-3">
                                   <ConfidenceTracker
                                     initialConfidence={initialConf}
-                                    currentConfidence={currentConf}
+                                    currentConfidence={ownershipConf}
                                     stage="ownership"
                                   />
                                 </div>

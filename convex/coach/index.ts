@@ -1541,7 +1541,7 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
     // COMPASS: Track confidence progression and nudges
     if (session.framework === 'COMPASS') {
       const initialConfidence = payload['initial_confidence'] as number | undefined;
-      const currentConfidence = payload['current_confidence'] as number | undefined;
+      const ownershipConfidence = payload['ownership_confidence'] as number | undefined;
       const finalConfidence = payload['final_confidence'] as number | undefined;
       
       if (initialConfidence !== undefined && finalConfidence !== undefined) {
@@ -1550,8 +1550,7 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
         
         payload['confidence_tracking'] = {
           initial_confidence: initialConfidence,
-          post_clarity_confidence: step.name === 'ownership' ? currentConfidence : undefined,
-          post_ownership_confidence: step.name === 'mapping' ? currentConfidence : undefined,
+          ownership_confidence: ownershipConfidence,
           final_confidence: finalConfidence,
           confidence_change: confidenceChange,
           confidence_percent_increase: confidencePercentIncrease

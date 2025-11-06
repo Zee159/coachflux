@@ -253,12 +253,12 @@ export class COMPASSCoach implements FrameworkCoach {
         context += `3. DO NOT extract personal_benefit until you have ASKED Q5 and the user has ANSWERED it.\n`;
         context += `4. DO NOT extract past_success until you have ASKED Q6 and the user has ANSWERED it.\n`;
         context += `5. Opportunistic extraction is ONLY allowed if the user EXPLICITLY mentions benefits or past success in their response.\n`;
-        context += `6. If you extract personal_benefit opportunistically, you MUST acknowledge it and SKIP Q5.\n`;
+        context += `6. If you extract personal_benefit opportunistically, you MUST acknowledge it and SKIP Q4.\n`;
         context += `7. DO NOT advance to mapping until you have explicitly asked for and received:\n`;
-        context += `   - current_confidence (asked and answered)\n`;
-        context += `   - personal_benefit (user's own words about what they could gain)\n`;
-        context += `   - past_success (user's actual story of handling change before)\n`;
-        context += `8. If you only have the opener message and user says "ok", ask the FIRST QUESTION now.\n`;
+        context += `   - ownership_confidence (final confidence after transformation - Q7)\n`;
+        context += `   - personal_benefit (user's own words about what they could gain - Q4)\n`;
+        context += `   - past_success (user's actual story of handling change before - Q5)\n`;
+        context += `8. If you only have the opener message and user says "ok", ask Q1 (Explore Fears) now.\n`;
       }
     }
 
