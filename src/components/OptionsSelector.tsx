@@ -64,6 +64,13 @@ export const OptionsSelector: React.FC<OptionsSelectorProps> = ({
         </div>
       )}
 
+      {/* Helper Text - Top */}
+      <div className="mb-3 px-2">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          💡 Tip: You can select multiple options to create a comprehensive action plan
+        </p>
+      </div>
+
       {/* Options List */}
       <div 
         className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden"

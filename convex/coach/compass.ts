@@ -14,11 +14,17 @@ export class COMPASSCoach implements FrameworkCoach {
    */
   getRequiredFields(): Record<string, string[]> {
     return {
-      // Note: initial_action_clarity is OPTIONAL (only asked if initial_confidence >= 8)
-      introduction: ["initial_confidence", "initial_mindset_state"],
-      clarity: ["change_description", "sphere_of_control"],
-      // Note: initial_confidence is from introduction, not captured again in ownership
-      ownership: ["current_confidence", "personal_benefit"],
+      introduction: ["user_consent_given"],
+      clarity: [
+        "change_description",
+        "personal_impact",
+        "clarity_score",
+        "initial_confidence",
+        "initial_mindset_state",
+        "control_level",
+        "sphere_of_control"
+      ],
+      ownership: ["personal_benefit", "ownership_confidence"],
       mapping: ["committed_action", "action_day", "action_time"],
       practice: [
         "action_commitment_confidence",
@@ -42,47 +48,54 @@ export class COMPASSCoach implements FrameworkCoach {
     _loopDetected: boolean
   ): StepCompletionResult {
     if (stepName === "introduction") {
-      // Requires CSS baseline measurements
-      const hasInitialConfidence = typeof payload["initial_confidence"] === "number" && payload["initial_confidence"] >= 1 && payload["initial_confidence"] <= 10;
-      const hasInitialActionClarity = typeof payload["initial_action_clarity"] === "number" && payload["initial_action_clarity"] >= 1 && payload["initial_action_clarity"] <= 10;
-      const hasInitialMindsetState = typeof payload["initial_mindset_state"] === "string" && payload["initial_mindset_state"].length > 0;
-
-      const completedFields = [hasInitialConfidence, hasInitialActionClarity, hasInitialMindsetState].filter(Boolean).length;
-      return { shouldAdvance: completedFields >= 2 }; // At least 2 out of 3 CSS baseline fields
+      // Just requires consent
+      const hasConsent = typeof payload["user_consent_given"] === "boolean" && payload["user_consent_given"] === true;
+      return { shouldAdvance: hasConsent };
     } else if (stepName === "clarity") {
-      // Requires change_description, sphere_of_control, AND meaningful conversation
+      // NEW SCHEMA: 7 mandatory fields + 1 optional (additional_context)
       const hasChangeDescription = typeof payload["change_description"] === "string" && payload["change_description"].length > 0;
-      const hasSphereOfControl = typeof payload["sphere_of_control"] === "string" && payload["sphere_of_control"].length > 0;
+      const hasPersonalImpact = typeof payload["personal_impact"] === "string" && payload["personal_impact"].length > 0;
+      const hasClarityScore = typeof payload["clarity_score"] === "number" && payload["clarity_score"] >= 1 && payload["clarity_score"] <= 5;
+      const hasInitialConfidence = typeof payload["initial_confidence"] === "number" && payload["initial_confidence"] >= 1 && payload["initial_confidence"] <= 10;
+      const hasInitialMindsetState = typeof payload["initial_mindset_state"] === "string" && payload["initial_mindset_state"].length > 0;
+      const controlLevel = payload["control_level"];
+      const hasControlLevel = typeof controlLevel === "string" && ["high", "mixed", "low"].includes(controlLevel);
+      const hasSphereOfControl = typeof payload["sphere_of_control"] === "string" && payload["sphere_of_control"].length > 15;
       
-      // Check if sphere_of_control is meaningful (not just resignation like "accept my fate")
+      // Check if sphere_of_control is meaningful (not just resignation)
       const sphereOfControl = payload["sphere_of_control"] as string | undefined;
       const isMeaningfulControl = typeof sphereOfControl === "string" &&
-        sphereOfControl.length > 15 && // More than just a short phrase
-        !sphereOfControl.toLowerCase().includes("accept") && // Not resignation
-        !sphereOfControl.toLowerCase().includes("nothing") && // Not helplessness
-        !sphereOfControl.toLowerCase().includes("can't control"); // Not pure negativity
+        !sphereOfControl.toLowerCase().includes("accept") &&
+        !sphereOfControl.toLowerCase().includes("nothing") &&
+        !sphereOfControl.toLowerCase().includes("can't control");
       
-      // Also check if we have at least 2 reflections in this step (ensures conversation happened)
-      const clarityReflections = reflections.filter(r => r.step === 'clarity');
-      const hasMinimumConversation = clarityReflections.length >= 2;
+      // Count completed mandatory fields
+      const completedFields = [
+        hasChangeDescription,
+        hasPersonalImpact,
+        hasClarityScore,
+        hasInitialConfidence,
+        hasInitialMindsetState,
+        hasControlLevel,
+        hasSphereOfControl && isMeaningfulControl
+      ].filter(Boolean).length;
 
-      const isComplete = hasChangeDescription && hasSphereOfControl && isMeaningfulControl && hasMinimumConversation;
+      // Require all 7 mandatory fields
+      const isComplete = completedFields === 7;
       
-      // NEW: Instead of auto-advancing, set awaiting confirmation
       if (isComplete) {
         return { shouldAdvance: false, awaitingConfirmation: true };
       }
       
       return { shouldAdvance: false };
     } else if (stepName === "ownership") {
-      // High-confidence branching: requires fewer fields if initial_confidence >= 8
-      // Get initial_confidence from introduction step (not current payload)
-      const introReflections = reflections.filter(r => r.step === 'introduction');
-      const latestIntro = introReflections[introReflections.length - 1];
-      const initialConfidence = latestIntro?.payload?.['initial_confidence'] as number | undefined;
+      // Get initial_confidence from CLARITY step (moved from introduction)
+      const clarityReflections = reflections.filter(r => r.step === 'clarity');
+      const latestClarity = clarityReflections[clarityReflections.length - 1];
+      const initialConfidence = latestClarity?.payload?.['initial_confidence'] as number | undefined;
       const isHighConfidence = typeof initialConfidence === "number" && initialConfidence >= 8;
 
-      const hasCurrentConfidence = typeof payload["current_confidence"] === "number" && payload["current_confidence"] >= 1 && payload["current_confidence"] <= 10;
+      const hasOwnershipConfidence = typeof payload["ownership_confidence"] === "number" && payload["ownership_confidence"] >= 1 && payload["ownership_confidence"] <= 10;
       const hasPersonalBenefit = typeof payload["personal_benefit"] === "string" && payload["personal_benefit"].length > 0;
       
       // Strengthen past_success validation - must have both achievement and strategy
@@ -101,20 +114,18 @@ export class COMPASSCoach implements FrameworkCoach {
       if (isHighConfidence) {
         // High-confidence path: 3 questions (confidence_source, personal_benefit, past_success)
         const hasConfidenceSource = typeof payload["confidence_source"] === "string" && payload["confidence_source"].length > 0;
-        const hasMinConversationHigh = ownershipReflections.length >= 3; // At least 3 exchanges for high-confidence path
-        const isComplete = hasConfidenceSource && hasPersonalBenefit && hasPastSuccess && hasMinConversationHigh;
+        const hasMinConversationHigh = ownershipReflections.length >= 3;
+        const isComplete = hasConfidenceSource && hasPersonalBenefit && hasPastSuccess && hasOwnershipConfidence && hasMinConversationHigh;
         
-        // NEW: Instead of auto-advancing, set awaiting confirmation
         if (isComplete) {
           return { shouldAdvance: false, awaitingConfirmation: true };
         }
         return { shouldAdvance: false };
       } else {
-        // Standard path: 8 questions (requires current_confidence, personal_benefit, past_success, and meaningful conversation)
-        const hasMinConversationStandard = ownershipReflections.length >= 5; // At least 5 exchanges for standard path
-        const isComplete = hasCurrentConfidence && hasPersonalBenefit && hasPastSuccess && hasMinConversationStandard;
+        // Standard path: requires ownership_confidence, personal_benefit, past_success
+        const hasMinConversationStandard = ownershipReflections.length >= 5;
+        const isComplete = hasOwnershipConfidence && hasPersonalBenefit && hasPastSuccess && hasMinConversationStandard;
         
-        // NEW: Instead of auto-advancing, set awaiting confirmation
         if (isComplete) {
           return { shouldAdvance: false, awaitingConfirmation: true };
         }

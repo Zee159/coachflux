@@ -34,13 +34,25 @@ export function extractCompassScores(
   let totalScore = 0;
   
   // Extract confidence progression (primary metric)
-  const introReflection = reflections.find(r => r.step === 'introduction');
+  // CSS BASELINE now from CLARITY step (moved from introduction)
+  const clarityReflection = reflections.find(r => r.step === 'clarity');
+  const ownershipReflection = reflections.find(r => r.step === 'ownership');
   const practiceReflection = reflections.find(r => r.step === 'practice');
   
-  if (introReflection !== undefined) {
-    const initialConfidence = getNumber(introReflection.payload, 'initial_confidence');
+  if (clarityReflection !== undefined) {
+    const initialConfidence = getNumber(clarityReflection.payload, 'initial_confidence');
     if (initialConfidence !== undefined) {
       scores['initial_confidence'] = initialConfidence;
+    }
+  }
+  
+  // Extract ownership_confidence (transformation point)
+  if (ownershipReflection !== undefined) {
+    const ownershipConfidence = getNumber(ownershipReflection.payload, 'ownership_confidence');
+    if (ownershipConfidence !== undefined) {
+      scores['ownership_confidence'] = ownershipConfidence;
+      totalScore += ownershipConfidence;
+      scoreCount++;
     }
   }
   
@@ -60,14 +72,19 @@ export function extractCompassScores(
     }
   }
   
-  // Extract optional clarity score
-  const clarityReflection = reflections.find(r => r.step === 'clarity');
+  // Extract clarity score
   if (clarityReflection !== undefined) {
     const score = getNumber(clarityReflection.payload, 'clarity_score');
     if (score !== undefined) {
       scores.clarity_score = score;
       totalScore += score;
       scoreCount++;
+    }
+    
+    // Extract control_level (CSS insight)
+    const controlLevel = getString(clarityReflection.payload, 'control_level');
+    if (controlLevel !== undefined) {
+      scores['control_level'] = controlLevel;
     }
   }
   
@@ -89,10 +106,10 @@ export function extractCompassTransformation(
   let pivotMoment: PivotMoment | null = null;
   const unlockFactors: string[] = [];
   
-  // Extract initial mindset state from introduction (CSS baseline)
-  const introReflection = reflections.find(r => r.step === 'introduction');
-  if (introReflection !== undefined && introReflection !== null) {
-    const state = getString(introReflection.payload, 'initial_mindset_state');
+  // Extract initial mindset state from CLARITY (CSS baseline - moved from introduction)
+  const clarityReflection = reflections.find(r => r.step === 'clarity');
+  if (clarityReflection !== undefined && clarityReflection !== null) {
+    const state = getString(clarityReflection.payload, 'initial_mindset_state');
     if (state !== undefined) {
       // Map mindset_state to EmotionalState
       initialState = state as EmotionalState;

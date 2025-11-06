@@ -216,7 +216,8 @@ export function replaceDynamicValues(
   // Replace numeric placeholders
   const numericFields = [
     'initial_confidence', 
-    'current_confidence', 
+    'current_confidence',  // GROW only
+    'ownership_confidence',  // COMPASS only
     'final_confidence',
     'initial_action_clarity', 
     'final_action_clarity', 
@@ -255,17 +256,27 @@ export function replaceDynamicValues(
   // Calculate and replace derived values
   const initial = allData['initial_confidence'] as number | undefined;
   const final = allData['final_confidence'] as number | undefined;
-  const current = allData['current_confidence'] as number | undefined;
+  const current = allData['current_confidence'] as number | undefined;  // GROW only
+  const ownership = allData['ownership_confidence'] as number | undefined;  // COMPASS only
   
+  // COMPASS: initial_confidence (Clarity) → ownership_confidence (Ownership)
+  if (typeof initial === 'number' && typeof ownership === 'number') {
+    const increase = ownership - initial;
+    result = result.replace(/\{ownership_increase\}/g, String(increase));
+    result = result.replace(/\{confidence_transformation\}/g, String(increase));
+  }
+  
+  // GROW: initial_confidence → current_confidence (Options)
+  if (typeof initial === 'number' && typeof current === 'number') {
+    const increase = current - initial;
+    result = result.replace(/\{options_increase\}/g, String(increase));
+  }
+  
+  // Final increase (both frameworks)
   if (typeof initial === 'number' && typeof final === 'number') {
     const increase = final - initial;
     result = result.replace(/\{increase\}/g, String(increase));
     result = result.replace(/\{confidence_increase\}/g, String(increase));
-  }
-  
-  if (typeof initial === 'number' && typeof current === 'number') {
-    const increase = current - initial;
-    result = result.replace(/\{ownership_increase\}/g, String(increase));
   }
   
   return result;

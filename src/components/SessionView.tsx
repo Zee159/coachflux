@@ -16,6 +16,7 @@ import { NudgeIndicator } from "./NudgeDisplay";
 import { ConfidenceTracker } from "./ConfidenceTracker";
 import { YesNoSelector } from "./YesNoSelector";
 import { OptionsSelector } from "./OptionsSelector";
+import { ControlLevelSelector } from "./ControlLevelSelector";
 import { ActionValidator } from "./ActionValidator";
 import { ConfidenceScaleSelector } from "./ConfidenceScaleSelector";
 import { MindsetSelector } from "./MindsetSelector";
@@ -1338,6 +1339,48 @@ export function SessionView() {
                                       sessionId: session._id,
                                       stepName: 'clarity',
                                       userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Control Level Selector (COMPASS Clarity Step) */}
+                          {reflection.step === 'clarity' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const controlLevel = payload['control_level'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: control_level not yet captured, AI is asking for it
+                            if (controlLevel !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking about control level
+                            const isAskingForControl = coachReflection.toLowerCase().includes('control') &&
+                                                      (coachReflection.toLowerCase().includes('how much') ||
+                                                       coachReflection.toLowerCase().includes('level'));
+                            
+                            if (!isAskingForControl) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ControlLevelSelector
+                                  coachMessage={coachReflection}
+                                  onSubmit={(level) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'clarity',
+                                      userTurn: `Selected control level: ${level}`,
+                                      structuredInput: {
+                                        type: 'control_level_selection',
+                                        data: { control_level: level }
+                                      }
                                     });
                                   }}
                                 />

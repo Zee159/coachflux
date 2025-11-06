@@ -42,36 +42,14 @@ export const compassFramework: FrameworkDefinition = {
         type: 'object',
         properties: {
           user_consent_given: { type: 'boolean' },
-          // CSS BASELINE MEASUREMENTS
-          // initial_confidence: PRIMARY METRIC - baseline confidence level
-          initial_confidence: { 
-            type: 'integer', 
-            minimum: 1, 
-            maximum: 10
-          },
-          // initial_action_clarity: CONDITIONAL - only for high-confidence users (>=8)
-          initial_action_clarity: { 
-            type: 'integer', 
-            minimum: 1, 
-            maximum: 10
-          },
-          // initial_mindset_state: MANDATORY - baseline mindset state (resistant/neutral/open/engaged)
-          initial_mindset_state: { 
-            type: 'string',
-            maxLength: 20
-          },
           coach_reflection: { type: 'string', minLength: 20, maxLength: 600 }
         },
-        // Note: Only coach_reflection is required. CSS baseline fields are captured progressively.
         required: ['coach_reflection'],
         additionalProperties: false
       },
       
       coaching_questions: [
-        'Does this framework feel right for what you want to explore in this session?',
-        'On a scale of 1-10, how confident do you feel about navigating this change successfully?',
-        'How clear are you on your specific next steps? (1-10 - only if confidence >= 8)',
-        'How would you describe your current mindset about this change?'
+        'Does this framework feel right for what you want to explore in this session?'
       ],
       
       guardrails: [
@@ -130,24 +108,36 @@ Move to Ownership when clarity is established.`,
             type: 'string', 
             maxLength: 300
           },
-          sphere_of_control: {
+          personal_impact: {
             type: 'string',
             maxLength: 300
-          },
-          supporters: {
-            type: 'array',
-            items: { type: 'string' },
-            maxItems: 10
-          },
-          resistors: {
-            type: 'array',
-            items: { type: 'string' },
-            maxItems: 10
           },
           clarity_score: { 
             type: 'integer',
             minimum: 1, 
             maximum: 5
+          },
+          // CSS BASELINE MEASUREMENTS (moved from Introduction)
+          initial_confidence: { 
+            type: 'integer', 
+            minimum: 1, 
+            maximum: 10
+          },
+          initial_mindset_state: { 
+            type: 'string',
+            maxLength: 20
+          },
+          control_level: {
+            type: 'string',
+            enum: ['high', 'mixed', 'low']
+          },
+          sphere_of_control: {
+            type: 'string',
+            maxLength: 300
+          },
+          additional_context: {
+            type: 'string',
+            maxLength: 500
           },
           coach_reflection: { 
             type: 'string', 
@@ -160,10 +150,14 @@ Move to Ownership when clarity is established.`,
       },
 
       coaching_questions: [
-        'What specific change are you dealing with?',
+        'What workplace change are you navigating right now?',
+        'How is this affecting you personally - your day-to-day work, your role, or your team?',
         'On a scale of 1-5, how well do you understand what\'s happening and why?',
-        'Who seems to be supporting this change, and who might be resisting it?',
-        'What parts of this can you control vs. what\'s beyond your control?'
+        'How confident do you feel about navigating this successfully? (1-10)',
+        'How would you describe your current mindset - resistant, neutral, open, or engaged?',
+        'Thinking about this change, how much control do you have? (high/mixed/low)',
+        'What specifically can you control or influence?',
+        'Is there anything else about this change that feels important to mention?'
       ],
 
       guardrails: [
@@ -232,15 +226,14 @@ User should have confidence of 6+/10 and see at least ONE personal benefit.`,
       required_fields_schema: {
         type: 'object',
         properties: {
-          // Note: initial_confidence is from introduction step, not captured here
-          current_confidence: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 10
-          },
+          // Note: initial_confidence is from clarity step
           personal_benefit: {
             type: 'string',
             maxLength: 200
+          },
+          primary_fears: {
+            type: 'string',
+            maxLength: 300
           },
           past_success: {
             type: 'object',
@@ -266,24 +259,29 @@ User should have confidence of 6+/10 and see at least ONE personal benefit.`,
             type: 'string',
             maxLength: 200
           },
+          // ownership_confidence: Final confidence after transformation (shows +4 point increase)
+          ownership_confidence: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 10
+          },
           coach_reflection: {
             type: 'string',
             minLength: 20,
             maxLength: 300
           }
         },
-        required: ['current_confidence', 'personal_benefit', 'coach_reflection'],
+        required: ['personal_benefit', 'ownership_confidence', 'coach_reflection'],
         additionalProperties: false
       },
 
       coaching_questions: [
-        'On a scale of 1-10, how confident do you feel about navigating this successfully?',
-        'What\'s making you feel unconfident or worried?',
+        'What\'s making you feel unconfident or worried about this change?',
         'What\'s the cost if you stay stuck in resistance?',
         'What could you gain personally if you adapt well to this?',
         'Tell me about a time you successfully handled change before.',
         'What strengths from that experience can you use now?',
-        'Where\'s your confidence now, 1-10?'
+        'After everything we\'ve discussed, where\'s your confidence now? (1-10)'
       ],
 
       guardrails: [

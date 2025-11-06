@@ -1539,9 +1539,9 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
         try {
           // Re-fetch reflections including this turn
           const reflections = await ctx.runQuery(api.queries.getSessionReflections, { sessionId: args.sessionId });
-          // Get CSS baseline from introduction step (not ownership)
-          const introList = reflections.filter((r: { step: string }) => r.step === 'introduction');
-          const introduction = introList.length > 0 ? introList[introList.length - 1] : undefined;
+          // Get CSS baseline from CLARITY step (moved from introduction)
+          const clarityList = reflections.filter((r: { step: string }) => r.step === 'clarity');
+          const clarity = clarityList.length > 0 ? clarityList[clarityList.length - 1] : undefined;
           const practiceList = reflections.filter((r: { step: string }) => r.step === 'practice');
           const practice = practiceList.length > 0 ? practiceList[practiceList.length - 1] : undefined;
 
@@ -1568,10 +1568,10 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
             return allowed.includes(s as MindsetState) ? (s as MindsetState) : 'neutral';
           };
 
-          // Get CSS baseline from introduction step
-          const initialConfidence = introduction !== undefined && introduction !== null ? getNum(introduction.payload, 'initial_confidence') : undefined;
-          const initialActionClarity = introduction !== undefined && introduction !== null ? getNum(introduction.payload, 'initial_action_clarity') : undefined;
-          const initialMindsetStr = introduction !== undefined && introduction !== null ? getStr(introduction.payload, 'initial_mindset_state') : undefined;
+          // Get CSS baseline from clarity step (moved from introduction)
+          const initialConfidence = clarity !== undefined && clarity !== null ? getNum(clarity.payload, 'initial_confidence') : undefined;
+          const initialActionClarity = clarity !== undefined && clarity !== null ? getNum(clarity.payload, 'initial_action_clarity') : undefined;
+          const initialMindsetStr = clarity !== undefined && clarity !== null ? getStr(clarity.payload, 'initial_mindset_state') : undefined;
 
           const finalConfidence = practice !== undefined && practice !== null ? getNum(practice.payload, 'final_confidence') : undefined;
           const finalActionClarity = practice !== undefined && practice !== null ? getNum(practice.payload, 'final_action_clarity') : undefined;
