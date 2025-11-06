@@ -1262,8 +1262,9 @@ export function SessionView() {
                           {/* Safety Pause Choice Buttons */}
                           {isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
-                            const safetyChoiceRequired = payload['safety_choice_required'] === true;
-                            return safetyChoiceRequired;
+                            const hasSafetyLevel = payload['safety_level'] !== undefined && payload['safety_level'] !== null;
+                            const isSafetyPauseStep = reflection.step === 'safety_pause';
+                            return hasSafetyLevel || isSafetyPauseStep;
                           })() && (
                             <div className="mt-6 space-y-3">
                               <div className="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 rounded-lg p-4">
