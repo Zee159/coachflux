@@ -48,6 +48,8 @@ export default defineSchema({
     escalated: v.optional(v.boolean()), // Session flagged for escalation to HR/specialist
     safetyPaused: v.optional(v.boolean()), // ⚠️ FIX P0-4: Session paused due to safety concern
     safetyPauseReason: v.optional(v.string()), // Reason for safety pause
+    pending_user_turn: v.optional(v.string()), // Stored user input awaiting resume after safety pause
+    pending_user_step: v.optional(v.string()), // Step associated with the pending user turn
     rating: v.optional(v.number()), // User satisfaction rating 1-5 stars
     ratingSubmittedAt: v.optional(v.number()), // When rating was submitted
   }).index("byUser", ["userId"]),

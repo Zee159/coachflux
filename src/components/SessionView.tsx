@@ -1252,6 +1252,59 @@ export function SessionView() {
                             );
                           })()}
 
+                          {/* Safety Pause Choice Buttons */}
+                          {reflection.step === 'safety_pause' && isLastReflection && !isSessionComplete && (
+                            <div className="mt-6 space-y-3">
+                              <div className="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                                <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-3">
+                                  Would you like to continue our coaching conversation or take a break?
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                  <button
+                                    onClick={() => {
+                                      void nextStepAction({
+                                        orgId: session.orgId,
+                                        userId: session.userId,
+                                        sessionId: session._id,
+                                        stepName: reflection.step,
+                                        userTurn: '',
+                                        structuredInput: {
+                                          type: 'safety_choice',
+                                          data: { action: 'continue' }
+                                        }
+                                      });
+                                    }}
+                                    disabled={submitting}
+                                    className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                                  >
+                                    <span>✓</span>
+                                    <span>Continue Session</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      void nextStepAction({
+                                        orgId: session.orgId,
+                                        userId: session.userId,
+                                        sessionId: session._id,
+                                        stepName: reflection.step,
+                                        userTurn: '',
+                                        structuredInput: {
+                                          type: 'safety_choice',
+                                          data: { action: 'close' }
+                                        }
+                                      });
+                                    }}
+                                    disabled={submitting}
+                                    className="flex-1 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                                  >
+                                    <span>×</span>
+                                    <span>Close Session</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Understanding/Clarity Score (COMPASS Clarity Step) */}
                           {reflection.step === 'clarity' && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;

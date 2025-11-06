@@ -497,6 +497,44 @@ export const pauseSession = mutation({
   },
 });
 
+export const storePendingUserTurn = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    userTurn: v.string(),
+    step: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (session === null) {
+      throw new Error("Session not found");
+    }
+    
+    await ctx.db.patch(args.sessionId, {
+      pending_user_turn: args.userTurn,
+      pending_user_step: args.step ?? session.step,
+    });
+  },
+});
+
+export const clearSafetyPause = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (session === null) {
+      throw new Error("Session not found");
+    }
+    
+    await ctx.db.patch(args.sessionId, {
+      safetyPaused: false,
+      safetyPauseReason: undefined,
+      pending_user_turn: undefined,
+      pending_user_step: undefined,
+    });
+  },
+});
+
 export const acceptLegalTerms = mutation({
   args: {
     userId: v.id("users"),

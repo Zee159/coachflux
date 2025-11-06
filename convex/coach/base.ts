@@ -40,6 +40,8 @@ export interface CoachMutations {
   updateSessionStep: any;
   updateSession: any; // Phase 2: OPTIONS state tracking
   pauseSession: any;
+  storePendingUserTurn: any;
+  clearSafetyPause: any;
 }
 
 /**
@@ -367,7 +369,7 @@ export async function performSafetyChecks(
   userInput: string,
   ctx: CoachContext,
   mutations: CoachMutations,
-  args: { orgId: Id<"orgs">; userId: Id<"users">; sessionId: Id<"sessions"> }
+  args: { orgId: Id<"orgs">; userId: Id<"users">; sessionId: Id<"sessions">; stepName: string }
 ): Promise<CoachActionResult | null> {
   // NEW COMPASS: Perform comprehensive safety check
   const safetyCheck = performSafetyCheck(userInput);
@@ -408,7 +410,6 @@ export async function performSafetyChecks(
   // Handle Level 1-3 safety concerns (anxiety, agitation, redundancy)
   // These don't block the session but provide immediate empathetic response
   if (safetyCheck.level === 'anxiety' || safetyCheck.level === 'agitation' || safetyCheck.level === 'redundancy') {
-    // Log incident for tracking (medium severity)
     await ctx.runMutation(mutations.createSafetyIncident, {
       orgId: args.orgId,
       userId: args.userId,
@@ -417,19 +418,43 @@ export async function performSafetyChecks(
       llmOutput: userInput.substring(0, 500),
       severity: "med"
     });
-    
+
+    await ctx.runMutation(mutations.pauseSession, {
+      sessionId: args.sessionId,
+      reason: `Level ${safetyCheck.level} safety support needed`
+    });
+
+    await ctx.runMutation(mutations.storePendingUserTurn, {
+      sessionId: args.sessionId,
+      userTurn: userInput,
+      step: args.stepName
+    });
+
     const safetyResponse = safetyCheck.response ?? '';
-    
-    // Return the safety response directly to the user
-    if (safetyResponse.length > 0) {
-      return {
-        ok: true, // Session continues, but with safety response
-        message: safetyResponse,
-        hint: safetyCheck.level === 'redundancy' 
-          ? "I'm here to support you through this difficult situation."
-          : "Take your time. I'm here to support you."
-      };
-    }
+    const continueHint = "Would you like to continue our coaching conversation or close the session for now?";
+    const coachReflection = safetyResponse.length > 0
+      ? `${safetyResponse}\n\n${continueHint}`
+      : `Let's take a breather before we continue.\n\n${continueHint}`;
+
+    await ctx.runMutation(mutations.createReflection, {
+      orgId: args.orgId,
+      userId: args.userId,
+      sessionId: args.sessionId,
+      step: 'safety_pause',
+      userInput,
+      payload: {
+        coach_reflection: coachReflection,
+        safety_level: safetyCheck.level,
+        detected_keywords: safetyCheck.detected_keywords
+      }
+    });
+
+    return {
+      ok: true,
+      message: safetyResponse,
+      hint: continueHint,
+      nextStep: 'awaiting_user_choice'
+    };
   }
   
   // Legacy safety checks (for backward compatibility)

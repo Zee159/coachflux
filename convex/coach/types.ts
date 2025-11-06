@@ -83,4 +83,24 @@ export interface CoachActionResult {
   triggerReportGeneration?: boolean;
 }
 
+/**
+ * Coach mutations
+ * 
+ * NOTE: Using 'any' here is a documented workaround for Convex's deep type recursion.
+ * This is whitelisted in scripts/safety-check.js
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export interface CoachMutations {
+  markSessionEscalated: any;
+  createSafetyIncident: any;
+  createAction: any;
+  closeSession: any;
+  createReflection: any;
+  updateSessionStep: any;
+  updateSession: any; // Phase 2: OPTIONS state tracking
+  pauseSession: any;
+  storePendingUserTurn: any;
+  clearSafetyPause: any;
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
 

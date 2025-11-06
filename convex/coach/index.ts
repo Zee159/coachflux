@@ -242,7 +242,9 @@ function createMutations(): CoachMutations {
     createReflection: m.createReflection,
     updateSessionStep: m.updateSessionStep,
     updateSession: m.updateSession, // Phase 2: OPTIONS state tracking
-    pauseSession: m.pauseSession
+    pauseSession: m.pauseSession,
+    storePendingUserTurn: m.storePendingUserTurn,
+    clearSafetyPause: m.clearSafetyPause
   };
 }
 
@@ -722,6 +724,54 @@ async function handleStructuredInput(
         ok: true,
         message: `Amending ${step} step...`
       };
+    }
+
+    case 'safety_choice': {
+      // User chose to continue or close session after safety pause
+      const { action } = data as { action: 'continue' | 'close' };
+      
+      const session = await ctx.runQuery(api.queries.getSession, { sessionId: args.sessionId });
+      if (session === null) {
+        return { ok: false, message: 'Session not found' };
+      }
+      
+      if (action === 'close') {
+        // User chose to close the session
+        await ctx.runMutation(api.mutations.closeSession, {
+          sessionId: args.sessionId
+        });
+        
+        return {
+          ok: true,
+          message: 'Session closed. Take care of yourself.',
+          sessionClosed: true
+        };
+      } else if (action === 'continue') {
+        // User chose to continue - retrieve pending input and resume
+        const pendingUserTurn = session.pending_user_turn;
+        const pendingUserStep = session.pending_user_step;
+        
+        if (typeof pendingUserTurn !== 'string' || pendingUserTurn.length === 0) {
+          return { ok: false, message: 'No pending input found' };
+        }
+        
+        // Clear safety pause state
+        await ctx.runMutation(api.mutations.clearSafetyPause, {
+          sessionId: args.sessionId
+        });
+        
+        // Recursively call nextStep with the stored user input
+        // This will process it through the normal coaching flow
+        return await ctx.runAction(api.coach.nextStep, {
+          orgId: args.orgId,
+          userId: args.userId,
+          sessionId: args.sessionId,
+          stepName: pendingUserStep ?? session.step,
+          userTurn: pendingUserTurn
+        });
+      }
+      
+      return { ok: false, message: 'Invalid safety choice action' };
     }
 
     default:

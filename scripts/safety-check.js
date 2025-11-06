@@ -35,7 +35,7 @@ const EXCLUDED_FILES = [
 const ALLOWED_WORKAROUNDS = [
   {
     // Convex type recursion workaround in coach module
-    files: ['convex/coach/base.ts', 'convex/coach/index.ts'],
+    files: ['convex/coach/base.ts', 'convex/coach/index.ts', 'convex/coach/types.ts'],
     reason: 'Necessary workaround for Convex generated type deep recursion',
     patterns: ['Type annotation "any"', '@ts-expect-error directive', '@ts-ignore directive', 'eslint-disable directive']
   },
