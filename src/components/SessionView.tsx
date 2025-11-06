@@ -261,10 +261,7 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
   introduction: {
     title: "Welcome",
     questions: [
-      "Does this framework feel right for what you want to explore in this session?",
-      "On a scale of 1-10, how confident do you feel about navigating this change successfully?",
-      "How clear are you on your specific next steps? (1-10 - only if confidence >= 8)",
-      "How would you describe your current mindset about this change?"
+      "Does this framework feel right for what you're facing today?"
     ]
   },
   goal: {
@@ -317,22 +314,23 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
   clarity: {
     title: "Understand the Change",
     questions: [
-      "What specific change are you dealing with?",
+      "What workplace change are you navigating right now?",
+      "How is this affecting you personally - your day-to-day work, your role, or your team?",
       "On a scale of 1-5, how well do you understand what's happening and why?",
-      "Who seems to be supporting this change, and who might be resisting it?",
-      "What parts of this can you control vs. what's beyond your control?"
+      "How confident do you feel about navigating this successfully? (1-10)",
+      "How would you describe your current mindset about this change?",
+      "Thinking about this change, how much control do you have? (High/Mixed/Low)",
+      "What specifically can you control or influence in this situation?",
+      "Is there anything else about this change that feels important to mention?"
     ]
   },
   ownership: {
     title: "Build Confidence & Commitment",
     questions: [
-      "On a scale of 1-10, how confident do you feel about navigating this successfully?",
       "What's making you feel unconfident or worried?",
-      "What's the cost if you stay stuck in resistance?",
       "What could you gain personally if you adapt well to this?",
       "Tell me about a time you successfully handled change before.",
-      "What strengths from that experience can you use now?",
-      "Where's your confidence now, 1-10?"
+      "After everything we've discussed, where's your confidence now? (1-10)"
     ]
   },
   mapping: {
@@ -457,6 +455,14 @@ export function SessionView() {
   const reflections = useQuery(
     api.queries.getSessionReflections,
     validSessionId !== null && validSessionId !== undefined ? { sessionId: validSessionId } : "skip"
+  );
+
+  // Fetch framework questions dynamically from backend (single source of truth)
+  const frameworkQuestions = useQuery(
+    api.queries.getFrameworkQuestions,
+    session?.framework !== undefined && session.framework !== null && session.framework.length > 0
+      ? { framework: session.framework }
+      : "skip"
   );
 
   const nextStepAction = useAction(api.coach.nextStep);
@@ -1962,7 +1968,7 @@ export function SessionView() {
                   </span>
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-white">
-                  {COACHING_PROMPTS[currentStep].title}
+                  {frameworkQuestions?.[currentStep]?.title ?? COACHING_PROMPTS[currentStep]?.title ?? "Coaching Questions"}
                 </h3>
               </div>
               
@@ -1974,7 +1980,7 @@ export function SessionView() {
                       Coaching Questions
                     </p>
                     <ul className="space-y-2">
-                      {COACHING_PROMPTS[currentStep].questions.map((question, _idx) => (
+                      {(frameworkQuestions?.[currentStep]?.questions ?? COACHING_PROMPTS[currentStep]?.questions ?? []).map((question, _idx) => (
                         <li key={_idx} className="flex gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                           <span className="text-indigo-600 dark:text-indigo-400 font-semibold">•</span>
                           <span>{question}</span>
@@ -2098,7 +2104,7 @@ export function SessionView() {
                         View All Questions
                       </summary>
                       <ul className="mt-3 space-y-2">
-                        {COACHING_PROMPTS[currentStep].questions.map((question, _idx) => (
+                        {(frameworkQuestions?.[currentStep]?.questions ?? COACHING_PROMPTS[currentStep]?.questions ?? []).map((question, _idx) => (
                           <li key={_idx} className="flex gap-2 text-xs text-gray-600 dark:text-gray-400">
                             <span className="text-indigo-600 dark:text-indigo-400 font-semibold">•</span>
                             <span>{question}</span>

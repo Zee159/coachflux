@@ -2,6 +2,8 @@ import { query } from "./_generated/server";
 import { v } from "convex/values";
 import { generateSessionReport } from "./reports";
 import type { SessionReportData, FormattedReport, ReflectionPayload } from "./types";
+import { growFramework } from "./frameworks/grow";
+import { compassFramework } from "./frameworks/compass";
 
 export const getOrg = query({
   args: { orgId: v.id("orgs") },
@@ -183,5 +185,28 @@ export const getCSSScore = query({
       calculatedAt: cssRecord.calculatedAt,
       calculationVersion: cssRecord.calculationVersion
     };
+  },
+});
+
+/**
+ * Get coaching questions for a framework
+ * Returns questions from framework definition (single source of truth)
+ */
+export const getFrameworkQuestions = query({
+  args: { framework: v.string() },
+  handler: (_ctx, args) => {
+    const framework = args.framework === "GROW" ? growFramework : compassFramework;
+    
+    // Build questions map from framework steps
+    const questionsMap: Record<string, { title: string; questions: string[] }> = {};
+    
+    for (const step of framework.steps) {
+      questionsMap[step.name] = {
+        title: step.objective?.split('.')[0] ?? step.name, // Use first sentence as title, fallback to step name
+        questions: step.coaching_questions ?? []
+      };
+    }
+    
+    return questionsMap;
   },
 });
