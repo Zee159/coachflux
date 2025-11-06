@@ -119,11 +119,10 @@ export const ControlLevelSelector: React.FC<ControlLevelSelectorProps> = ({
               <button
                 key={level.id}
                 onClick={() => handleSelect(level.id)}
-                disabled={selectedLevel !== null}
                 className={`
                   w-full text-left relative px-4 py-4 transition-all duration-200 
                   ${getColorClasses(level.color, isSelected)}
-                  ${selectedLevel !== null ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:shadow-md'}
+                  cursor-pointer hover:shadow-md
                   rounded-xl shadow-sm
                 `}
                 role="radio"

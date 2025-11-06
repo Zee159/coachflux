@@ -1382,17 +1382,39 @@ export function SessionView() {
                                 <ControlLevelSelector
                                   coachMessage={coachReflection}
                                   onSubmit={(level) => {
-                                    void nextStepAction({
-                                      orgId: session.orgId,
-                                      userId: session.userId,
-                                      sessionId: session._id,
-                                      stepName: 'clarity',
-                                      userTurn: `Selected control level: ${level}`,
-                                      structuredInput: {
-                                        type: 'control_level_selection',
-                                        data: { control_level: level }
+                                    void (async (): Promise<void> => {
+                                      if (submitting) {
+                                        return;
                                       }
-                                    });
+                                      
+                                      setSubmitting(true);
+                                      try {
+                                        const result = await nextStepAction({
+                                          orgId: session.orgId,
+                                          userId: session.userId,
+                                          sessionId: session._id,
+                                          stepName: 'clarity',
+                                          userTurn: `Selected control level: ${level}`,
+                                          structuredInput: {
+                                            type: 'control_level_selection',
+                                            data: { control_level: level }
+                                          }
+                                        });
+
+                                        if (!result.ok) {
+                                          const errorMsg = result.message ?? "Unable to process your selection. Please try again.";
+                                          setNotification({ type: "error", message: errorMsg });
+                                        }
+                                      } catch (error: unknown) {
+                                        console.error("Control level selection error:", error);
+                                        setNotification({ 
+                                          type: "error", 
+                                          message: "Failed to submit control level. Please try again." 
+                                        });
+                                      } finally {
+                                        setSubmitting(false);
+                                      }
+                                    })();
                                   }}
                                 />
                               </div>
