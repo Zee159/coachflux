@@ -205,7 +205,7 @@ export class COMPASSCoach implements FrameworkCoach {
       },
       openers: {
         clarity: "What workplace change are you navigating right now, and what's making you feel uncertain about it?",
-        ownership: "Great! You've clarified the change. Now let's build your confidence. On a scale of 1-10, how confident do you feel about navigating this successfully?",
+        ownership: "Great! You've clarified the change. Now let's build your confidence and find the upside in this situation.",
         mapping: "With your confidence built, let's map out your specific action plan. What's the ONE action you want to commit to?",
         practice: "You've got your action plan. Now let's lock in your commitment and see how far you've come.",
         review: "Time to consolidate. Let's review your key takeaways and next actions.",
@@ -225,9 +225,10 @@ export class COMPASSCoach implements FrameworkCoach {
 
     // Add high-confidence branching logic for ownership stage
     if (stepName === 'ownership') {
-      const introReflections = reflections.filter(r => r.step === 'introduction');
-      const latestIntro = introReflections[introReflections.length - 1];
-      const initialConfidence = latestIntro?.payload?.['initial_confidence'] as number | undefined;
+      // Get initial_confidence from CLARITY step (CSS baseline moved from introduction)
+      const clarityReflections = reflections.filter(r => r.step === 'clarity');
+      const latestClarity = clarityReflections[clarityReflections.length - 1];
+      const initialConfidence = latestClarity?.payload?.['initial_confidence'] as number | undefined;
 
       if (typeof initialConfidence === 'number') {
         if (initialConfidence >= 8) {
@@ -264,14 +265,14 @@ export class COMPASSCoach implements FrameworkCoach {
 
     // Add CSS measurement triggers for practice stage
     if (stepName === 'practice') {
-      // Get initial_confidence from introduction for comparison
-      const introReflections = reflections.filter(r => r.step === 'introduction');
-      const latestIntro = introReflections[introReflections.length - 1];
-      const initialConfidence = latestIntro?.payload?.['initial_confidence'] as number | undefined;
+      // Get initial_confidence from CLARITY step (CSS baseline moved from introduction)
+      const clarityReflections = reflections.filter(r => r.step === 'clarity');
+      const latestClarity = clarityReflections[clarityReflections.length - 1];
+      const initialConfidence = latestClarity?.payload?.['initial_confidence'] as number | undefined;
       const initialValue = typeof initialConfidence === 'number' ? initialConfidence : '[initial]';
       
       context += `\n\n📊 CSS FINAL MEASUREMENTS REQUIRED\n`;
-      context += `Initial confidence from introduction: ${initialValue}/10\n\n`;
+      context += `Initial confidence from Clarity step: ${initialValue}/10\n\n`;
       context += `You MUST ask these 5 questions before closing the session:\n`;
       context += `1. final_confidence (1-10): "When we started, you were at ${initialValue}/10. Where are you now?"\n`;
       context += `2. final_action_clarity (1-10): "How clear are you now on your specific next steps?"\n`;
