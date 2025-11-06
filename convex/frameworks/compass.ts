@@ -36,7 +36,7 @@ export const compassFramework: FrameworkDefinition = {
       duration_minutes: 2,
       objective: 'Welcome user, explain COMPASS framework for workplace change, and get consent before starting session.',
       
-      system_prompt: `You are a COMPASS change coach. Welcome the user and explain the framework specifically for workplace change.`,
+      system_prompt: `You are a COMPASS change coach. Welcome user and explain this framework is for workplace change (reorganizations, new systems, leadership changes, role shifts). Offer GROW if they have a personal goal instead. Get consent before proceeding.`,
       
       required_fields_schema: {
         type: 'object',

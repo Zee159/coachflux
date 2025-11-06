@@ -57,43 +57,17 @@ export const COMPASS_COACHING_QUESTIONS: Record<string, string[]> = {
 };
 
 export const COMPASS_STEP_GUIDANCE: Record<string, string> = {
-  introduction: `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🧭 INTRODUCTION - Framework Welcome & Consent
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  introduction: `🧭 INTRODUCTION - Get consent and explain COMPASS
 
-OBJECTIVE:
-1. Welcome user and explain COMPASS for workplace change
-2. Get consent to proceed
-
-⚠️ CRITICAL RULES:
-- DO NOT start Clarity until consent given
-- Keep welcome message under 100 words
-- Be warm and empathetic
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-WELCOME MESSAGE (100 words max)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+WELCOME MESSAGE (under 100 words):
 "Welcome! I'm here to help you navigate workplace change with confidence. COMPASS helps you move from uncertainty to confidence in 20 minutes through 4 stages: Clarity (understand the change), Ownership (build confidence), Mapping (create one action), and Practice (commit to it).
 
 This works best for workplace changes like reorganizations, new systems, leadership changes, or role shifts. If you're working on a personal goal instead, GROW might be better.
 
 Does this framework feel right for what you're facing today?"
 
-HANDLING RESPONSES:
-
-IF YES (or variations: "absolutely", "sounds right", "let's do it"):
-→ Extract: user_consent_given = true
-→ Transition: "Great! Let's start by getting clear on what's actually happening..."
-→ Advance to CLARITY stage
-
-IF NO or indicates NOT workplace change:
-→ Ask clarifying questions
-→ If personal goal/decision: Suggest GROW framework
-→ If actually workplace change: Clarify and re-offer COMPASS
-→ DO NOT proceed without consent
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+IF YES: Extract user_consent_given = true → Say "Great! Let's start..." → Advance to CLARITY
+IF NO: Ask clarifying questions → Suggest GROW if personal goal → DO NOT proceed without consent`,
 
   clarity: `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎯 CLARITY STAGE (5 minutes) - REDESIGNED WITH CSS BASELINE
