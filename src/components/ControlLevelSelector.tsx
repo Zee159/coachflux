@@ -46,12 +46,8 @@ export const ControlLevelSelector: React.FC<ControlLevelSelectorProps> = ({
 
   const handleSelect = (level: 'high' | 'mixed' | 'low'): void => {
     setSelectedLevel(level);
-  };
-
-  const handleSubmit = (): void => {
-    if (selectedLevel !== null) {
-      onSubmit(selectedLevel);
-    }
+    // Submit immediately on click
+    onSubmit(level);
   };
 
   const getColorClasses = (color: string, isSelected: boolean): string => {
@@ -82,22 +78,6 @@ export const ControlLevelSelector: React.FC<ControlLevelSelectorProps> = ({
     }
     if (color === 'orange') {
       return isSelected ? 'text-orange-600 dark:text-orange-400' : 'text-gray-400 dark:text-gray-500';
-    }
-    return '';
-  };
-
-  const getButtonColorClasses = (): string => {
-    if (selectedLevel === null) {
-      return 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-500 cursor-not-allowed';
-    }
-    if (selectedLevel === 'high') {
-      return 'bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg transform hover:scale-105';
-    }
-    if (selectedLevel === 'mixed') {
-      return 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-md hover:shadow-lg transform hover:scale-105';
-    }
-    if (selectedLevel === 'low') {
-      return 'bg-orange-500 hover:bg-orange-600 text-white shadow-md hover:shadow-lg transform hover:scale-105';
     }
     return '';
   };
@@ -138,10 +118,12 @@ export const ControlLevelSelector: React.FC<ControlLevelSelectorProps> = ({
               <button
                 key={level.id}
                 onClick={() => handleSelect(level.id)}
+                disabled={selectedLevel !== null}
                 className={`
                   w-full text-left relative px-4 py-4 transition-all duration-200 
                   ${getColorClasses(level.color, isSelected)}
-                  cursor-pointer rounded-xl shadow-sm hover:shadow-md
+                  ${selectedLevel !== null ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:shadow-md'}
+                  rounded-xl shadow-sm
                 `}
                 role="radio"
                 aria-checked={isSelected ? 'true' : 'false'}
@@ -177,33 +159,6 @@ export const ControlLevelSelector: React.FC<ControlLevelSelectorProps> = ({
               </button>
             );
           })}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {selectedLevel === null ? (
-                <span>No selection made</span>
-              ) : (
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  {CONTROL_LEVELS.find(l => l.id === selectedLevel)?.label} selected
-                </span>
-              )}
-            </div>
-
-            <button
-              onClick={handleSubmit}
-              disabled={selectedLevel === null}
-              className={`
-                px-6 py-2.5 rounded-lg font-medium text-base transition-all duration-200
-                ${getButtonColorClasses()}
-              `}
-              aria-label={`Continue with ${selectedLevel ?? 'no'} selection`}
-            >
-              Continue
-            </button>
-          </div>
         </div>
       </div>
     </div>
