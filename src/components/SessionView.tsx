@@ -1399,6 +1399,85 @@ export function SessionView() {
                             );
                           })()}
 
+                          {/* Initial Confidence Scale (COMPASS Clarity Step - CSS Baseline) */}
+                          {reflection.step === 'clarity' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const initialConfidence = payload['initial_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: initial_confidence not yet captured, AI is asking for it
+                            if (initialConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for confidence (1-10 scale)
+                            const isAskingForConfidence = (coachReflection.includes('1-10') || coachReflection.includes('/10')) &&
+                                                         (coachReflection.toLowerCase().includes('confident') ||
+                                                          coachReflection.toLowerCase().includes('confidence'));
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="How confident do you feel about navigating this successfully? (1-10)"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident at all"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'clarity',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Initial Mindset State (COMPASS Clarity Step - CSS Baseline) */}
+                          {reflection.step === 'clarity' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const initialMindsetState = payload['initial_mindset_state'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: initial_mindset_state not yet captured, AI is asking for it
+                            if (initialMindsetState !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking about mindset
+                            const isAskingForMindset = coachReflection.toLowerCase().includes('mindset') &&
+                                                      (coachReflection.toLowerCase().includes('describe') ||
+                                                       coachReflection.toLowerCase().includes('how would you'));
+                            
+                            if (!isAskingForMindset) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <MindsetSelector
+                                  question="How would you describe your current mindset about this change?"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'clarity',
+                                      userTurn: value,
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
                           {/* Current Confidence Scale (COMPASS Ownership Step) */}
                           {reflection.step === 'ownership' && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
