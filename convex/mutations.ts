@@ -241,28 +241,9 @@ Ready to dive in with this framework?`;
 
     if (args.framework === "COMPASS") {
       firstStep = "introduction";
-      greeting = `Welcome! I'm here to help you navigate change with confidence.
+      greeting = `Welcome! I'm here to help you navigate workplace change with confidence. COMPASS helps you move from uncertainty to confidence in 20 minutes through 4 stages: Clarity (understand the change), Ownership (build confidence), Mapping (create one action), and Practice (commit to it).
 
-We'll use the COMPASS method - a coaching approach specifically designed for workplace change. COMPASS helps you transform from feeling uncertain about a change to feeling confident and in control.
-
-Here's our journey together:
-• Clarity: Understand exactly what's changing and what you can control
-• Ownership: Build confidence by recognizing your strengths and potential benefits
-• Mapping: Create one specific action you'll take this week
-• Practice: Commit to your action with a clear plan
-
-This takes about 15-20 minutes.
-
-COMPASS is specifically for workplace change situations like:
-• Company reorganizations or restructuring
-• New processes, tools, or ways of working
-• Leadership changes or team transitions
-• Role changes or new responsibilities
-• Adapting to industry shifts or market changes
-
-We'll help you move from feeling uncertain to confident. You'll identify one specific action you can take this week to build momentum. Most people see their confidence increase significantly by the end of our session.
-
-Note: COMPASS is designed for workplace change. If you're working on a personal goal, decision-making, or project planning (not change-related), the GROW method might be a better fit.
+This works best for workplace changes like reorganizations, new systems, leadership changes, or role shifts. If you're working on a personal goal instead, GROW might be better.
 
 Does this framework feel right for what you're facing today?`;
       // NEW COMPASS: 4 stages (Clarity, Ownership, Mapping, Practice) + Introduction
