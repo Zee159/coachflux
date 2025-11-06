@@ -1500,6 +1500,109 @@ export function SessionView() {
                             );
                           })()}
 
+                          {/* Q7: Additional Context Yes/No (COMPASS Clarity Step - Final Question) */}
+                          {reflection.step === 'clarity' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const q7Asked = payload['q7_asked'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: q7_asked not yet set, AI is asking Q7
+                            if (q7Asked === true) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking Q7 (anything else to mention)
+                            const isAskingQ7 = (coachReflection.toLowerCase().includes('anything else') ||
+                                               coachReflection.toLowerCase().includes('anything important')) &&
+                                              (coachReflection.toLowerCase().includes('mention') ||
+                                               coachReflection.toLowerCase().includes('add') ||
+                                               coachReflection.toLowerCase().includes('share'));
+                            
+                            if (!isAskingQ7) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <YesNoSelector
+                                  question={coachReflection}
+                                  yesLabel="Yes, there's more"
+                                  noLabel="No, that's everything"
+                                  onYes={() => {
+                                    void (async (): Promise<void> => {
+                                      if (submitting) {
+                                        return;
+                                      }
+                                      
+                                      setSubmitting(true);
+                                      try {
+                                        const result = await nextStepAction({
+                                          orgId: session.orgId,
+                                          userId: session.userId,
+                                          sessionId: session._id,
+                                          stepName: 'clarity',
+                                          userTurn: 'Yes, there is something else I want to mention',
+                                          structuredInput: {
+                                            type: 'q7_yes_response',
+                                            data: { wants_to_add: true }
+                                          }
+                                        });
+
+                                        if (!result.ok) {
+                                          const errorMsg = result.message ?? "Unable to process your response. Please try again.";
+                                          setNotification({ type: "error", message: errorMsg });
+                                        }
+                                      } catch (error: unknown) {
+                                        console.error("Q7 Yes response error:", error);
+                                        setNotification({ 
+                                          type: "error", 
+                                          message: "Failed to process response. Please try again." 
+                                        });
+                                      } finally {
+                                        setSubmitting(false);
+                                      }
+                                    })();
+                                  }}
+                                  onNo={() => {
+                                    void (async (): Promise<void> => {
+                                      if (submitting) {
+                                        return;
+                                      }
+                                      
+                                      setSubmitting(true);
+                                      try {
+                                        const result = await nextStepAction({
+                                          orgId: session.orgId,
+                                          userId: session.userId,
+                                          sessionId: session._id,
+                                          stepName: 'clarity',
+                                          userTurn: 'No, that covers everything',
+                                          structuredInput: {
+                                            type: 'q7_no_response',
+                                            data: { wants_to_add: false }
+                                          }
+                                        });
+
+                                        if (!result.ok) {
+                                          const errorMsg = result.message ?? "Unable to process your response. Please try again.";
+                                          setNotification({ type: "error", message: errorMsg });
+                                        }
+                                      } catch (error: unknown) {
+                                        console.error("Q7 No response error:", error);
+                                        setNotification({ 
+                                          type: "error", 
+                                          message: "Failed to process response. Please try again." 
+                                        });
+                                      } finally {
+                                        setSubmitting(false);
+                                      }
+                                    })();
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
                           {/* Current Confidence Scale (COMPASS Ownership Step) */}
                           {reflection.step === 'ownership' && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;

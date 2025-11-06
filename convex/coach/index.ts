@@ -767,6 +767,74 @@ async function handleStructuredInput(
       });
     }
 
+    case 'q7_yes_response': {
+      // User clicked YES on Q7 - wants to add more context
+      // Get current state from last reflection
+      const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
+        sessionId: args.sessionId
+      });
+      
+      const lastReflection = sessionReflections[sessionReflections.length - 1];
+      const lastPayload = lastReflection?.payload as Record<string, unknown> | undefined;
+      
+      // Store marker that user wants to add context (but don't set q7_asked yet)
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: 'clarity',
+        userInput: args.userTurn,
+        payload: {
+          ...lastPayload,
+          coach_reflection: '[Q7_YES_RESPONSE]' // Marker for silent transition
+        }
+      });
+      
+      // Recursively call nextStep to let AI ask follow-up question
+      return await ctx.runAction(api.coach.nextStep, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        stepName: 'clarity',
+        userTurn: '[User wants to add more context]'
+      });
+    }
+
+    case 'q7_no_response': {
+      // User clicked NO on Q7 - nothing else to add
+      // Get current state from last reflection
+      const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
+        sessionId: args.sessionId
+      });
+      
+      const lastReflection = sessionReflections[sessionReflections.length - 1];
+      const lastPayload = lastReflection?.payload as Record<string, unknown> | undefined;
+      
+      // Store that Q7 was asked and user said no
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: 'clarity',
+        userInput: args.userTurn,
+        payload: {
+          ...lastPayload,
+          additional_context: '',
+          q7_asked: true,
+          coach_reflection: '[Q7_NO_RESPONSE]' // Marker for silent transition
+        }
+      });
+      
+      // Recursively call nextStep to let AI provide completion summary
+      return await ctx.runAction(api.coach.nextStep, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        stepName: 'clarity',
+        userTurn: '[User has nothing else to add - ready for summary]'
+      });
+    }
+
     case 'safety_choice': {
       // User chose to continue or close session after safety pause
       const { action } = data as { action: 'continue' | 'close' };
@@ -1567,7 +1635,6 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
         sessionId: args.sessionId,
         awaiting: true
       });
-      console.log("✅ Step complete - awaiting user confirmation");
       return { ok: true };
     }
 

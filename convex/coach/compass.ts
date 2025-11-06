@@ -80,8 +80,14 @@ export class COMPASSCoach implements FrameworkCoach {
         hasSphereOfControl && isMeaningfulControl
       ].filter(Boolean).length;
 
-      // Require all 7 mandatory fields
-      const isComplete = completedFields === 7;
+      // Check if Q7 (optional final question) has been asked
+      // Q7 is marked by either having additional_context OR having q7_asked flag
+      const hasAdditionalContext = typeof payload["additional_context"] === "string" && payload["additional_context"].length > 0;
+      const q7Asked = payload["q7_asked"] === true;
+      const q7Handled = hasAdditionalContext || q7Asked;
+
+      // Require all 7 mandatory fields AND Q7 must have been asked (even if skipped)
+      const isComplete = completedFields === 7 && q7Handled;
       
       if (isComplete) {
         return { shouldAdvance: false, awaitingConfirmation: true };
