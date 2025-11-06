@@ -726,6 +726,35 @@ async function handleStructuredInput(
       };
     }
 
+    case 'control_level_selection': {
+      // User selected control level via ControlLevelSelector
+      const { control_level } = data as { control_level: 'high' | 'mixed' | 'low' };
+      
+      // Get current state from last reflection
+      const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
+        sessionId: args.sessionId
+      });
+      
+      const lastReflection = sessionReflections[sessionReflections.length - 1];
+      const lastPayload = lastReflection?.payload as Record<string, unknown> | undefined;
+      
+      // Create reflection with control level
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: 'clarity',
+        userInput: args.userTurn,
+        payload: {
+          ...lastPayload,
+          control_level,
+          coach_reflection: `Got it - you have ${control_level} control over this change. Let me ask you about your confidence level.`
+        }
+      });
+      
+      return { ok: true };
+    }
+
     case 'safety_choice': {
       // User chose to continue or close session after safety pause
       const { action } = data as { action: 'continue' | 'close' };
