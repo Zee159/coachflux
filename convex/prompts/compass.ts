@@ -20,16 +20,17 @@
 
 export const COMPASS_COACHING_QUESTIONS: Record<string, string[]> = {
   introduction: [
-    "Does this framework feel right for what you want to explore in this session?",
-    "On a scale of 1-10, how confident do you feel about navigating this change successfully?",
-    "How clear are you on your specific next steps? (1-10 - only if confidence >= 8)",
-    "How would you describe your current mindset about this change?"
+    "Does this framework feel right for what you're facing today?"
   ],
   clarity: [
-    "What workplace change are you navigating right now, and what's making you feel uncertain about it?",
+    "What workplace change are you navigating right now?",
+    "How is this affecting you personally - your day-to-day work, your role, or your team?",
     "On a scale of 1-5, how well do you understand what's happening and why?",
-    "Who seems to be supporting this change, and who might be resisting it?",
-    "What parts of this can you control vs. what's beyond your control?"
+    "How confident do you feel about navigating this successfully? (1-10)",
+    "How would you describe your current mindset about this change?",
+    "Thinking about this change, how much control do you have? (High/Mixed/Low)",
+    "What specifically can you control or influence in this situation?",
+    "Is there anything else about this change that feels important to mention?"
   ],
   ownership: [
     "Now that we've clarified the change, where's your confidence at? (1-10)",
