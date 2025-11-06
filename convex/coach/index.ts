@@ -738,7 +738,13 @@ async function handleStructuredInput(
       const lastReflection = sessionReflections[sessionReflections.length - 1];
       const lastPayload = lastReflection?.payload as Record<string, unknown> | undefined;
       
-      // Create reflection with control level
+      // Store control level in payload and let AI ask the follow-up question
+      const updatedPayload = {
+        ...lastPayload,
+        control_level
+      };
+      
+      // Update the last reflection with control_level (silent update)
       await ctx.runMutation(api.mutations.createReflection, {
         orgId: args.orgId,
         userId: args.userId,
@@ -746,13 +752,19 @@ async function handleStructuredInput(
         step: 'clarity',
         userInput: args.userTurn,
         payload: {
-          ...lastPayload,
-          control_level,
-          coach_reflection: `Got it - you have ${control_level} control over this change. Let me ask you about your confidence level.`
+          ...updatedPayload,
+          coach_reflection: '[CONTROL_LEVEL_CAPTURED]' // Marker for silent transition
         }
       });
       
-      return { ok: true };
+      // Recursively call nextStep to let AI ask the follow-up question
+      return await ctx.runAction(api.coach.nextStep, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        stepName: 'clarity',
+        userTurn: `[Control level selected: ${control_level}]`
+      });
     }
 
     case 'safety_choice': {
