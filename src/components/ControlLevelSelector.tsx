@@ -45,9 +45,10 @@ export const ControlLevelSelector: React.FC<ControlLevelSelectorProps> = ({
   const [selectedLevel, setSelectedLevel] = useState<'high' | 'mixed' | 'low' | null>(null);
 
   const handleSelect = (level: 'high' | 'mixed' | 'low'): void => {
-    setSelectedLevel(level);
-    // Submit immediately on click
+    // Submit immediately on click (before state update to prevent re-render blocking)
     onSubmit(level);
+    // Update state for visual feedback
+    setSelectedLevel(level);
   };
 
   const getColorClasses = (color: string, isSelected: boolean): string => {
