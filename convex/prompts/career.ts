@@ -59,57 +59,49 @@ export const CAREER_COACHING_QUESTIONS = {
 // ============================================================================
 
 export const CAREER_STEP_GUIDANCE: Record<string, string> = {
-  INTRODUCTION: `INTRODUCTION - Welcome & Career Focus
+  INTRODUCTION: `INTRODUCTION - Welcome & Consent
 
-FLOW:
-1. FIRST TURN: Show welcome message and ask about career focus
-2. SECOND TURN: Extract coaching_focus, ask for consent
-3. THIRD TURN: Extract user_consent=true and use "[CONSENT_RECEIVED]"
+SIMPLE 2-TURN FLOW (like GROW):
 
 FIRST TURN (no user input yet):
-coach_reflection: "Welcome! I'm your Career Coach. Are you looking for career development, a role transition, or skill building?"
-coaching_focus: NOT SET YET
+coach_reflection: "Welcome! I'm your Career Coach. I'll help you navigate career transitions, skill development, and role advancement. Ready to begin your career planning session?"
 user_consent: NOT SET YET
 
-SECOND TURN (user states their focus):
-coaching_focus: "career_development" | "role_transition" | "skill_building"
-coach_reflection: "Great! Ready to begin your career planning session?"
-user_consent: NOT SET YET
-
-THIRD TURN (user clicked Yes button):
+SECOND TURN (user clicked Yes button):
 user_consent: true
 coach_reflection: "[CONSENT_RECEIVED]" (system will advance to ASSESSMENT automatically)
 
-CRITICAL:
-- First turn: Show welcome message and ask about focus
-- Second turn: Extract coaching_focus, ask "Ready to begin?"
-- Third turn: If user says "yes", set user_consent=true and coach_reflection="[CONSENT_RECEIVED]"
-- Do NOT say "Great! Let's begin" or "Advancing to Assessment" or ANY visible confirmation message
+CRITICAL RULES:
+- First turn: Show welcome + ask "Ready to begin?"
+- Second turn: If user says "yes", set user_consent=true and coach_reflection="[CONSENT_RECEIVED]"
+- Do NOT ask about career focus in INTRODUCTION - that happens in ASSESSMENT
+- Do NOT say "Great! Let's begin" or ANY visible confirmation message
 - Use EXACTLY "[CONSENT_RECEIVED]" as coach_reflection (system will filter this out)
-- System will automatically advance to ASSESSMENT step and AI will ask first Assessment question
+- System will automatically advance to ASSESSMENT step
 
 EXTRACT:
-- coaching_focus: "career_development" | "role_transition" | "skill_building" (when user states their need)
 - user_consent: true (if user says yes/ready/sure) / false (if no/not now)
-- coach_reflection: Welcome message on FIRST turn, consent question on SECOND turn, "[CONSENT_RECEIVED]" on THIRD turn
+- coach_reflection: Welcome message on FIRST turn, "[CONSENT_RECEIVED]" on SECOND turn
 
 GUARDRAILS:
 - Never auto-extract consent - user must explicitly agree
-- If user describes non-career goal, redirect to GROW
-- Keep reflections brief and welcoming (20+ chars minimum)`,
+- Keep welcome brief and welcoming (20+ chars minimum)
+- If user declines, session ends`,
 
   ASSESSMENT: `ASSESSMENT - Current State & Career Target
 
 ### Objective
 Understand current state and career target.
 
+🚨 FIRST TURN: Immediately ask "What's your current role?" - DO NOT just make a statement!
+
 ### Question Flow (Progressive)
 1. "What's your current role?" → Extract current_role
 2. "How many years of experience do you have?" → Extract years_experience
 3. "What industry are you in?" → Extract industry
 4. "What role are you targeting?" → Extract target_role
-5. "What's your timeframe?" → Extract timeframe
-6. "How would you describe your career stage?" → Extract career_stage
+5. "What's your timeframe for this transition?" → Extract timeframe
+6. "How would you describe your career stage: early (0-3 years), mid (3-10 years), senior (10+ years), or executive?" → Extract career_stage
 7. "On a scale of 1-10, how confident are you about making this transition?" → Extract initial_confidence
 8. "On a scale of 1-10, how clear are you on what it takes to get there?" → Extract assessment_score
 

@@ -29,10 +29,6 @@ export const careerFramework: FrameworkDefinition = {
         type: "object",
         properties: {
           user_consent: { type: "boolean" },
-          coaching_focus: { 
-            type: "string",
-            enum: ["career_development", "role_transition", "skill_building"]
-          },
           coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
         },
         required: ["coach_reflection"],
@@ -43,14 +39,13 @@ export const careerFramework: FrameworkDefinition = {
 
 Your role in the INTRODUCTION step:
 1. Welcome the user warmly
-2. Explain that this is career-focused coaching (not therapy or medical advice)
-3. Ask what type of career support they need: development, transition, or skill building
-4. Obtain consent to proceed
+2. Explain briefly what Career Coach does (career transitions, skill development, role advancement)
+3. Ask "Ready to begin your career planning session?"
+4. When user says yes, extract user_consent=true and use "[CONSENT_RECEIVED]" as coach_reflection
 
-If the user describes a non-career goal (e.g., personal relationships, health), politely redirect them to the GROW framework instead.`,
+Keep it simple - just welcome and get consent. Career focus questions happen in ASSESSMENT step.`,
       
       coaching_questions: [
-        "Welcome! I'm your Career Coach. Are you looking for career development, a role transition, or skill building?",
         "Ready to begin your career planning session?"
       ],
       
@@ -95,9 +90,10 @@ If the user describes a non-career goal (e.g., personal relationships, health), 
             enum: ["early", "mid", "senior", "executive"]
           },
           initial_confidence: { type: "number", minimum: 1, maximum: 10 },
-          assessment_score: { type: "number", minimum: 1, maximum: 10 }
+          assessment_score: { type: "number", minimum: 1, maximum: 10 },
+          coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
         },
-        required: ["current_role", "target_role", "initial_confidence", "assessment_score"],
+        required: ["coach_reflection"],
         additionalProperties: false
       },
       
@@ -177,9 +173,10 @@ CRITICAL RULES:
             minItems: 1,
             maxItems: 3
           },
-          gap_analysis_score: { type: "number", minimum: 1, maximum: 10 }
+          gap_analysis_score: { type: "number", minimum: 1, maximum: 10 },
+          coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
         },
-        required: ["skill_gaps", "transferable_skills", "development_priorities", "gap_analysis_score"],
+        required: ["coach_reflection"],
         additionalProperties: false
       },
       
@@ -276,9 +273,10 @@ CRITICAL RULES:
           },
           milestone_3_months: { type: "string", minLength: 10, maxLength: 200 },
           milestone_6_months: { type: "string", minLength: 10, maxLength: 200 },
-          roadmap_score: { type: "number", minimum: 1, maximum: 10 }
+          roadmap_score: { type: "number", minimum: 1, maximum: 10 },
+          coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
         },
-        required: ["learning_actions", "experience_actions", "milestone_3_months", "milestone_6_months", "roadmap_score"],
+        required: ["coach_reflection"],
         additionalProperties: false
       },
       
@@ -338,9 +336,10 @@ CRITICAL RULES:
           biggest_challenge: { type: "string", minLength: 10, maxLength: 200 },
           final_confidence: { type: "number", minimum: 1, maximum: 10 },
           final_clarity: { type: "number", minimum: 1, maximum: 10 },
-          session_helpfulness: { type: "number", minimum: 1, maximum: 10 }
+          session_helpfulness: { type: "number", minimum: 1, maximum: 10 },
+          coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
         },
-        required: ["key_takeaways", "immediate_next_step", "final_confidence", "final_clarity", "session_helpfulness"],
+        required: ["coach_reflection"],
         additionalProperties: false
       },
       

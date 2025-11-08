@@ -291,11 +291,11 @@ export class CareerCoach implements FrameworkCoach {
         REVIEW: "Session complete! You now have a clear career development roadmap."
       },
       openers: {
-        INTRODUCTION: "Welcome! I'm your Career Coach. I'll help you create a clear roadmap for your career development.",
-        ASSESSMENT: "Let's understand your current position and where you're heading.",
-        GAP_ANALYSIS: "Now we'll identify the skills and experience you need to develop.",
-        ROADMAP: "Time to create your action plan with specific learning, networking, and experience-building steps.",
-        REVIEW: "Let's reflect on what we've covered and ensure you have a clear next step."
+        INTRODUCTION: "Ready to begin your career planning session?",
+        ASSESSMENT: "What's your current role?",
+        GAP_ANALYSIS: "What skills does your target role require that you don't currently have?",
+        ROADMAP: "What learning actions will you take to close your skill gaps? For each, what's the timeline and what resource will you use?",
+        REVIEW: "What are your key takeaways from this session?"
       }
     };
   }

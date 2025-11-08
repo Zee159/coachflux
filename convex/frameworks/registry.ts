@@ -30,6 +30,7 @@ import { careerFramework } from './career';
 const legacyFrameworkRegistry: Record<string, LegacyFramework> = {
   'GROW': growFrameworkLegacy,
   'COMPASS': compassFramework as unknown as LegacyFramework, // Use NEW COMPASS (4-stage)
+  'CAREER': careerFramework as unknown as LegacyFramework, // Career Coach
 };
 
 /**

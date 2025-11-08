@@ -253,7 +253,7 @@ Does this framework feel right for what you're facing today?`;
       greeting = `Welcome! I'm your Career Coach, here to help you navigate career transitions, skill development, and role advancement.
 
 In this 25-minute session, we'll work through 5 steps:
-• Introduction: Confirm your career development focus
+• Introduction: Get started
 • Assessment: Understand where you are and where you want to go
 • Gap Analysis: Identify what's missing between here and there
 • Roadmap: Create a concrete action plan with milestones
@@ -265,7 +265,7 @@ This works best for:
 • Career advancement strategies
 • Professional growth roadmaps
 
-Are you looking for career development, a role transition, or skill building?`;
+Ready to begin your career planning session?`;
       skipSteps = { INTRODUCTION: 0, ASSESSMENT: 0, GAP_ANALYSIS: 0, ROADMAP: 0, REVIEW: 0 };
     }
 

@@ -2448,7 +2448,7 @@ export function SessionView() {
 
       {/* Fixed Input Box at Bottom - HIDE IF SESSION IS CLOSED */}
       {/* Show input during all active coaching stages */}
-      {(currentStep === 'introduction' || currentStep === 'clarity' || currentStep === 'ownership' || currentStep === 'mapping' || currentStep === 'practice' || currentStep === 'goal' || currentStep === 'reality' || currentStep === 'options' || currentStep === 'will' || currentStep === 'review') && !isSessionComplete && (
+      {(currentStep === 'introduction' || currentStep === 'clarity' || currentStep === 'ownership' || currentStep === 'mapping' || currentStep === 'practice' || currentStep === 'goal' || currentStep === 'reality' || currentStep === 'options' || currentStep === 'will' || currentStep === 'review' || currentStep === 'INTRODUCTION' || currentStep === 'ASSESSMENT' || currentStep === 'GAP_ANALYSIS' || currentStep === 'ROADMAP' || currentStep === 'REVIEW') && !isSessionComplete && (
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-40 safe-area-bottom">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="py-3 sm:py-4">
