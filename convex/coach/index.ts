@@ -575,6 +575,187 @@ async function handleStructuredInput(
       }
     }
 
+    case 'gap_selection': {
+      // User selected AI-suggested gaps in Career Coach GAP_ANALYSIS
+      const { selected_gap_ids } = data as { selected_gap_ids: string[] };
+      
+      // Create reflection with selected gap IDs
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: args.stepName,
+        userInput: args.userTurn,
+        payload: {
+          selected_gap_ids,
+          coach_reflection: selected_gap_ids.length > 0
+            ? `Great! I've noted those ${selected_gap_ids.length} gap${selected_gap_ids.length > 1 ? 's' : ''}. Now let's identify your transferable skills.`
+            : "No problem! Let's move on to identifying your transferable skills."
+        }
+      });
+      
+      return { ok: true, message: 'Gap selection recorded' };
+    }
+
+    case 'priority_selection': {
+      // User selected development priorities in Career Coach GAP_ANALYSIS
+      const { development_priorities } = data as { development_priorities: string[] };
+      
+      // Create reflection with priorities
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: args.stepName,
+        userInput: args.userTurn,
+        payload: {
+          development_priorities,
+          coach_reflection: `Perfect! You've prioritized ${development_priorities.length} gap${development_priorities.length > 1 ? 's' : ''} to focus on. These will guide your roadmap. On a scale of 1-10, how manageable do these gaps feel?`
+        }
+      });
+      
+      return { ok: true, message: 'Priorities recorded' };
+    }
+
+    case 'roadmap_finalization': {
+      // User finalized roadmap selections in Career Coach ROADMAP
+      const { 
+        selected_learning_ids,
+        selected_networking_ids,
+        selected_experience_ids,
+        milestone_3_months,
+        milestone_6_months
+      } = data as {
+        selected_learning_ids: string[];
+        selected_networking_ids: string[];
+        selected_experience_ids: string[];
+        milestone_3_months: string;
+        milestone_6_months: string;
+      };
+      
+      // Create reflection with finalized roadmap
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: args.stepName,
+        userInput: args.userTurn,
+        payload: {
+          selected_learning_ids,
+          selected_networking_ids,
+          selected_experience_ids,
+          milestone_3_months,
+          milestone_6_months,
+          coach_reflection: `Excellent! You've created a comprehensive roadmap with ${selected_learning_ids.length} learning actions, ${selected_networking_ids.length} networking actions, and ${selected_experience_ids.length} experience actions. On a scale of 1-10, how committed are you to executing this roadmap?`
+        }
+      });
+      
+      return { ok: true, message: 'Roadmap finalized' };
+    }
+
+    case 'gap_completion': {
+      // User completed one gap in the roadmap
+      const {
+        gap_id,
+        selected_learning_ids,
+        selected_networking_ids,
+        selected_experience_ids,
+        milestone
+      } = data as {
+        gap_id: string;
+        selected_learning_ids: string[];
+        selected_networking_ids: string[];
+        selected_experience_ids: string[];
+        milestone: string;
+      };
+      
+      const session = await ctx.runQuery(api.queries.getSession, { sessionId: args.sessionId });
+      if (session === null) {
+        return { ok: false, message: 'Session not found' };
+      }
+      
+      // Get current roadmap state
+      const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
+        sessionId: args.sessionId
+      });
+      
+      const roadmapReflections = sessionReflections.filter((r: { step: string }) => r.step === 'ROADMAP');
+      const lastRoadmapReflection = roadmapReflections[roadmapReflections.length - 1];
+      
+      if (lastRoadmapReflection === undefined) {
+        return { ok: false, message: 'Roadmap not found' };
+      }
+      
+      const payload = lastRoadmapReflection.payload as Record<string, unknown>;
+      const aiSuggestedRoadmap = payload['ai_suggested_roadmap'] as Record<string, unknown> | undefined;
+      
+      if (aiSuggestedRoadmap === undefined) {
+        return { ok: false, message: 'Roadmap data not found' };
+      }
+      
+      const gapCards = Array.isArray(aiSuggestedRoadmap['gap_cards']) 
+        ? aiSuggestedRoadmap['gap_cards'] as Array<Record<string, unknown>>
+        : [];
+      const currentGapIndex = typeof aiSuggestedRoadmap['current_gap_index'] === 'number'
+        ? aiSuggestedRoadmap['current_gap_index']
+        : 0;
+      
+      // Store this gap's selections
+      const gapSelections = payload[`gap_${currentGapIndex}_selections`] as Record<string, unknown> | undefined ?? {};
+      gapSelections[gap_id] = {
+        selected_learning_ids,
+        selected_networking_ids,
+        selected_experience_ids,
+        milestone
+      };
+      
+      // Check if there are more gaps
+      const nextGapIndex = currentGapIndex + 1;
+      const hasMoreGaps = nextGapIndex < gapCards.length;
+      
+      if (hasMoreGaps) {
+        // Move to next gap
+        const nextGap = gapCards[nextGapIndex];
+        const nextGapName = nextGap !== undefined ? String(nextGap['gap_name'] ?? 'next gap') : 'next gap';
+        
+        await ctx.runMutation(api.mutations.createReflection, {
+          orgId: args.orgId,
+          userId: args.userId,
+          sessionId: args.sessionId,
+          step: args.stepName,
+          userInput: args.userTurn,
+          payload: {
+            ...payload,
+            [`gap_${currentGapIndex}_selections`]: gapSelections[gap_id],
+            ai_suggested_roadmap: {
+              ...aiSuggestedRoadmap,
+              current_gap_index: nextGapIndex
+            },
+            coach_reflection: `Great! You've completed gap ${currentGapIndex + 1}. Now let's work on gap ${nextGapIndex + 1}: ${nextGapName}.`
+          }
+        });
+        
+        return { ok: true, message: `Moving to gap ${nextGapIndex + 1}` };
+      } else {
+        // All gaps completed - finalize roadmap
+        await ctx.runMutation(api.mutations.createReflection, {
+          orgId: args.orgId,
+          userId: args.userId,
+          sessionId: args.sessionId,
+          step: args.stepName,
+          userInput: args.userTurn,
+          payload: {
+            ...payload,
+            [`gap_${currentGapIndex}_selections`]: gapSelections[gap_id],
+            roadmap_completed: true,
+            coach_reflection: `Excellent! You've completed your roadmap for all ${gapCards.length} gaps. On a scale of 1-10, how committed are you to executing this roadmap?`
+          }
+        });
+        
+        return { ok: true, message: 'Roadmap completed!' };
+      }
+    }
+
     case 'step_confirmation': {
       // User clicked Proceed or Amend on step confirmation buttons
       const { action } = data as { action: 'proceed' | 'amend' };
@@ -595,7 +776,7 @@ async function handleStructuredInput(
         const currentStep = session.step;
         
         // Special handling for review step - trigger report generation instead of advancing
-        if (currentStep === 'review') {
+        if (currentStep.toLowerCase() === 'review') {
           if (framework === 'GROW') {
             // GROW: Generate full AI analysis via the generateReviewAnalysis action
             // This will be called from the frontend after this returns
@@ -606,6 +787,10 @@ async function handleStructuredInput(
               sessionId: args.sessionId
             });
             return { ok: true, message: 'COMPASS session complete!' };
+          } else if (framework === 'CAREER') {
+            // CAREER: Generate career transition report via the generateReviewAnalysis action
+            // This will be called from the frontend after this returns
+            return { ok: true, message: 'Review confirmed, ready for report generation', triggerReportGeneration: true };
           }
         }
         
@@ -617,6 +802,108 @@ async function handleStructuredInput(
           sessionId: args.sessionId,
           step: nextStep
         });
+        
+        // Special handling for CAREER ROADMAP - generate template roadmap from gaps
+        if (framework === 'CAREER' && nextStep === 'ROADMAP') {
+          // Get all reflections to find development_priorities
+          const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
+            sessionId: args.sessionId
+          });
+          
+          // Find development_priorities from GAP_ANALYSIS
+          const gapReflections = sessionReflections.filter((r: { step: string }) => r.step === 'GAP_ANALYSIS');
+          let developmentPriorities: string[] = [];
+          
+          for (const reflection of gapReflections) {
+            const payload = reflection.payload as Record<string, unknown>;
+            if (Array.isArray(payload['development_priorities'])) {
+              developmentPriorities = payload['development_priorities'] as string[];
+              break;
+            }
+          }
+          
+          // Generate roadmap with gap-specific actions for sequential flow
+          const gapCards = developmentPriorities.map((gap, gapIndex) => ({
+            gap_id: `gap_${gapIndex}`,
+            gap_name: gap,
+            gap_index: gapIndex,
+            total_gaps: developmentPriorities.length,
+            learning_actions: [
+              {
+                id: `learn_${gapIndex}_1`,
+                action: `Complete comprehensive training on ${gap}`,
+                timeline: "2 months",
+                resource: "Online course"
+              },
+              {
+                id: `learn_${gapIndex}_2`,
+                action: `Practice ${gap} through hands-on projects`,
+                timeline: "6 weeks",
+                resource: "Practice exercises"
+              },
+              {
+                id: `learn_${gapIndex}_3`,
+                action: `Read industry books/articles on ${gap}`,
+                timeline: "1 month",
+                resource: "Books/Articles"
+              }
+            ],
+            networking_actions: [
+              {
+                id: `network_${gapIndex}_1`,
+                action: `Connect with professionals who excel in ${gap}`,
+                timeline: "Next 2 weeks"
+              },
+              {
+                id: `network_${gapIndex}_2`,
+                action: `Join ${gap} community or discussion group`,
+                timeline: "This month"
+              },
+              {
+                id: `network_${gapIndex}_3`,
+                action: `Attend ${gap} workshop or webinar`,
+                timeline: "Next quarter"
+              }
+            ],
+            experience_actions: [
+              {
+                id: `exp_${gapIndex}_1`,
+                action: `Take on project requiring ${gap}`,
+                timeline: "Next quarter"
+              },
+              {
+                id: `exp_${gapIndex}_2`,
+                action: `Shadow someone skilled in ${gap}`,
+                timeline: "Within 2 months"
+              },
+              {
+                id: `exp_${gapIndex}_3`,
+                action: `Volunteer for initiative using ${gap}`,
+                timeline: "Next 3 months"
+              }
+            ],
+            milestone: `Develop proficiency in ${gap} through learning and practice`
+          }));
+          
+          // Create reflection with roadmap
+          await ctx.runMutation(api.mutations.createReflection, {
+            orgId: args.orgId,
+            userId: args.userId,
+            sessionId: args.sessionId,
+            step: nextStep,
+            userInput: '',
+            payload: {
+              coach_reflection: `Let's build your roadmap! I've identified ${developmentPriorities.length} gaps to address. We'll work on them one at a time, starting with: ${developmentPriorities[0] ?? 'your first gap'}.`,
+              ai_suggested_roadmap: {
+                gap_cards: gapCards,
+                current_gap_index: 0,
+                total_gaps: developmentPriorities.length
+              }
+            }
+          });
+          
+          return { ok: true, message: 'Roadmap generated!', nextStep };
+        }
         
         // Get step transitions for opener message
         const frameworkCoach = getFrameworkCoach(framework);
@@ -765,13 +1052,14 @@ async function handleStructuredInput(
       });
       
       // Recursively call nextStep to let AI ask the follow-up question
-      return await ctx.runAction(api.coach.nextStep, {
+      const result1 = await ctx.runAction(api.coach.nextStep, {
         orgId: args.orgId,
         userId: args.userId,
         sessionId: args.sessionId,
         stepName: 'clarity',
         userTurn: `[Mindset state selected: ${mindset_state}]`
-      });
+      }) as unknown;
+      return result1 as { ok: boolean; message: string };
     }
 
     case 'control_level_selection': {
@@ -806,13 +1094,14 @@ async function handleStructuredInput(
       });
       
       // Recursively call nextStep to let AI ask the follow-up question
-      return await ctx.runAction(api.coach.nextStep, {
+      const result2 = await ctx.runAction(api.coach.nextStep, {
         orgId: args.orgId,
         userId: args.userId,
         sessionId: args.sessionId,
         stepName: 'clarity',
         userTurn: `[Control level selected: ${control_level}]`
-      });
+      }) as unknown;
+      return result2 as { ok: boolean; message: string };
     }
 
     case 'q7_yes_response': {
@@ -839,13 +1128,14 @@ async function handleStructuredInput(
       });
       
       // Recursively call nextStep to let AI ask follow-up question
-      return await ctx.runAction(api.coach.nextStep, {
+      const result3 = await ctx.runAction(api.coach.nextStep, {
         orgId: args.orgId,
         userId: args.userId,
         sessionId: args.sessionId,
         stepName: 'clarity',
         userTurn: '[User wants to add more context]'
-      });
+      }) as unknown;
+      return result3 as { ok: boolean; message: string };
     }
 
     case 'q7_no_response': {
@@ -874,13 +1164,14 @@ async function handleStructuredInput(
       });
       
       // Recursively call nextStep to let AI provide completion summary
-      return await ctx.runAction(api.coach.nextStep, {
+      const result4 = await ctx.runAction(api.coach.nextStep, {
         orgId: args.orgId,
         userId: args.userId,
         sessionId: args.sessionId,
         stepName: 'clarity',
         userTurn: '[User has nothing else to add - ready for summary]'
-      });
+      }) as unknown;
+      return result4 as { ok: boolean; message: string };
     }
 
     case 'safety_choice': {
@@ -919,13 +1210,14 @@ async function handleStructuredInput(
         
         // Recursively call nextStep with the stored user input
         // This will process it through the normal coaching flow
-        return await ctx.runAction(api.coach.nextStep, {
+        const result = await ctx.runAction(api.coach.nextStep, {
           orgId: args.orgId,
           userId: args.userId,
           sessionId: args.sessionId,
           stepName: pendingUserStep ?? session.step,
           userTurn: pendingUserTurn
-        });
+        }) as unknown;
+        return result as { ok: boolean; message: string };
       }
       
       return { ok: false, message: 'Invalid safety choice action' };
@@ -948,6 +1240,10 @@ function getNextStepForFramework(currentStep: string, framework: string): string
     const steps = ['introduction', 'clarity', 'ownership', 'mapping', 'practice', 'review'];
     const idx = steps.indexOf(currentStep);
     return steps[idx + 1] ?? 'review';
+  } else if (framework === 'CAREER') {
+    const steps = ['INTRODUCTION', 'ASSESSMENT', 'GAP_ANALYSIS', 'ROADMAP', 'REVIEW'];
+    const idx = steps.indexOf(currentStep);
+    return steps[idx + 1] ?? 'REVIEW';
   }
   return 'review';
 }
@@ -1172,7 +1468,7 @@ ${Array.isArray(options) ? `\nALL AVAILABLE OPTIONS:\n${JSON.stringify(options, 
         
         if (crossSessionContext.length > 0) {
           // Filter out any results with missing content
-          const validContext = crossSessionContext.filter(ctx => 
+          const validContext = crossSessionContext.filter((ctx: { content: string | null | undefined; framework?: string; relevance?: number }) => 
             ctx.content !== null && 
             ctx.content !== undefined && 
             typeof ctx.content === 'string' && 
@@ -1184,8 +1480,8 @@ ${Array.isArray(options) ? `\nALL AVAILABLE OPTIONS:\n${JSON.stringify(options, 
 📚 RELEVANT PAST CONTEXT (from similar sessions):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-${validContext.map((ctx, i) => 
-  `${i + 1}. ${ctx.content.substring(0, 200)}... (${ctx.framework} session, ${(ctx.relevance * 100).toFixed(0)}% relevant)`
+${validContext.map((ctx: { content: string; framework?: string; relevance?: number }, i: number) => 
+  `${i + 1}. ${ctx.content.substring(0, 200)}... (${ctx.framework ?? 'unknown'} session, ${((ctx.relevance ?? 0) * 100).toFixed(0)}% relevant)`
 ).join('\n\n')}
 
 💡 Use this context to:
@@ -1526,8 +1822,10 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
 
     // Validate response
     // SKIP validator for GROW Will step - it hallucinates that selected_option_ids isn't in schema
+    // SKIP validator for CAREER ROADMAP step - roadmap is generated programmatically in backend
     // Pre-validation already checked required fields, and we have fallback to ensure selected_option_ids
-    const skipValidation = session.framework === 'GROW' && step.name === 'will';
+    const skipValidation = (session.framework === 'GROW' && step.name === 'will') ||
+                           (session.framework === 'CAREER' && step.name === 'ROADMAP');
     
     let isValid = true;
     let verdict: { valid?: boolean; verdict?: string; reasons?: string[] } = { valid: true };
@@ -1673,7 +1971,8 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
       shouldAdvance: completionResult.shouldAdvance,
       awaitingConfirmation: completionResult.awaitingConfirmation,
       capturedFields: capturedFields.length,
-      missingFields: missingFields.length
+      missingFields: missingFields.length,
+      missingFieldsBefore: missingFields
     });
 
     // NEW: Handle awaiting confirmation state
@@ -1845,6 +2144,27 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
 });
 
 // ============================================================================
+// CAREER REPORT GENERATION HELPER
+// ============================================================================
+
+async function generateCareerReport(
+  ctx: ActionCtx,
+  _session: { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> },
+  _reflections: Array<{ step: string; payload: Record<string, unknown> }>,
+  _userName: string,
+  args: { sessionId: Id<"sessions">; orgId: Id<"orgs">; userId: Id<"users"> }
+): Promise<{ ok: boolean; message: string }> {
+  // Simple report for now - just close the session
+  // TODO: Generate comprehensive career transition report with AI analysis
+  // When implementing, extract: assessmentPayload, gapAnalysisPayload, roadmapPayload, reviewPayload from reflections
+  await ctx.runMutation(api.mutations.closeSession, {
+    sessionId: args.sessionId
+  });
+  
+  return { ok: true, message: 'Career transition report generated!' };
+}
+
+// ============================================================================
 // REVIEW ANALYSIS ACTION
 // ============================================================================
 
@@ -1854,8 +2174,8 @@ export const generateReviewAnalysis = action({
     orgId: v.id("orgs"),
     userId: v.id("users"),
   },
-  handler: async (ctx, args) => {
-    const session = await ctx.runQuery(api.queries.getSession, { sessionId: args.sessionId });
+  handler: async (ctx, args): Promise<{ ok: boolean; message?: string; analysis?: Record<string, unknown> }> => {
+    const session: { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> } | null = await ctx.runQuery(api.queries.getSession, { sessionId: args.sessionId });
     if (session === null || session === undefined) {
       return { ok: false, message: "Session not found" };
     }
@@ -1868,6 +2188,19 @@ export const generateReviewAnalysis = action({
       return { ok: false, message: "No reflections found" };
     }
 
+    // Framework-specific report generation
+    if (session.framework === 'CAREER') {
+      // CAREER framework report generation
+      return await generateCareerReport(
+        ctx, 
+        session as { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> },
+        reflections as Array<{ step: string; payload: Record<string, unknown> }>,
+        userName,
+        args
+      );
+    }
+
+    // GROW framework report generation (existing logic)
     const goalReflection = reflections.find((r: { step: string }) => r.step === "goal");
     const realityReflection = reflections.find((r: { step: string }) => r.step === "reality");
     const optionsReflection = reflections.find((r: { step: string }) => r.step === "options");

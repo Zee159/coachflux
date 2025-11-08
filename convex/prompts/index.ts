@@ -122,6 +122,18 @@ ${capturedState}
 MISSING REQUIRED FIELDS: ${missingFields.length > 0 ? missingFields.join(", ") : "None - all fields captured!"}
 ALREADY CAPTURED: ${capturedFields.length > 0 ? capturedFields.join(", ") : "None yet"}
 
+${missingFields.length === 0 ? `
+🎯 STEP COMPLETE - PROVIDE CONFIRMATION SUMMARY NOW:
+ALL required fields are captured! DO NOT ask more questions.
+Instead, follow the "STEP COMPLETION - CONFIRMATION SUMMARY" guidance in your step instructions above.
+Provide a structured summary with insights, then ask if they want to proceed or amend.
+The system will show "Proceed" and "Amend" buttons after your summary.
+` : missingFields.length === 1 ? `
+⚠️ LAST FIELD REMAINING: ${missingFields[0]}
+The user's current input likely contains the answer to this last field.
+EXTRACT it from their response, then IMMEDIATELY provide the step completion summary.
+DO NOT ask another question. Follow the "STEP COMPLETION - CONFIRMATION SUMMARY" guidance.
+` : ''}
 AGENT INSTRUCTIONS:
 1. DO NOT ask about fields already captured: ${capturedFields.length > 0 ? capturedFields.join(', ') : 'none yet'}
 2. ACKNOWLEDGE what you already know in your reflection

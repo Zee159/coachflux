@@ -81,6 +81,7 @@ export interface CoachActionResult {
   payload?: ReflectionPayload;
   sessionClosed?: boolean;
   triggerReportGeneration?: boolean;
+  triggerAIGeneration?: boolean;
 }
 
 /**

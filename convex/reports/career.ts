@@ -231,7 +231,18 @@ function generateCareerTargetSection(assessment: ReflectionPayload): string {
   section += `- **Role:** ${getString(assessment, 'current_role', 'Not specified')}\n`;
   section += `- **Industry:** ${getString(assessment, 'industry', 'Not specified')}\n`;
   section += `- **Experience:** ${getNumber(assessment, 'years_experience', 0)} years\n`;
-  section += `- **Career Stage:** ${getString(assessment, 'career_stage', 'Not specified')}\n\n`;
+  
+  // Format career level with human-readable labels
+  const careerLevel = getString(assessment, 'career_stage', 'Not specified');
+  const levelLabels: Record<string, string> = {
+    'entry_level': 'Entry Level',
+    'middle_manager': 'Middle Manager',
+    'senior_manager': 'Senior Manager',
+    'executive': 'Executive',
+    'founder': 'Founder/Entrepreneur'
+  };
+  const formattedLevel = careerLevel.length > 0 ? (levelLabels[careerLevel] ?? careerLevel) : 'Not specified';
+  section += `- **Current Level:** ${formattedLevel}\n\n`;
   
   section += '**Target Position:**\n\n';
   section += `- **Role:** ${getString(assessment, 'target_role', 'Not specified')}\n`;

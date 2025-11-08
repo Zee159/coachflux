@@ -106,17 +106,18 @@ export class CareerCoach implements FrameworkCoach {
     const capturedCount = capturedFields.length;
 
     // Progressive relaxation
-    let requiredCount = 7; // Strict: 7/8 fields
-    if (skipCount >= 1) { requiredCount = 5; } // Lenient: 5/8 fields
-    if (skipCount >= 2) { requiredCount = 3; } // Very lenient: 3/8 fields
-    if (loopDetected) { requiredCount = 4; } // Loop override: 4/8 fields
+    let requiredCount = 8; // Strict: ALL 8 fields required
+    if (skipCount >= 1) { requiredCount = 6; } // Lenient: 6/8 fields
+    if (skipCount >= 2) { requiredCount = 4; } // Very lenient: 4/8 fields
+    if (loopDetected) { requiredCount = 5; } // Loop override: 5/8 fields
 
     // Minimum critical fields
     const hasCriticalFields = fields.current_role && fields.target_role && fields.initial_confidence;
 
     if (capturedCount >= requiredCount && hasCriticalFields) {
       return {
-        shouldAdvance: true,
+        shouldAdvance: false,
+        awaitingConfirmation: true,
         reason: `Captured ${capturedCount}/8 fields (required: ${requiredCount})`,
         capturedFields,
         completionPercentage: Math.round((capturedCount / 8) * 100)
@@ -154,9 +155,9 @@ export class CareerCoach implements FrameworkCoach {
     const capturedCount = capturedFields.length;
 
     // Progressive relaxation
-    let requiredCount = 4; // Strict: 4/5 fields
-    if (skipCount >= 1) { requiredCount = 3; } // Lenient: 3/5 fields
-    if (skipCount >= 2) { requiredCount = 2; } // Very lenient: 2/5 fields
+    let requiredCount = 5; // Strict: ALL 5 fields required
+    if (skipCount >= 1) { requiredCount = 4; } // Lenient: 4/5 fields
+    if (skipCount >= 2) { requiredCount = 3; } // Very lenient: 3/5 fields
     if (loopDetected) { requiredCount = 3; } // Loop override: 3/5 fields
 
     // Minimum critical fields
@@ -164,7 +165,8 @@ export class CareerCoach implements FrameworkCoach {
 
     if (capturedCount >= requiredCount && hasCriticalFields) {
       return {
-        shouldAdvance: true,
+        shouldAdvance: false,
+        awaitingConfirmation: true,
         reason: `Captured ${capturedCount}/5 fields (required: ${requiredCount})`,
         capturedFields,
         completionPercentage: Math.round((capturedCount / 5) * 100)
@@ -189,6 +191,22 @@ export class CareerCoach implements FrameworkCoach {
     skipCount: number,
     loopDetected: boolean
   ): StepCompletionResult {
+    // Check for new sequential gap flow
+    const roadmapCompleted = payload['roadmap_completed'] === true;
+    const roadmapScore = typeof payload['roadmap_score'] === 'number';
+    
+    // If roadmap is completed and score is captured, await confirmation
+    if (roadmapCompleted && roadmapScore) {
+      return {
+        shouldAdvance: false,
+        awaitingConfirmation: true,
+        reason: 'Roadmap completed with commitment score',
+        capturedFields: ['roadmap_completed', 'roadmap_score'],
+        completionPercentage: 100
+      };
+    }
+    
+    // Backward compatibility: Check for old format (all gaps in one go)
     const fields = {
       learning_actions: Array.isArray(payload['learning_actions']) && payload['learning_actions'].length >= 1,
       networking_actions: Array.isArray(payload['networking_actions']), // Optional, can be empty
@@ -203,9 +221,9 @@ export class CareerCoach implements FrameworkCoach {
     const capturedCount = capturedFields.length;
 
     // Progressive relaxation
-    let requiredCount = 5; // Strict: 5/6 fields
-    if (skipCount >= 1) { requiredCount = 4; } // Lenient: 4/6 fields
-    if (skipCount >= 2) { requiredCount = 3; } // Very lenient: 3/6 fields
+    let requiredCount = 6; // Strict: ALL 6 fields required
+    if (skipCount >= 1) { requiredCount = 5; } // Lenient: 5/6 fields
+    if (skipCount >= 2) { requiredCount = 4; } // Very lenient: 4/6 fields
     if (loopDetected) { requiredCount = 4; } // Loop override: 4/6 fields
 
     // Minimum critical fields
@@ -213,7 +231,8 @@ export class CareerCoach implements FrameworkCoach {
 
     if (capturedCount >= requiredCount && hasCriticalFields) {
       return {
-        shouldAdvance: true,
+        shouldAdvance: false,
+        awaitingConfirmation: true,
         reason: `Captured ${capturedCount}/6 fields (required: ${requiredCount})`,
         capturedFields,
         completionPercentage: Math.round((capturedCount / 6) * 100)
@@ -222,7 +241,9 @@ export class CareerCoach implements FrameworkCoach {
 
     return {
       shouldAdvance: false,
-      reason: `Need ${requiredCount} fields, have ${capturedCount}/6`,
+      reason: roadmapCompleted 
+        ? 'Waiting for commitment score'
+        : `Need ${requiredCount} fields, have ${capturedCount}/6`,
       capturedFields,
       missingFields,
       completionPercentage: Math.round((capturedCount / 6) * 100)
@@ -252,9 +273,9 @@ export class CareerCoach implements FrameworkCoach {
     const capturedCount = capturedFields.length;
 
     // Progressive relaxation
-    let requiredCount = 5; // Strict: 5/6 fields
-    if (skipCount >= 1) { requiredCount = 4; } // Lenient: 4/6 fields
-    if (skipCount >= 2) { requiredCount = 3; } // Very lenient: 3/6 fields
+    let requiredCount = 6; // Strict: ALL 6 fields required
+    if (skipCount >= 1) { requiredCount = 5; } // Lenient: 5/6 fields
+    if (skipCount >= 2) { requiredCount = 4; } // Very lenient: 4/6 fields
     if (loopDetected) { requiredCount = 4; } // Loop override: 4/6 fields
 
     // Minimum critical fields
@@ -262,7 +283,8 @@ export class CareerCoach implements FrameworkCoach {
 
     if (capturedCount >= requiredCount && hasCriticalFields) {
       return {
-        shouldAdvance: true,
+        shouldAdvance: false,
+        awaitingConfirmation: true,
         reason: `Captured ${capturedCount}/6 fields (required: ${requiredCount})`,
         capturedFields,
         completionPercentage: Math.round((capturedCount / 6) * 100)
@@ -294,7 +316,7 @@ export class CareerCoach implements FrameworkCoach {
         INTRODUCTION: "Ready to begin your career planning session?",
         ASSESSMENT: "What's your current role?",
         GAP_ANALYSIS: "What skills does your target role require that you don't currently have?",
-        ROADMAP: "What learning actions will you take to close your skill gaps? For each, what's the timeline and what resource will you use?",
+        ROADMAP: "Let me create a comprehensive roadmap for your transition. I'll suggest learning actions for each gap, networking opportunities, hands-on experiences, and milestones.",
         REVIEW: "What are your key takeaways from this session?"
       }
     };

@@ -4,6 +4,7 @@ import { generateSessionReport } from "./reports";
 import type { SessionReportData, FormattedReport, ReflectionPayload } from "./types";
 import { growFramework } from "./frameworks/grow";
 import { compassFramework } from "./frameworks/compass";
+import { careerFramework } from "./frameworks/career";
 
 export const getOrg = query({
   args: { orgId: v.id("orgs") },
@@ -195,7 +196,9 @@ export const getCSSScore = query({
 export const getFrameworkQuestions = query({
   args: { framework: v.string() },
   handler: (_ctx, args) => {
-    const framework = args.framework === "GROW" ? growFramework : compassFramework;
+    const framework = args.framework === "GROW" ? growFramework 
+                    : args.framework === "CAREER" ? careerFramework 
+                    : compassFramework;
     
     // Build questions map from framework steps
     const questionsMap: Record<string, { title: string; questions: string[] }> = {};

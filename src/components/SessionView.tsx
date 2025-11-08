@@ -16,6 +16,9 @@ import { NudgeIndicator } from "./NudgeDisplay";
 import { ConfidenceTracker } from "./ConfidenceTracker";
 import { YesNoSelector } from "./YesNoSelector";
 import { OptionsSelector } from "./OptionsSelector";
+import { GapSelector } from "./GapSelector";
+import { GapPrioritySelector } from "./GapPrioritySelector";
+import { GapRoadmapCard } from "./GapRoadmapCard";
 import { ControlLevelSelector } from "./ControlLevelSelector";
 import { ActionValidator } from "./ActionValidator";
 import { ConfidenceScaleSelector } from "./ConfidenceScaleSelector";
@@ -31,6 +34,15 @@ type COMPASSStepName = "introduction" | "clarity" | "ownership" | "mapping" | "p
 type CAREERStepName = "INTRODUCTION" | "ASSESSMENT" | "GAP_ANALYSIS" | "ROADMAP" | "REVIEW";
 type StepName = GROWStepName | COMPASSStepName | CAREERStepName;
 
+// AI Suggested Gap interface
+interface AISuggestedGap {
+  id: string;
+  type: 'skill' | 'experience';
+  gap: string;
+  rationale: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
 function formatReflectionDisplay(step: string, payload: Record<string, unknown>): JSX.Element {
   const entries = Object.entries(payload);
   
@@ -44,7 +56,25 @@ function formatReflectionDisplay(step: string, payload: Record<string, unknown>)
   // Hide 'selected_option_ids' field (internal state)
   // Hide 'suggested_action' field in Will step (shown via ActionValidator buttons instead)
   // Hide 'current_option_index', 'current_option_label', 'total_options' (internal state)
-  const buttonFields = ['options', 'selected_option_ids', 'suggested_action', 'current_option_index', 'current_option_label', 'total_options'];
+  // Hide 'ai_suggested_roadmap' (shown via RoadmapBuilder component)
+  // Hide 'ai_suggested_gaps' (shown via GapSelector component)
+  // Hide 'selected_gap_ids', 'selected_learning_ids', 'selected_networking_ids', 'selected_experience_ids' (internal state)
+  const buttonFields = [
+    'options', 
+    'selected_option_ids', 
+    'suggested_action', 
+    'current_option_index', 
+    'current_option_label', 
+    'total_options',
+    'ai_suggested_roadmap',
+    'ai_suggested_gaps',
+    'gap_cards',
+    'selected_gap_ids',
+    'selected_learning_ids',
+    'selected_networking_ids',
+    'selected_experience_ids',
+    'development_priorities'
+  ];
   
   const otherEntries = entries.filter(([key]) => 
     key !== 'coach_reflection' && !internalFields.includes(key) && !buttonFields.includes(key)
@@ -383,11 +413,11 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
     title: "Career Assessment",
     questions: [
       "What's your current role?",
-      "How many years of experience do you have?",
       "What industry are you in?",
       "What role are you targeting?",
-      "What's your timeframe?",
-      "How would you describe your career stage?",
+      "How many years of professional experience do you have?",
+      "What best describes your current level?",
+      "What's your timeframe for this transition?",
       "On a scale of 1-10, how confident are you about making this transition?",
       "On a scale of 1-10, how clear are you on what it takes to get there?"
     ]
@@ -397,20 +427,19 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
     questions: [
       "What skills does your target role require that you don't currently have?",
       "What types of experience are you missing?",
+      "Would you like me to suggest additional gaps based on your career transition?",
       "What skills from your current role transfer to your target role?",
-      "Of all the gaps we've identified, which 3 are most critical to address first?",
+      "Of all the gaps we've identified, which ones are most critical to address first?",
       "On a scale of 1-10, how manageable do these gaps feel?"
     ]
   },
   ROADMAP: {
     title: "Career Roadmap",
     questions: [
-      "What learning actions will you take to close your skill gaps?",
-      "What networking actions will help you?",
-      "What hands-on experience can you get?",
-      "What will you achieve in 3 months?",
-      "What about 6 months?",
-      "On a scale of 1-10, how confident are you in this roadmap?"
+      "Let's build your roadmap! We'll work on each gap one at a time.",
+      "[For each gap: Select learning actions, networking actions, experience actions, and set a milestone]",
+      "[After all gaps are complete]",
+      "On a scale of 1-10, how committed are you to executing this roadmap?"
     ]
   },
   REVIEW: {
@@ -743,14 +772,26 @@ export function SessionView() {
         will: 'Review' 
       };
       return steps[currentStep] ?? 'Review';
-    } else {
+    } else if (session?.framework === 'COMPASS') {
       const steps: Record<string, string> = { 
         clarity: 'Ownership', 
         ownership: 'Mapping', 
         mapping: 'Practice', 
-        practice: 'Review' 
+        practice: 'Anchoring',
+        anchoring: 'Sustaining',
+        sustaining: 'Review'
       };
       return steps[currentStep] ?? 'Review';
+    } else if (session?.framework === 'CAREER') {
+      const steps: Record<string, string> = { 
+        INTRODUCTION: 'Assessment',
+        ASSESSMENT: 'Gap Analysis', 
+        GAP_ANALYSIS: 'Roadmap', 
+        ROADMAP: 'Review'
+      };
+      return steps[currentStep] ?? 'Review';
+    } else {
+      return 'Review';
     }
   };
 
@@ -758,8 +799,12 @@ export function SessionView() {
   const getStepsForFramework = (framework: string): string[] => {
     if (framework === 'GROW') {
       return ['goal', 'reality', 'options', 'will'];
+    } else if (framework === 'COMPASS') {
+      return ['clarity', 'ownership', 'mapping', 'practice', 'anchoring', 'sustaining'];
+    } else if (framework === 'CAREER') {
+      return ['INTRODUCTION', 'ASSESSMENT', 'GAP_ANALYSIS', 'ROADMAP'];
     } else {
-      return ['clarity', 'ownership', 'mapping', 'practice'];
+      return [];
     }
   };
 
@@ -1202,6 +1247,684 @@ export function SessionView() {
                                   }}
                                   onNo={() => {
                                     navigate('/dashboard');
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach ASSESSMENT - Initial Confidence Scale */}
+                          {session?.framework === 'CAREER' && reflection.step === 'ASSESSMENT' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const initialConfidence = payload['initial_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: initial_confidence not yet captured, AI is asking for it
+                            if (initialConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for confidence (look for "confident" in coach message)
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('how confident') ||
+                                                         coachReflection.toLowerCase().includes('confidence');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident are you about making this transition?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident at all"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'ASSESSMENT',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach ASSESSMENT - Clarity Scale */}
+                          {session?.framework === 'CAREER' && reflection.step === 'ASSESSMENT' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const initialConfidence = payload['initial_confidence'];
+                            const assessmentScore = payload['assessment_score'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: initial_confidence captured, assessment_score not yet captured, AI is asking for it
+                            if (typeof initialConfidence !== 'number' || assessmentScore !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for clarity
+                            const isAskingForClarity = coachReflection.toLowerCase().includes('how clear') ||
+                                                      coachReflection.toLowerCase().includes('what it takes');
+                            
+                            if (!isAskingForClarity) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how clear are you on what it takes to get there?"
+                                  colorScheme="clarity"
+                                  minLabel="Not clear at all"
+                                  maxLabel="Very clear"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'ASSESSMENT',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach ASSESSMENT - Career Stage Selector */}
+                          {reflection.step === 'ASSESSMENT' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const careerStage = payload['career_stage'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: career_stage not yet captured, AI is asking for it
+                            if (careerStage !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for career level
+                            const isAskingForStage = coachReflection.toLowerCase().includes('current level') ||
+                                                    coachReflection.toLowerCase().includes('career level') ||
+                                                    (coachReflection.toLowerCase().includes('entry') && coachReflection.toLowerCase().includes('manager'));
+                            
+                            if (!isAskingForStage) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4 space-y-2">
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  What best describes your current level?
+                                </p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {[
+                                    { value: 'entry_level', label: 'Entry Level', emoji: '🌱' },
+                                    { value: 'middle_manager', label: 'Middle Manager', emoji: '👔' },
+                                    { value: 'senior_manager', label: 'Senior Manager', emoji: '🎯' },
+                                    { value: 'executive', label: 'Executive', emoji: '👑' },
+                                    { value: 'founder', label: 'Founder/Entrepreneur', emoji: '🚀' }
+                                  ].map((stage) => (
+                                    <button
+                                      key={stage.value}
+                                      onClick={() => {
+                                        void nextStepAction({
+                                          orgId: session.orgId,
+                                          userId: session.userId,
+                                          sessionId: session._id,
+                                          stepName: 'ASSESSMENT',
+                                          userTurn: stage.value,
+                                        });
+                                      }}
+                                      className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:border-blue-400 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                      <span className="text-xl">{stage.emoji}</span>
+                                      <span>{stage.label}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach ASSESSMENT - Timeframe Selector */}
+                          {reflection.step === 'ASSESSMENT' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const timeframe = payload['timeframe'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: timeframe not yet captured, AI is asking for it
+                            if (timeframe !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for timeframe
+                            const isAskingForTimeframe = coachReflection.toLowerCase().includes('timeframe') ||
+                                                        coachReflection.toLowerCase().includes('how long') ||
+                                                        coachReflection.toLowerCase().includes('when do you want');
+                            
+                            if (!isAskingForTimeframe) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4 space-y-2">
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  What's your timeframe for this transition?
+                                </p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {[
+                                    { value: '3-6 months', label: '3-6 months', emoji: '⚡' },
+                                    { value: '6-12 months', label: '6-12 months', emoji: '📅' },
+                                    { value: '1-2 years', label: '1-2 years', emoji: '🎯' },
+                                    { value: '2+ years', label: '2+ years', emoji: '🌟' }
+                                  ].map((time) => (
+                                    <button
+                                      key={time.value}
+                                      onClick={() => {
+                                        void nextStepAction({
+                                          orgId: session.orgId,
+                                          userId: session.userId,
+                                          sessionId: session._id,
+                                          stepName: 'ASSESSMENT',
+                                          userTurn: time.value,
+                                        });
+                                      }}
+                                      className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:border-blue-400 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                      <span className="text-xl">{time.emoji}</span>
+                                      <span>{time.label}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach GAP_ANALYSIS - AI Wants Suggestions Yes/No */}
+                          {session?.framework === 'CAREER' && reflection.step === 'GAP_ANALYSIS' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const aiWantsSuggestions = payload['ai_wants_suggestions'];
+                            const experienceGaps = payload['experience_gaps'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: experience_gaps captured, ai_wants_suggestions not yet set, AI is asking
+                            if (experienceGaps === undefined || aiWantsSuggestions !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for suggestions
+                            const isAskingForSuggestions = coachReflection.toLowerCase().includes('would you like me to suggest') ||
+                                                          coachReflection.toLowerCase().includes('suggest additional gaps') ||
+                                                          coachReflection.toLowerCase().includes('ai.*suggest');
+                            
+                            if (!isAskingForSuggestions) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <YesNoSelector
+                                  question="Would you like AI to suggest additional gaps based on your career transition?"
+                                  yesLabel="Yes, please suggest gaps"
+                                  noLabel="No, continue with my gaps"
+                                  onYes={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'GAP_ANALYSIS',
+                                      userTurn: 'Yes, please suggest additional gaps based on my career transition.'
+                                    });
+                                  }}
+                                  onNo={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'GAP_ANALYSIS',
+                                      userTurn: 'No, I prefer to continue with my own gaps.'
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach GAP_ANALYSIS - AI Suggested Gaps Selector */}
+                          {session?.framework === 'CAREER' && reflection.step === 'GAP_ANALYSIS' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const aiSuggestedGaps = payload['ai_suggested_gaps'];
+                            const selectedGapIds = payload['selected_gap_ids'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: AI has suggested gaps and user hasn't selected yet
+                            if (!Array.isArray(aiSuggestedGaps) || aiSuggestedGaps.length === 0 || selectedGapIds !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is presenting the gaps
+                            const isPresentingGaps = coachReflection.toLowerCase().includes('identified') ||
+                                                    coachReflection.toLowerCase().includes('potential gaps') ||
+                                                    coachReflection.toLowerCase().includes('suggest');
+                            
+                            if (!isPresentingGaps) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <GapSelector
+                                  gaps={(aiSuggestedGaps as AISuggestedGap[]).map(gap => ({
+                                    id: gap.id,
+                                    type: gap.type,
+                                    gap: gap.gap,
+                                    rationale: gap.rationale,
+                                    priority: gap.priority
+                                  }))}
+                                  onSubmit={(selectedIds) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'GAP_ANALYSIS',
+                                      userTurn: selectedIds.length > 0 
+                                        ? `I've selected ${selectedIds.length} gap${selectedIds.length > 1 ? 's' : ''}`
+                                        : 'I prefer to skip these suggestions',
+                                      structuredInput: {
+                                        type: 'gap_selection',
+                                        data: { selected_gap_ids: selectedIds }
+                                      }
+                                    });
+                                  }}
+                                  maxSelections={5}
+                                  coachMessage={coachReflection}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach GAP_ANALYSIS - Development Priorities Selector */}
+                          {session?.framework === 'CAREER' && reflection.step === 'GAP_ANALYSIS' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const skillGaps = payload['skill_gaps'];
+                            const selectedGapIds = payload['selected_gap_ids'];
+                            const developmentPriorities = payload['development_priorities'];
+                            const transferableSkills = payload['transferable_skills'];
+                            const aiSuggestedGaps = payload['ai_suggested_gaps'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: transferable_skills captured, priorities not yet set, AI is asking
+                            if (!Array.isArray(transferableSkills) || transferableSkills.length === 0 || developmentPriorities !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for priorities
+                            const isAskingForPriorities = coachReflection.toLowerCase().includes('most critical') ||
+                                                         coachReflection.toLowerCase().includes('priorit') ||
+                                                         coachReflection.toLowerCase().includes('focus on');
+                            
+                            if (!isAskingForPriorities) {
+                              return null;
+                            }
+                            
+                            // Build combined gaps list
+                            const allGaps: Array<{id: string; gap: string; type: 'skill' | 'experience'; source: 'user' | 'ai'}> = [];
+                            
+                            // Add user skill gaps
+                            if (Array.isArray(skillGaps)) {
+                              skillGaps.forEach((gap: unknown, idx: number) => {
+                                if (typeof gap === 'string') {
+                                  allGaps.push({
+                                    id: `skill_${idx}`,
+                                    gap,
+                                    type: 'skill',
+                                    source: 'user'
+                                  });
+                                }
+                              });
+                            }
+                            
+                            // Add AI-selected gaps
+                            if (Array.isArray(selectedGapIds) && Array.isArray(aiSuggestedGaps)) {
+                              selectedGapIds.forEach((gapId: unknown) => {
+                                const aiGap = (aiSuggestedGaps as AISuggestedGap[]).find(g => g.id === gapId);
+                                if (aiGap !== undefined) {
+                                  allGaps.push({
+                                    id: aiGap.id,
+                                    gap: aiGap.gap,
+                                    type: aiGap.type,
+                                    source: 'ai'
+                                  });
+                                }
+                              });
+                            }
+                            
+                            if (allGaps.length === 0) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <GapPrioritySelector
+                                  gaps={allGaps}
+                                  onSubmit={(selectedGaps) => {
+                                    // Map IDs back to gap descriptions
+                                    const priorityGaps = selectedGaps.map(id => {
+                                      const gap = allGaps.find(g => g.id === id);
+                                      return gap?.gap ?? '';
+                                    }).filter(Boolean);
+                                    
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'GAP_ANALYSIS',
+                                      userTurn: `My top ${priorityGaps.length} priorities are: ${priorityGaps.join(', ')}`,
+                                      structuredInput: {
+                                        type: 'priority_selection',
+                                        data: { development_priorities: priorityGaps }
+                                      }
+                                    });
+                                  }}
+                                  minSelections={1}
+                                  maxSelections={5}
+                                  coachMessage={coachReflection}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach GAP_ANALYSIS - Gap Analysis Score */}
+                          {session?.framework === 'CAREER' && reflection.step === 'GAP_ANALYSIS' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const gapAnalysisScore = payload['gap_analysis_score'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: gap_analysis_score not yet captured, AI is asking for it
+                            if (gapAnalysisScore !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for gap manageability
+                            const isAskingForScore = coachReflection.toLowerCase().includes('how manageable') ||
+                                                    coachReflection.toLowerCase().includes('manageable do these gaps');
+                            
+                            if (!isAskingForScore) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how manageable do these gaps feel?"
+                                  colorScheme="clarity"
+                                  minLabel="Overwhelming"
+                                  maxLabel="Very manageable"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'GAP_ANALYSIS',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach ROADMAP - Gap Roadmap Card (Sequential) */}
+                          {session?.framework === 'CAREER' && reflection.step === 'ROADMAP' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const aiSuggestedRoadmap = payload['ai_suggested_roadmap'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: AI has generated roadmap
+                            if (aiSuggestedRoadmap === undefined || !isObject(aiSuggestedRoadmap)) {
+                              return null;
+                            }
+                            
+                            // Check if AI is presenting the roadmap
+                            const isPresentingRoadmap = coachReflection.toLowerCase().includes('roadmap') ||
+                                                       coachReflection.toLowerCase().includes('gap');
+                            
+                            if (!isPresentingRoadmap) {
+                              return null;
+                            }
+                            
+                            // Type guard for roadmap data
+                            function isObject(value: unknown): value is Record<string, unknown> {
+                              return typeof value === 'object' && value !== null;
+                            }
+                            
+                            const roadmapData = aiSuggestedRoadmap;
+                            const gapCards = Array.isArray(roadmapData['gap_cards']) 
+                              ? roadmapData['gap_cards'] as Array<Record<string, unknown>>
+                              : [];
+                            const currentGapIndex = typeof roadmapData['current_gap_index'] === 'number' 
+                              ? roadmapData['current_gap_index'] 
+                              : 0;
+                            
+                            if (gapCards.length === 0 || currentGapIndex >= gapCards.length) {
+                              return null;
+                            }
+                            
+                            const currentGapCard = gapCards[currentGapIndex];
+                            if (currentGapCard === undefined) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <GapRoadmapCard
+                                  gapCard={{
+                                    gap_id: String(currentGapCard['gap_id'] ?? ''),
+                                    gap_name: String(currentGapCard['gap_name'] ?? ''),
+                                    gap_index: typeof currentGapCard['gap_index'] === 'number' ? currentGapCard['gap_index'] : currentGapIndex,
+                                    total_gaps: typeof currentGapCard['total_gaps'] === 'number' ? currentGapCard['total_gaps'] : gapCards.length,
+                                    learning_actions: Array.isArray(currentGapCard['learning_actions'])
+                                      ? currentGapCard['learning_actions'] as Array<{
+                                          id: string;
+                                          action: string;
+                                          timeline: string;
+                                          resource: string;
+                                        }>
+                                      : [],
+                                    networking_actions: Array.isArray(currentGapCard['networking_actions'])
+                                      ? currentGapCard['networking_actions'] as Array<{
+                                          id: string;
+                                          action: string;
+                                          timeline: string;
+                                        }>
+                                      : [],
+                                    experience_actions: Array.isArray(currentGapCard['experience_actions'])
+                                      ? currentGapCard['experience_actions'] as Array<{
+                                          id: string;
+                                          action: string;
+                                          timeline: string;
+                                        }>
+                                      : [],
+                                    milestone: String(currentGapCard['milestone'] ?? '')
+                                  }}
+                                  onComplete={(selections) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'ROADMAP',
+                                      userTurn: `I've completed gap ${currentGapIndex + 1}: ${String(currentGapCard['gap_name'])}`,
+                                      structuredInput: {
+                                        type: 'gap_completion',
+                                        data: selections
+                                      }
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach ROADMAP - Roadmap Commitment Score */}
+                          {reflection.step === 'ROADMAP' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const roadmapScore = payload['roadmap_score'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: roadmap_score not yet captured, AI is asking for it
+                            if (roadmapScore !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for commitment
+                            const isAskingForScore = coachReflection.toLowerCase().includes('how committed') ||
+                                                    coachReflection.toLowerCase().includes('committed are you');
+                            
+                            if (!isAskingForScore) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how committed are you to this roadmap?"
+                                  colorScheme="confidence"
+                                  minLabel="Not committed"
+                                  maxLabel="Fully committed"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'ROADMAP',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach REVIEW - Final Confidence */}
+                          {reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const finalConfidence = payload['final_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: final_confidence not yet captured, AI is asking for it
+                            if (finalConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for confidence
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('how confident are you now') ||
+                                                         coachReflection.toLowerCase().includes('confident are you now');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident are you now about your career transition?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'REVIEW',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach REVIEW - Final Clarity */}
+                          {reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const finalConfidence = payload['final_confidence'];
+                            const finalClarity = payload['final_clarity'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: final_confidence captured, final_clarity not yet captured, AI is asking for it
+                            if (typeof finalConfidence !== 'number' || finalClarity !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for clarity
+                            const isAskingForClarity = coachReflection.toLowerCase().includes('how clear are you') ||
+                                                      coachReflection.toLowerCase().includes('clear are you on your path');
+                            
+                            if (!isAskingForClarity) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="How clear are you on your path forward (1-10)?"
+                                  colorScheme="clarity"
+                                  minLabel="Not clear"
+                                  maxLabel="Very clear"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'REVIEW',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach REVIEW - Session Helpfulness */}
+                          {reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const finalConfidence = payload['final_confidence'];
+                            const finalClarity = payload['final_clarity'];
+                            const sessionHelpfulness = payload['session_helpfulness'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if: final_confidence and final_clarity captured, session_helpfulness not yet captured, AI is asking for it
+                            if (typeof finalConfidence !== 'number' || typeof finalClarity !== 'number' || sessionHelpfulness !== undefined) {
+                              return null;
+                            }
+                            
+                            // Check if AI is asking for helpfulness
+                            const isAskingForHelpfulness = coachReflection.toLowerCase().includes('how helpful') ||
+                                                          coachReflection.toLowerCase().includes('helpful was this session');
+                            
+                            if (!isAskingForHelpfulness) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="How helpful was this session (1-10)?"
+                                  colorScheme="confidence"
+                                  minLabel="Not helpful"
+                                  maxLabel="Very helpful"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'REVIEW',
+                                      userTurn: String(value),
+                                    });
                                   }}
                                 />
                               </div>

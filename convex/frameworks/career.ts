@@ -87,7 +87,7 @@ Keep it simple - just welcome and get consent. Career focus questions happen in 
           },
           career_stage: {
             type: "string",
-            enum: ["early", "mid", "senior", "executive"]
+            enum: ["entry_level", "middle_manager", "senior_manager", "executive", "founder"]
           },
           initial_confidence: { type: "number", minimum: 1, maximum: 10 },
           assessment_score: { type: "number", minimum: 1, maximum: 10 },
@@ -161,6 +161,30 @@ CRITICAL RULES:
             minItems: 0,
             maxItems: 5
           },
+          ai_wants_suggestions: { type: "boolean" },
+          ai_suggested_gaps: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                type: { type: "string", enum: ["skill", "experience"] },
+                gap: { type: "string", minLength: 3, maxLength: 100 },
+                rationale: { type: "string", minLength: 10, maxLength: 200 },
+                priority: { type: "string", enum: ["high", "medium", "low"] }
+              },
+              required: ["id", "type", "gap", "rationale", "priority"],
+              additionalProperties: false
+            },
+            minItems: 0,
+            maxItems: 5
+          },
+          selected_gap_ids: {
+            type: "array",
+            items: { type: "string" },
+            minItems: 0,
+            maxItems: 5
+          },
           transferable_skills: { 
             type: "array",
             items: { type: "string", minLength: 3, maxLength: 100 },
@@ -171,7 +195,7 @@ CRITICAL RULES:
             type: "array",
             items: { type: "string", minLength: 3, maxLength: 100 },
             minItems: 1,
-            maxItems: 3
+            maxItems: 5
           },
           gap_analysis_score: { type: "number", minimum: 1, maximum: 10 },
           coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
@@ -182,7 +206,21 @@ CRITICAL RULES:
       
       system_prompt: `Help the user identify gaps between their current capabilities and target role requirements, while also recognizing transferable strengths.
 
+🚨 MANDATORY QUESTION SEQUENCE (END EACH WITH A QUESTION, NOT A STATEMENT):
+1. ASK: "What skills does your target role require that you don't currently have?"
+2. ASK: "What types of experience are you missing?" (optional)
+3. ⚠️ ALWAYS ASK: "Would you like me to suggest additional gaps based on your career transition?"
+   - Set ai_wants_suggestions = true/false based on response
+   - If true, generate ai_suggested_gaps and present via GapSelector
+   - If false, skip to transferable_skills
+4. ASK: "What skills from your current role transfer to your target role?"
+5. ASK: "Of all the gaps we've identified, which ones are most critical to address first?"
+6. ASK: "On a scale of 1-10, how manageable do these gaps feel?"
+
+⚠️ DO NOT say "Now let's identify..." or "Let's talk about..." - END WITH A DIRECT QUESTION.
+
 CRITICAL RULES:
+- NEVER skip the AI suggestion question (step 3)
 - Never generate skill lists from job descriptions
 - Never suggest "common gaps" for the role
 - Never invent transferable skills
@@ -193,8 +231,10 @@ CRITICAL RULES:
       coaching_questions: [
         "What skills does your target role require that you don't currently have?",
         "What types of experience are you missing?",
+        "Would you like me to suggest additional gaps based on your career transition?",
+        "[If yes] Here are some potential gaps I've identified. Select the ones that resonate with you.",
         "What skills from your current role transfer to your target role?",
-        "Of all the gaps we've identified, which 3 are most critical to address first?",
+        "Of all the gaps we've identified, which ones are most critical to address first?",
         "On a scale of 1-10, how manageable do these gaps feel?"
       ],
       
@@ -228,75 +268,144 @@ CRITICAL RULES:
       required_fields_schema: {
         type: "object",
         properties: {
-          learning_actions: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                action: { type: "string", minLength: 5, maxLength: 200 },
-                timeline: { type: "string", minLength: 3, maxLength: 50 },
-                resource: { type: "string", minLength: 3, maxLength: 100 }
+          // AI-suggested comprehensive roadmap
+          ai_suggested_roadmap: {
+            type: "object",
+            properties: {
+              gap_cards: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    gap_id: { type: "string" },
+                    gap_name: { type: "string", minLength: 3, maxLength: 100 },
+                    learning_actions: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          id: { type: "string" },
+                          action: { type: "string", minLength: 5, maxLength: 200 },
+                          timeline: { type: "string", minLength: 3, maxLength: 50 },
+                          resource: { type: "string", minLength: 3, maxLength: 100 }
+                        },
+                        required: ["id", "action", "timeline", "resource"],
+                        additionalProperties: false
+                      },
+                      minItems: 1,
+                      maxItems: 5
+                    }
+                  },
+                  required: ["gap_id", "gap_name", "learning_actions"],
+                  additionalProperties: false
+                },
+                minItems: 1,
+                maxItems: 5
               },
-              required: ["action", "timeline", "resource"],
-              additionalProperties: false
-            },
-            minItems: 1,
-            maxItems: 5
-          },
-          networking_actions: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                action: { type: "string", minLength: 5, maxLength: 200 },
-                timeline: { type: "string", minLength: 3, maxLength: 50 }
+              learning_actions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    gap_id: { type: "string" },
+                    gap_name: { type: "string", minLength: 3, maxLength: 100 },
+                    action: { type: "string", minLength: 5, maxLength: 200 },
+                    timeline: { type: "string", minLength: 3, maxLength: 50 },
+                    resource: { type: "string", minLength: 3, maxLength: 100 }
+                  },
+                  required: ["id", "gap_id", "gap_name", "action", "timeline", "resource"],
+                  additionalProperties: false
+                },
+                minItems: 2,
+                maxItems: 10
               },
-              required: ["action", "timeline"],
-              additionalProperties: false
-            },
-            minItems: 0,
-            maxItems: 3
-          },
-          experience_actions: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                action: { type: "string", minLength: 5, maxLength: 200 },
-                timeline: { type: "string", minLength: 3, maxLength: 50 }
+              networking_actions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    action: { type: "string", minLength: 5, maxLength: 200 },
+                    timeline: { type: "string", minLength: 3, maxLength: 50 }
+                  },
+                  required: ["id", "action", "timeline"],
+                  additionalProperties: false
+                },
+                minItems: 3,
+                maxItems: 5
               },
-              required: ["action", "timeline"],
-              additionalProperties: false
-            },
-            minItems: 1,
-            maxItems: 3
+              experience_actions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    action: { type: "string", minLength: 5, maxLength: 200 },
+                    timeline: { type: "string", minLength: 3, maxLength: 50 }
+                  },
+                  required: ["id", "action", "timeline"],
+                  additionalProperties: false
+                },
+                minItems: 3,
+                maxItems: 5
+              },
+            milestone_3_months: { type: "string", minLength: 10, maxLength: 200 },
+            milestone_6_months: { type: "string", minLength: 10, maxLength: 200 },
+            current_gap_index: { type: "number", minimum: 0 },
+            total_gaps: { type: "number", minimum: 1 }
           },
-          milestone_3_months: { type: "string", minLength: 10, maxLength: 200 },
-          milestone_6_months: { type: "string", minLength: 10, maxLength: 200 },
+          required: [],
+          additionalProperties: true
+          },
+          
+          // Commitment score
           roadmap_score: { type: "number", minimum: 1, maximum: 10 },
+          roadmap_completed: { type: "boolean" },
+          
           coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
         },
         required: ["coach_reflection"],
-        additionalProperties: false
+        additionalProperties: true
       },
       
-      system_prompt: `Help the user create a concrete, actionable roadmap with specific learning, networking, and experience-building actions.
+      system_prompt: `Generate a comprehensive, AI-suggested roadmap for the user's career transition.
 
-CRITICAL RULES:
-- Never suggest specific courses or certifications
-- Never recommend networking events
-- Never create timelines without user input
-- Never auto-generate milestones
-- Each action must have a user-defined timeline
-- Learning actions must have user-identified resources
-- Milestones must be measurable outcomes (not just "complete course")`,
+🚨 CRITICAL: Your response MUST include BOTH fields:
+
+{
+  "coach_reflection": "Let me create a comprehensive roadmap for your transition...",
+  "ai_suggested_roadmap": {
+    "learning_actions": [
+      {"id": "learn1", "gap_id": "gap_0", "gap_name": "Financial modeling", "action": "Complete comprehensive financial modeling course", "timeline": "2 months", "resource": "Online course"},
+      {"id": "learn2", "gap_id": "gap_0", "gap_name": "Financial modeling", "action": "Practice with real datasets", "timeline": "6 weeks", "resource": "Practice exercises"}
+    ],
+    "networking_actions": [
+      {"id": "network1", "action": "Connect with 5 CFOs on LinkedIn", "timeline": "Next 2 weeks"},
+      {"id": "network2", "action": "Join finance leaders community", "timeline": "This month"}
+    ],
+    "experience_actions": [
+      {"id": "exp1", "action": "Lead quarterly budget planning", "timeline": "Next quarter"},
+      {"id": "exp2", "action": "Shadow CFO in board meeting", "timeline": "Within 2 months"}
+    ],
+    "milestone_3_months": "Complete 2 courses and connect with 5 industry leaders",
+    "milestone_6_months": "Lead first major budget cycle and apply for CFO roles"
+  }
+}
+
+RULES:
+- Use development_priorities from conversation history
+- Create 2-3 learning actions for EACH priority gap
+- Include realistic timelines (e.g., "2 months", "6 weeks")
+- Specify resource types (e.g., "Online course", "Book", "Mentor")
+- Make networking/experience actions specific to THEIR transition
+- Make milestones measurable and achievable
+- DO NOT suggest specific course names or platforms`,
       
       coaching_questions: [
-        "What learning actions will you take to close your skill gaps? For each, what's the timeline and what resource will you use?",
-        "What networking actions will help you? When will you do each one?",
-        "What hands-on experience can you get? What's your timeline for each?",
-        "What will you achieve in 3 months?",
-        "What about 6 months?",
+        "Let me create a comprehensive roadmap for your transition. I'll suggest learning actions for each gap, networking opportunities, hands-on experiences, and milestones.",
+        "[AI generates complete roadmap with all actions and milestones]",
+        "[User curates selections via RoadmapBuilder UI]",
         "On a scale of 1-10, how committed are you to this roadmap?"
       ],
       
