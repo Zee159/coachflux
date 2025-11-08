@@ -230,25 +230,8 @@ export function generateCompassInsights(
     insights.push(`\n🔓 WHAT UNLOCKED THE SHIFT:\n${factors}`);
   }
   
-  // Primary barrier analysis
-  const reviewReflection = reflections.find(r => r.step === 'review');
-  if (reviewReflection !== undefined && reviewReflection !== null) {
-    const barrier = getString(reviewReflection.payload, 'primary_barrier');
-    const barrierScore = getNumber(reviewReflection.payload, 'barrier_score');
-    if (barrier !== undefined && barrierScore !== undefined) {
-      const severity = barrierScore >= 4 ? 'CRITICAL' : barrierScore >= 3 ? 'SIGNIFICANT' : 'MODERATE';
-      insights.push(`\n🚨 ${severity} BARRIER (${barrierScore}/5): ${barrier}`);
-      
-      // Specific recommendations based on barrier score
-      if (barrierScore >= 4) {
-        insights.push(`⚡ URGENT ACTION NEEDED: This is blocking your progress. Address this FIRST before moving forward.`);
-      } else if (barrierScore >= 3) {
-        insights.push(`📋 HIGH PRIORITY: Tackle this within the next 7 days. It's holding you back.`);
-      } else {
-        insights.push(`💡 WATCH & MITIGATE: Keep an eye on this. Small actions now prevent bigger issues later.`);
-      }
-    }
-  }
+  // NOTE: COMPASS doesn't have a 'review' step - it ends at 'practice'
+  // Barrier analysis would come from other steps if needed
   
   // Readiness assessment with specific guidance
   if (scores.overall_readiness >= 4.0) {

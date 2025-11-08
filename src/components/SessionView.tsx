@@ -25,7 +25,11 @@ import { StepConfirmationButtons } from "./StepConfirmationButtons";
 import { AmendmentModal } from "./AmendmentModal";
 import { ReviewConfidenceSelector } from "./ReviewConfidenceSelector";
 
-type StepName = "introduction" | "goal" | "reality" | "options" | "will" | "review" | "clarity" | "ownership" | "mapping" | "practice";
+// Framework-specific step types
+type GROWStepName = "introduction" | "goal" | "reality" | "options" | "will" | "review";
+type COMPASSStepName = "introduction" | "clarity" | "ownership" | "mapping" | "practice";
+type CAREERStepName = "INTRODUCTION" | "ASSESSMENT" | "GAP_ANALYSIS" | "ROADMAP" | "REVIEW";
+type StepName = GROWStepName | COMPASSStepName | CAREERStepName;
 
 function formatReflectionDisplay(step: string, payload: Record<string, unknown>): JSX.Element {
   const entries = Object.entries(payload);
@@ -229,19 +233,29 @@ const STEP_DESCRIPTIONS: Record<StepName, string> = {
   ownership: "Transform resistance into commitment. Build confidence.",
   mapping: "Identify ONE specific action with day, time, and backup plan.",
   practice: "Lock in 10/10 commitment and recognize your transformation.",
+  INTRODUCTION: "Welcome to Career Coach. Confirm your career development focus.",
+  ASSESSMENT: "Assess your current role, experience, and target career goal.",
+  GAP_ANALYSIS: "Identify skill gaps, experience gaps, and transferable strengths.",
+  ROADMAP: "Create learning, networking, and experience actions with milestones.",
+  REVIEW: "Reflect on your career plan and measure confidence growth.",
 };
 
 const STEP_LABELS: Record<StepName, string> = {
-  introduction: "👋 WELCOME: Understanding the Framework",
-  goal: "🎯 GOAL: What do you want to achieve?",
-  reality: "📍 REALITY: What's your current situation?",
-  options: "🤔 OPTIONS: What are your possibilities?",
-  will: "✅ WILL: What will you actually do?",
-  review: "🔍 REVIEW: What have you learned?",
-  clarity: "🧭 CLARITY: What's changing? What can you control?",
-  ownership: "💪 OWNERSHIP: Building your confidence and commitment",
-  mapping: "🗺️ MAPPING: Your specific action plan",
-  practice: "🎯 PRACTICE: Locking in your commitment",
+  introduction: "👋 WELCOME",
+  goal: "🎯 GOAL",
+  reality: "📍 REALITY",
+  options: "🤔 OPTIONS",
+  will: "✅ WILL",
+  review: "🔍 REVIEW",
+  clarity: "🧭 CLARITY",
+  ownership: "💪 OWNERSHIP",
+  mapping: "🗺️ MAPPING",
+  practice: "🎯 PRACTICE",
+  INTRODUCTION: "💼 INTRODUCTION",
+  ASSESSMENT: "📊 ASSESSMENT",
+  GAP_ANALYSIS: "🔍 GAP ANALYSIS",
+  ROADMAP: "🗺️ ROADMAP",
+  REVIEW: "✨ REVIEW",
 };
 
 const STEP_TIPS: Record<StepName, string> = {
@@ -255,6 +269,11 @@ const STEP_TIPS: Record<StepName, string> = {
   ownership: "Your confidence can increase 3-4 points in this stage. Let it happen.",
   mapping: "Be specific: 'Thursday 2-4pm' not 'soon'. Small action beats big plan.",
   practice: "You've had a transformation. Recognize it. Celebrate it.",
+  INTRODUCTION: "This is career-focused coaching. Be clear about what type of support you need.",
+  ASSESSMENT: "Be honest about where you are. This clarity helps us build the right plan.",
+  GAP_ANALYSIS: "Focus on actionable gaps, not vague concepts. 'Python' beats 'technical skills'.",
+  ROADMAP: "Specific actions with timelines. 'Coursera Python course in March' beats 'learn Python'.",
+  REVIEW: "Your confidence gain shows real progress. Trust the process you've created.",
 };
 
 const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }> = {
@@ -351,6 +370,58 @@ const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }>
       "After you complete this action, what will you have proven to yourself?",
       "When we started, confidence was {initial_confidence}/10. Where is it now?",
       "What's the one thing you're taking away from today?"
+    ]
+  },
+  INTRODUCTION: {
+    title: "Welcome to Career Coach",
+    questions: [
+      "Are you looking for career development, a role transition, or skill building?",
+      "Ready to begin your career planning session?"
+    ]
+  },
+  ASSESSMENT: {
+    title: "Career Assessment",
+    questions: [
+      "What's your current role?",
+      "How many years of experience do you have?",
+      "What industry are you in?",
+      "What role are you targeting?",
+      "What's your timeframe?",
+      "How would you describe your career stage?",
+      "On a scale of 1-10, how confident are you about making this transition?",
+      "On a scale of 1-10, how clear are you on what it takes to get there?"
+    ]
+  },
+  GAP_ANALYSIS: {
+    title: "Gap Analysis",
+    questions: [
+      "What skills does your target role require that you don't currently have?",
+      "What types of experience are you missing?",
+      "What skills from your current role transfer to your target role?",
+      "Of all the gaps we've identified, which 3 are most critical to address first?",
+      "On a scale of 1-10, how manageable do these gaps feel?"
+    ]
+  },
+  ROADMAP: {
+    title: "Career Roadmap",
+    questions: [
+      "What learning actions will you take to close your skill gaps?",
+      "What networking actions will help you?",
+      "What hands-on experience can you get?",
+      "What will you achieve in 3 months?",
+      "What about 6 months?",
+      "On a scale of 1-10, how confident are you in this roadmap?"
+    ]
+  },
+  REVIEW: {
+    title: "Session Review",
+    questions: [
+      "What are your key takeaways from this session?",
+      "What's your immediate next step (within 48 hours)?",
+      "What's your biggest challenge in executing this plan?",
+      "On a scale of 1-10, how confident are you now about your career transition?",
+      "How clear are you on your path forward (1-10)?",
+      "How helpful was this session (1-10)?"
     ]
   }
 };
@@ -1102,13 +1173,14 @@ export function SessionView() {
                             {formatReflectionDisplay(reflection.step, reflection.payload as Record<string, unknown>)}
                           </div>
 
-                          {/* Yes/No Buttons for Introduction Step */}
-                          {reflection.step === 'introduction' && isLastReflection && !isSessionComplete && (() => {
+                          {/* Yes/No Buttons for Introduction Step (GROW/COMPASS/CAREER) */}
+                          {(reflection.step === 'introduction' || reflection.step === 'INTRODUCTION') && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
                             const userConsentGiven = payload['user_consent_given'];
+                            const userConsent = payload['user_consent'];
                             
-                            // Hide buttons if user already gave consent (COMPASS continues with confidence questions)
-                            if (userConsentGiven === true) {
+                            // Hide buttons if user already gave consent
+                            if (userConsentGiven === true || userConsent === true) {
                               return null;
                             }
                             
@@ -1119,12 +1191,12 @@ export function SessionView() {
                                   yesLabel="Yes, let's begin"
                                   noLabel="No, close session"
                                   onYes={() => {
-                                    // Send "yes" to trigger AI to advance to Goal and ask first question
+                                    // Send "yes" to trigger AI to advance to next step
                                     void nextStepAction({
                                       orgId: session.orgId,
                                       userId: session.userId,
                                       sessionId: session._id,
-                                      stepName: 'introduction',
+                                      stepName: reflection.step,
                                       userTurn: 'yes',
                                     });
                                   }}
@@ -1492,7 +1564,11 @@ export function SessionView() {
                                       userId: session.userId,
                                       sessionId: session._id,
                                       stepName: 'clarity',
-                                      userTurn: value,
+                                      userTurn: `Selected mindset: ${value}`,
+                                      structuredInput: {
+                                        type: 'mindset_selection',
+                                        data: { mindset_state: value }
+                                      }
                                     });
                                   }}
                                 />

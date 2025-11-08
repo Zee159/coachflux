@@ -6,7 +6,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { FeedbackWidget } from "./FeedbackWidget";
 
 export function DemoSetup() {
-  const [selectedFramework, setSelectedFramework] = useState<'GROW' | 'COMPASS'>('GROW');
+  const [selectedFramework, setSelectedFramework] = useState<'GROW' | 'COMPASS' | 'CAREER'>('GROW');
   
   const [orgName, setOrgName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -154,10 +154,10 @@ export function DemoSetup() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
-              <span>2 Frameworks Live</span>
+              <span>3 Frameworks Live</span>
               <span className="text-violet-400 dark:text-violet-500">•</span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-              <span>4 More Coming Soon</span>
+              <span>3 More Coming Soon</span>
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
@@ -289,12 +289,57 @@ export function DemoSetup() {
                 </div>
               </button>
 
+              {/* CAREER Framework */}
+              <button
+                onClick={() => {
+                  setSelectedFramework('CAREER');
+                  setTimeout(() => {
+                    document.getElementById('get-started')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 300);
+                }}
+                className={`group relative text-left p-8 rounded-2xl border-2 transition-all duration-300 bg-white dark:bg-gray-800 hover:scale-105 hover:shadow-2xl cursor-pointer ${
+                  selectedFramework === 'CAREER' 
+                    ? 'border-violet-500 dark:border-violet-400 shadow-2xl shadow-violet-500/20' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-violet-300'
+                }`}
+              >
+                {selectedFramework === 'CAREER' && (
+                  <div className="absolute -top-3 -right-3 bg-violet-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    Selected
+                  </div>
+                )}
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="text-5xl">💼</div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">CAREER</h3>
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">Career Development</p>
+                  </div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
+                  A structured framework for career advancement and role transitions. Assess your current position, identify skill gaps, leverage transferable strengths, and create a concrete roadmap with milestones.
+                </p>
+                <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  <p className="font-semibold mb-1">Perfect if you're thinking:</p>
+                  <p>"I want to switch careers" • "How do I get promoted?" • "What skills do I need?" • "I'm ready for the next level"</p>
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    25 min
+                  </div>
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    Intermediate
+                  </span>
+                </div>
+              </button>
+
               {/* Coming Soon Cards */}
               {[
                 { name: 'CLEAR', emoji: '✨', tag: 'Clarity' },
                 { name: 'Power-Interest', emoji: '🔲', tag: 'Stakeholders' },
-                { name: 'Psych Safety', emoji: '🛡️', tag: 'Team Culture' },
-                { name: 'Executive', emoji: '👔', tag: 'Leadership' }
+                { name: 'Psych Safety', emoji: '🛡️', tag: 'Team Culture' }
               ].map((fw) => (
                 <div
                   key={fw.name}

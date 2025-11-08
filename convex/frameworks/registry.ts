@@ -14,6 +14,7 @@ import {
 } from './types';
 import { growFramework, growFrameworkLegacy } from './grow';
 import { compassFramework } from './compass';
+import { careerFramework } from './career';
 
 // ============================================================================
 // Legacy Registry (Phase 1 - Migration Mode)
@@ -56,6 +57,7 @@ export function getFrameworkLegacy(frameworkId: string = 'GROW'): LegacyFramewor
 const frameworkRegistry: Partial<Record<FrameworkId, FrameworkDefinition>> = {
   GROW: growFramework,
   COMPASS: compassFramework,
+  CAREER: careerFramework,
   // Phase 2: Add CLEAR framework
   // CLEAR: clearFramework,
   // Future: Additional frameworks

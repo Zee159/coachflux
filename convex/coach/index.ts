@@ -15,6 +15,7 @@ import { getFrameworkLegacy } from "../frameworks/registry";
 import type { FrameworkCoach, CoachActionResult } from "./types";
 import { growCoach } from "./grow";
 import { compassCoach } from "./compass";
+import { CareerCoach } from "./career";
 import { getEmergencyResources } from "../safety";
 
 // Type for knowledge base search results
@@ -60,6 +61,8 @@ const USE_MODULAR_REGISTRY = true; // Use modular framework registry
 /**
  * Get framework coach for a specific framework
  */
+const careerCoach = new CareerCoach();
+
 function getFrameworkCoach(frameworkId: string): FrameworkCoach {
   const id = frameworkId.toUpperCase();
   
@@ -69,6 +72,10 @@ function getFrameworkCoach(frameworkId: string): FrameworkCoach {
   
   if (id === 'COMPASS') {
     return compassCoach;
+  }
+  
+  if (id === 'CAREER') {
+    return careerCoach;
   }
   
   // Default to GROW coach for unknown frameworks
@@ -724,6 +731,47 @@ async function handleStructuredInput(
         ok: true,
         message: `Amending ${step} step...`
       };
+    }
+
+    case 'mindset_selection': {
+      // User selected mindset state via MindsetSelector
+      const { mindset_state } = data as { mindset_state: string };
+      
+      // Get current state from last reflection
+      const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
+        sessionId: args.sessionId
+      });
+      
+      const lastReflection = sessionReflections[sessionReflections.length - 1];
+      const lastPayload = lastReflection?.payload as Record<string, unknown> | undefined;
+      
+      // Store mindset state in payload and let AI ask the follow-up question
+      const updatedPayload = {
+        ...lastPayload,
+        initial_mindset_state: mindset_state
+      };
+      
+      // Update the last reflection with initial_mindset_state (silent update)
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: 'clarity',
+        userInput: args.userTurn,
+        payload: {
+          ...updatedPayload,
+          coach_reflection: '[MINDSET_STATE_CAPTURED]' // Marker for silent transition
+        }
+      });
+      
+      // Recursively call nextStep to let AI ask the follow-up question
+      return await ctx.runAction(api.coach.nextStep, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        stepName: 'clarity',
+        userTurn: `[Mindset state selected: ${mindset_state}]`
+      });
     }
 
     case 'control_level_selection': {

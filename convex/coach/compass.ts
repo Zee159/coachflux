@@ -119,9 +119,10 @@ export class COMPASSCoach implements FrameworkCoach {
 
       if (isHighConfidence) {
         // High-confidence path: 3 questions (confidence_source, personal_benefit, past_success)
+        // NO ownership_confidence needed - they're already at 8+
         const hasConfidenceSource = typeof payload["confidence_source"] === "string" && payload["confidence_source"].length > 0;
         const hasMinConversationHigh = ownershipReflections.length >= 3;
-        const isComplete = hasConfidenceSource && hasPersonalBenefit && hasPastSuccess && hasOwnershipConfidence && hasMinConversationHigh;
+        const isComplete = hasConfidenceSource && hasPersonalBenefit && hasPastSuccess && hasMinConversationHigh;
         
         if (isComplete) {
           return { shouldAdvance: false, awaitingConfirmation: true };
@@ -180,9 +181,6 @@ export class COMPASSCoach implements FrameworkCoach {
         return { shouldAdvance: false, awaitingConfirmation: true };
       }
       
-      return { shouldAdvance: false };
-    } else if (stepName === "review") {
-      // Review never auto-advances
       return { shouldAdvance: false };
     }
 
@@ -247,19 +245,28 @@ export class COMPASSCoach implements FrameworkCoach {
           context += `Focus on fear exploration, reframing, and past success activation.\n`;
         }
         
-        // 🔧 FIX: Add explicit warning about data extraction
+        // Add path-specific completion requirements
+        if (initialConfidence >= 8) {
+          context += `\n\n⚠️ HIGH-CONFIDENCE PATH COMPLETION:\n`;
+          context += `DO NOT advance to mapping until you have:\n`;
+          context += `   - confidence_source (what's giving them confidence)\n`;
+          context += `   - personal_benefit (user's own words about what they could gain)\n`;
+          context += `   - past_success (user's actual story of handling change before)\n`;
+          context += `\n⚠️ NO ownership_confidence needed - they're already at ${initialConfidence}/10!\n`;
+        } else {
+          context += `\n\n⚠️ STANDARD PATH COMPLETION:\n`;
+          context += `DO NOT advance to mapping until you have:\n`;
+          context += `   - ownership_confidence (final confidence after transformation - Q7)\n`;
+          context += `   - personal_benefit (user's own words about what they could gain - Q4)\n`;
+          context += `   - past_success (user's actual story of handling change before - Q5)\n`;
+        }
+        
+        // Common rules for both paths
         context += `\n\n⚠️ CRITICAL OWNERSHIP RULES:\n`;
         context += `1. You MUST ask each question and WAIT for the user to answer before extracting any fields.\n`;
         context += `2. DO NOT infer or auto-fill personal_benefit - the user must explicitly state what THEY could gain.\n`;
-        context += `3. DO NOT extract personal_benefit until you have ASKED Q5 and the user has ANSWERED it.\n`;
-        context += `4. DO NOT extract past_success until you have ASKED Q6 and the user has ANSWERED it.\n`;
-        context += `5. Opportunistic extraction is ONLY allowed if the user EXPLICITLY mentions benefits or past success in their response.\n`;
-        context += `6. If you extract personal_benefit opportunistically, you MUST acknowledge it and SKIP Q4.\n`;
-        context += `7. DO NOT advance to mapping until you have explicitly asked for and received:\n`;
-        context += `   - ownership_confidence (final confidence after transformation - Q7)\n`;
-        context += `   - personal_benefit (user's own words about what they could gain - Q4)\n`;
-        context += `   - past_success (user's actual story of handling change before - Q5)\n`;
-        context += `8. If you only have the opener message and user says "ok", ask Q1 (Explore Fears) now.\n`;
+        context += `3. Opportunistic extraction is ONLY allowed if the user EXPLICITLY mentions benefits or past success in their response.\n`;
+        context += `4. When all required fields are captured, provide a completion summary and STOP asking questions.\n`;
       }
     }
 

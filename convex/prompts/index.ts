@@ -14,6 +14,7 @@
 import { SYSTEM_BASE } from "./base";
 import { GROW_COACHING_QUESTIONS, GROW_STEP_GUIDANCE } from "./grow";
 import { COMPASS_COACHING_QUESTIONS, COMPASS_STEP_GUIDANCE } from "./compass";
+import { CAREER_COACHING_QUESTIONS, CAREER_STEP_GUIDANCE } from "./career";
 
 /**
  * Get framework-specific coaching questions
@@ -24,6 +25,8 @@ export function getCoachingQuestions(frameworkId: string): Record<string, string
       return GROW_COACHING_QUESTIONS;
     case "COMPASS":
       return COMPASS_COACHING_QUESTIONS;
+    case "CAREER":
+      return CAREER_COACHING_QUESTIONS;
     default:
       return GROW_COACHING_QUESTIONS; // Fallback
   }
@@ -38,6 +41,8 @@ export function getStepGuidance(frameworkId: string): Record<string, string> {
       return GROW_STEP_GUIDANCE;
     case "COMPASS":
       return COMPASS_STEP_GUIDANCE;
+    case "CAREER":
+      return CAREER_STEP_GUIDANCE;
     default:
       return GROW_STEP_GUIDANCE; // Fallback
   }
@@ -362,7 +367,7 @@ ONLY ask to rephrase if response is GENUINELY:
 ✅ Numbers in response to confidence/clarity questions → Extract immediately
    - User says "8" or "9" → Extract: initial_confidence = 8 or 9
    - User says "4" or "5" → Extract: initial_action_clarity = 4 or 5
-✅ "yes", "sure", "okay" to consent → Extract: user_consent_given = true
+✅ "yes", "sure", "okay" to consent → Extract: user_consent_given = true (GROW/COMPASS) OR user_consent = true (CAREER)
 ✅ Mindset descriptors (resistant/neutral/open/engaged) → Extract immediately
 
 **ALL OTHER STEPS - Extract when answer is clear:**

@@ -413,7 +413,7 @@ IF initial_confidence < 8 (STANDARD PATH):
 → End with ownership_confidence measurement
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚡ HIGH-CONFIDENCE PATH (4 questions)
+⚡ HIGH-CONFIDENCE PATH (3 questions)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Q1: Confidence Source
@@ -435,10 +435,12 @@ Ask: "Tell me about a time you successfully handled a difficult change before."
 → Extract: past_success {achievement, strategy}
 → Bridge: "You used [strength] then. You still have it now."
 
+⚠️ NO CONFIDENCE RE-CHECK: User is already at {initial_confidence}/10 - no need to ask again!
+
 TRANSITION: Move to MAPPING stage
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚡ STANDARD PATH (8 questions)
+⚡ STANDARD PATH (7 questions)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 🚨 AI BEHAVIOR CHECK BEFORE ADVANCING:
@@ -646,6 +648,37 @@ OPTIONAL BUT POWERFUL:
 ○ confidence_source - For high-confidence users
 
 READY TO ADVANCE: Confidence measured + personal benefit found
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 STEP COMPLETION - CONFIRMATION SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HIGH-CONFIDENCE PATH:
+When confidence_source, personal_benefit, and past_success are captured, STOP asking questions.
+Provide a brief summary:
+
+coach_reflection: "You've got a strong foundation here:
+• Your confidence comes from: [confidence_source]
+• What you'll gain: [personal_benefit]
+• Past success: [past_success.achievement]
+
+You're at {initial_confidence}/10 confidence and you've proven you can handle change.
+Ready to map out your action plan?"
+
+STANDARD PATH:
+When ownership_confidence, personal_benefit, and past_success are captured, STOP asking questions.
+Provide a brief summary:
+
+coach_reflection: "Let's see where we are:
+• Started at: {initial_confidence}/10 confidence
+• Now at: {ownership_confidence}/10 confidence
+• What you'll gain: [personal_benefit]
+• Past success: [past_success.achievement]
+
+That's real progress. Ready to map out your action plan?"
+
+Then the system will show "Proceed to Mapping" and "Amend Response" buttons.
+DO NOT ask more questions. DO NOT continue the conversation. Just summarize and confirm.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

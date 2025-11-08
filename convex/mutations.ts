@@ -248,6 +248,25 @@ This works best for workplace changes like reorganizations, new systems, leaders
 Does this framework feel right for what you're facing today?`;
       // NEW COMPASS: 4 stages (Clarity, Ownership, Mapping, Practice) + Introduction
       skipSteps = { introduction: 0, clarity: 0, ownership: 0, mapping: 0, practice: 0 };
+    } else if (args.framework === "CAREER") {
+      firstStep = "INTRODUCTION";
+      greeting = `Welcome! I'm your Career Coach, here to help you navigate career transitions, skill development, and role advancement.
+
+In this 25-minute session, we'll work through 5 steps:
+• Introduction: Confirm your career development focus
+• Assessment: Understand where you are and where you want to go
+• Gap Analysis: Identify what's missing between here and there
+• Roadmap: Create a concrete action plan with milestones
+• Review: Measure your progress and confidence
+
+This works best for:
+• Career transitions (moving to a new role or industry)
+• Skill development planning
+• Career advancement strategies
+• Professional growth roadmaps
+
+Are you looking for career development, a role transition, or skill building?`;
+      skipSteps = { INTRODUCTION: 0, ASSESSMENT: 0, GAP_ANALYSIS: 0, ROADMAP: 0, REVIEW: 0 };
     }
 
     const sessionId = await ctx.db.insert("sessions", {

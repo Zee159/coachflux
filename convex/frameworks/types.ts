@@ -13,6 +13,7 @@ export type FrameworkId =
   | 'GROW' 
   | 'CLEAR' 
   | 'COMPASS' 
+  | 'CAREER' 
   | 'POWER_INTEREST_GRID' 
   | 'PSYCHOLOGICAL_SAFETY' 
   | 'EXECUTIVE_PRESENCE';
@@ -21,6 +22,7 @@ export type ChallengeType =
   | 'goal_achievement' 
   | 'complex_situation' 
   | 'change_leadership' 
+  | 'career_development' 
   | 'stakeholder_management' 
   | 'team_development' 
   | 'executive_presence';
@@ -188,6 +190,7 @@ export function isValidFrameworkId(id: string): id is FrameworkId {
     'GROW',
     'CLEAR',
     'COMPASS',
+    'CAREER',
     'POWER_INTEREST_GRID',
     'PSYCHOLOGICAL_SAFETY',
     'EXECUTIVE_PRESENCE'
@@ -200,6 +203,7 @@ export function isValidChallengeType(type: string): type is ChallengeType {
     'goal_achievement',
     'complex_situation',
     'change_leadership',
+    'career_development',
     'stakeholder_management',
     'team_development',
     'executive_presence'
