@@ -509,7 +509,10 @@ export function generateSafetyAlerts(userInput: string): string {
   
   const wordCount = userInput.trim().split(/\s+/).length;
   const charCount = userInput.trim().length;
-  const isDisengaged = wordCount < 3 || charCount < 10;
+  
+  // Exempt numeric scale responses (1-10) from disengagement detection
+  const isNumericScale = /^([1-9]|10)$/.test(userInput.trim());
+  const isDisengaged = !isNumericScale && (wordCount < 3 || charCount < 10);
   
   if (isDisengaged && !userInputLower.includes("skip")) {
     console.warn("⚠️ DISENGAGEMENT DETECTED:", { wordCount, charCount, userInput });

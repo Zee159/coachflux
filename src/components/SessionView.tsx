@@ -765,13 +765,15 @@ export function SessionView() {
       Array.isArray(reviewPayload['potential_pitfalls']) && reviewPayload['potential_pitfalls'].length > 0
     );
   } else if (session?.framework === 'CAREER') {
-    // CAREER: Check for user reflection fields
+    // CAREER: Check for ALL 6 user reflection fields
     isReviewComplete = Boolean(
       reviewPayload !== null && reviewPayload !== undefined &&
       typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length >= 50 &&
       typeof reviewPayload['immediate_next_step'] === 'string' && reviewPayload['immediate_next_step'].length >= 10 &&
+      typeof reviewPayload['biggest_challenge'] === 'string' && reviewPayload['biggest_challenge'].length >= 10 &&
       typeof reviewPayload['final_confidence'] === 'number' &&
-      typeof reviewPayload['final_clarity'] === 'number'
+      typeof reviewPayload['final_clarity'] === 'number' &&
+      typeof reviewPayload['session_helpfulness'] === 'number'
     );
   } else if (session?.framework === 'COMPASS') {
     // COMPASS: Check for review fields
