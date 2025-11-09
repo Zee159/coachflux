@@ -481,22 +481,25 @@ Then show "Proceed to Review" and "Amend Roadmap" buttons.`,
 
 **Question 4: final_confidence**
 - ASK: "On a scale of 1-10, how confident are you now about your career transition?"
-- WAIT for user to select from button scale (1-10)
-- ✅ This triggers ConfidenceScaleSelector UI component
-- DO NOT accept text responses - buttons will appear
+- WAIT for user response
+- ✅ This triggers ConfidenceScaleSelector UI component with buttons
+- EXTRACT: If user types a number (1-10), extract to final_confidence
+- EXTRACT: If user clicks button, extract to final_confidence
 - Compare to initial_confidence for delta
 
 **Question 5: final_clarity**
 - ASK: "How clear are you on your path forward (1-10)?"
-- WAIT for user to select from button scale (1-10)
-- ✅ This triggers ConfidenceScaleSelector UI component
-- DO NOT accept text responses - buttons will appear
+- WAIT for user response
+- ✅ This triggers ConfidenceScaleSelector UI component with buttons
+- EXTRACT: If user types a number (1-10), extract to final_clarity
+- EXTRACT: If user clicks button, extract to final_clarity
 
 **Question 6: session_helpfulness**
 - ASK: "How helpful was this session (1-10)?"
-- WAIT for user to select from button scale (1-10)
-- ✅ This triggers ConfidenceScaleSelector UI component
-- DO NOT accept text responses - buttons will appear
+- WAIT for user response
+- ✅ This triggers ConfidenceScaleSelector UI component with buttons
+- EXTRACT: If user types a number (1-10), extract to session_helpfulness
+- EXTRACT: If user clicks button, extract to session_helpfulness
 
 ### CRITICAL RULES
 - ❌ NEVER list multiple questions in one message

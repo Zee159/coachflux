@@ -271,8 +271,9 @@ export class CareerCoach implements FrameworkCoach {
     };
 
     // Debug logging
-    console.warn('=== CAREER REVIEW COMPLETION CHECK ===', {
+    console.error('🔍 === CAREER REVIEW COMPLETION CHECK ===', {
       payload_keys: Object.keys(payload),
+      payload_full: JSON.stringify(payload),
       key_takeaways: { exists: 'key_takeaways' in payload, type: typeof payload['key_takeaways'], length: typeof payload['key_takeaways'] === 'string' ? payload['key_takeaways'].length : 0 },
       immediate_next_step: { exists: 'immediate_next_step' in payload, type: typeof payload['immediate_next_step'], length: typeof payload['immediate_next_step'] === 'string' ? payload['immediate_next_step'].length : 0 },
       biggest_challenge: { exists: 'biggest_challenge' in payload, type: typeof payload['biggest_challenge'], length: typeof payload['biggest_challenge'] === 'string' ? payload['biggest_challenge'].length : 0 },
@@ -301,7 +302,7 @@ export class CareerCoach implements FrameworkCoach {
     // If ALL user fields complete, await confirmation
     // AI insights will be generated during report generation (like GROW framework)
     if (userFieldsComplete) {
-      console.warn('=== CAREER REVIEW COMPLETE ===', {
+      console.error('✅ === CAREER REVIEW COMPLETE ===', {
         userCapturedCount,
         requiredUserCount,
         hasCriticalUserFields,
@@ -318,7 +319,7 @@ export class CareerCoach implements FrameworkCoach {
     }
 
     // User fields incomplete
-    console.warn('=== CAREER REVIEW INCOMPLETE ===', {
+    console.error('❌ === CAREER REVIEW INCOMPLETE ===', {
       userCapturedCount,
       requiredUserCount,
       hasCriticalUserFields,
