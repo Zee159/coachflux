@@ -865,14 +865,41 @@ async function handleStructuredInput(
           step: nextStep
         });
         
-        // Special handling for CAREER ROADMAP - generate template roadmap from gaps
+        // Special handling for CAREER ROADMAP - generate AI-powered personalized roadmap
         if (framework === 'CAREER' && nextStep === 'ROADMAP') {
-          // Get all reflections to find development_priorities
+          // Get all reflections to extract session context
           const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
             sessionId: args.sessionId
           });
           
-          // Find development_priorities from GAP_ANALYSIS
+          // Extract ASSESSMENT data
+          const assessmentReflections = sessionReflections.filter((r: { step: string }) => r.step === 'ASSESSMENT');
+          let currentRole = '';
+          let targetRole = '';
+          let industry = '';
+          let careerStage = '';
+          let timeframe = '';
+          
+          for (const reflection of assessmentReflections) {
+            const payload = reflection.payload as Record<string, unknown>;
+            if (typeof payload['current_role'] === 'string') {
+              currentRole = payload['current_role'];
+            }
+            if (typeof payload['target_role'] === 'string') {
+              targetRole = payload['target_role'];
+            }
+            if (typeof payload['industry'] === 'string') {
+              industry = payload['industry'];
+            }
+            if (typeof payload['career_stage'] === 'string') {
+              careerStage = payload['career_stage'];
+            }
+            if (typeof payload['timeframe'] === 'string') {
+              timeframe = payload['timeframe'];
+            }
+          }
+          
+          // Extract development_priorities from GAP_ANALYSIS
           const gapReflections = sessionReflections.filter((r: { step: string }) => r.step === 'GAP_ANALYSIS');
           let developmentPriorities: string[] = [];
           
@@ -884,68 +911,57 @@ async function handleStructuredInput(
             }
           }
           
-          // Generate roadmap with gap-specific actions for sequential flow
-          const gapCards = developmentPriorities.map((gap, gapIndex) => ({
-            gap_id: `gap_${gapIndex}`,
-            gap_name: gap,
-            gap_index: gapIndex,
-            total_gaps: developmentPriorities.length,
-            learning_actions: [
-              {
-                id: `learn_${gapIndex}_1`,
-                action: `Complete comprehensive training on ${gap}`,
-                timeline: "2 months",
-                resource: "Online course"
-              },
-              {
-                id: `learn_${gapIndex}_2`,
-                action: `Practice ${gap} through hands-on projects`,
-                timeline: "6 weeks",
-                resource: "Practice exercises"
-              },
-              {
-                id: `learn_${gapIndex}_3`,
-                action: `Read industry books/articles on ${gap}`,
-                timeline: "1 month",
-                resource: "Books/Articles"
-              }
-            ],
-            networking_actions: [
-              {
-                id: `network_${gapIndex}_1`,
-                action: `Connect with professionals who excel in ${gap}`,
-                timeline: "Next 2 weeks"
-              },
-              {
-                id: `network_${gapIndex}_2`,
-                action: `Join ${gap} community or discussion group`,
-                timeline: "This month"
-              },
-              {
-                id: `network_${gapIndex}_3`,
-                action: `Attend ${gap} workshop or webinar`,
-                timeline: "Next quarter"
-              }
-            ],
-            experience_actions: [
-              {
-                id: `exp_${gapIndex}_1`,
-                action: `Take on project requiring ${gap}`,
-                timeline: "Next quarter"
-              },
-              {
-                id: `exp_${gapIndex}_2`,
-                action: `Shadow someone skilled in ${gap}`,
-                timeline: "Within 2 months"
-              },
-              {
-                id: `exp_${gapIndex}_3`,
-                action: `Volunteer for initiative using ${gap}`,
-                timeline: "Next 3 months"
-              }
-            ],
-            milestone: `Develop proficiency in ${gap} through learning and practice`
-          }));
+          // Generate AI-powered roadmap
+          let gapCards;
+          try {
+            const aiRoadmap = await generateAIRoadmap(ctx, {
+              currentRole,
+              targetRole,
+              industry,
+              careerStage,
+              timeframe,
+              developmentPriorities
+            });
+            gapCards = aiRoadmap.gap_cards;
+          } catch (error) {
+            console.error('AI roadmap generation failed, using fallback:', error);
+            // Fallback to simple template if AI fails
+            gapCards = developmentPriorities.map((gap, gapIndex) => ({
+              gap_id: `gap_${gapIndex}`,
+              gap_name: gap,
+              gap_index: gapIndex,
+              total_gaps: developmentPriorities.length,
+              learning_actions: [
+                {
+                  id: `learn_${gapIndex}_1`,
+                  action: `Complete comprehensive training on ${gap}`,
+                  timeline: "2 months",
+                  resource: "Online course"
+                },
+                {
+                  id: `learn_${gapIndex}_2`,
+                  action: `Practice ${gap} through hands-on projects`,
+                  timeline: "6 weeks",
+                  resource: "Practice exercises"
+                }
+              ],
+              networking_actions: [
+                {
+                  id: `network_${gapIndex}_1`,
+                  action: `Connect with professionals who excel in ${gap}`,
+                  timeline: "Next 2 weeks"
+                }
+              ],
+              experience_actions: [
+                {
+                  id: `exp_${gapIndex}_1`,
+                  action: `Take on project requiring ${gap}`,
+                  timeline: "Next quarter"
+                }
+              ],
+              milestone: `Develop proficiency in ${gap} through learning and practice`
+            }));
+          }
           
           // Create reflection with roadmap
           await ctx.runMutation(api.mutations.createReflection, {
@@ -2264,6 +2280,188 @@ async function generateCareerReport(
   });
   
   return { ok: true, message: 'Career transition report ready!' };
+}
+
+// ============================================================================
+// AI-POWERED ROADMAP GENERATION HELPER
+// ============================================================================
+
+/**
+ * Generate personalized roadmap suggestions using AI
+ * Takes into account user's full context: role transition, industry, gaps, career stage
+ */
+async function generateAIRoadmap(
+  _ctx: ActionCtx,
+  sessionContext: {
+    currentRole: string;
+    targetRole: string;
+    industry: string;
+    careerStage: string;
+    timeframe: string;
+    developmentPriorities: string[];
+  }
+): Promise<{
+  gap_cards: Array<{
+    gap_id: string;
+    gap_name: string;
+    gap_index: number;
+    total_gaps: number;
+    learning_actions: Array<{ id: string; action: string; timeline: string; resource: string }>;
+    networking_actions: Array<{ id: string; action: string; timeline: string }>;
+    experience_actions: Array<{ id: string; action: string; timeline: string }>;
+    milestone: string;
+  }>;
+}> {
+  const apiKey = process.env['ANTHROPIC_API_KEY'];
+  if (apiKey === undefined || apiKey === null || apiKey.length === 0) {
+    throw new Error("ANTHROPIC_API_KEY not configured");
+  }
+
+  const anthropic = new Anthropic({ apiKey });
+
+  const prompt = `You are a career development coach helping someone transition from ${sessionContext.currentRole} to ${sessionContext.targetRole} in the ${sessionContext.industry} industry.
+
+**Career Context:**
+- Current Role: ${sessionContext.currentRole}
+- Target Role: ${sessionContext.targetRole}
+- Industry: ${sessionContext.industry}
+- Career Stage: ${sessionContext.careerStage}
+- Timeframe: ${sessionContext.timeframe}
+
+**Priority Gaps to Address:**
+${sessionContext.developmentPriorities.map((gap, i) => `${i + 1}. ${gap}`).join('\n')}
+
+**Your Task:**
+Generate a personalized roadmap with specific, actionable suggestions for EACH gap. Consider their industry, role transition, and career stage.
+
+**Output Format (JSON):**
+{
+  "gap_cards": [
+    {
+      "gap_id": "gap_0",
+      "gap_name": "Financial modeling",
+      "gap_index": 0,
+      "total_gaps": 3,
+      "learning_actions": [
+        {
+          "id": "learn_0_1",
+          "action": "Complete comprehensive financial modeling course focusing on DCF and LBO models",
+          "timeline": "2 months",
+          "resource": "Online course (e.g., Coursera, Udemy)"
+        },
+        {
+          "id": "learn_0_2",
+          "action": "Practice building financial models using real company data",
+          "timeline": "6 weeks",
+          "resource": "Practice exercises with templates"
+        },
+        {
+          "id": "learn_0_3",
+          "action": "Study financial modeling best practices from industry leaders",
+          "timeline": "1 month",
+          "resource": "Books (e.g., 'Financial Modeling' by Simon Benninga)"
+        }
+      ],
+      "networking_actions": [
+        {
+          "id": "network_0_1",
+          "action": "Connect with 5 financial analysts or CFOs on LinkedIn who work in similar industries",
+          "timeline": "Next 2 weeks"
+        },
+        {
+          "id": "network_0_2",
+          "action": "Join finance professionals community or Slack group",
+          "timeline": "This month"
+        },
+        {
+          "id": "network_0_3",
+          "action": "Attend financial modeling workshop or webinar",
+          "timeline": "Next quarter"
+        }
+      ],
+      "experience_actions": [
+        {
+          "id": "exp_0_1",
+          "action": "Volunteer to build financial model for upcoming project or budget cycle",
+          "timeline": "Next quarter"
+        },
+        {
+          "id": "exp_0_2",
+          "action": "Shadow finance team during quarterly planning to see models in action",
+          "timeline": "Within 2 months"
+        },
+        {
+          "id": "exp_0_3",
+          "action": "Offer to create financial analysis for department or team initiative",
+          "timeline": "Next 3 months"
+        }
+      ],
+      "milestone": "Build 3 complete financial models and present analysis to leadership"
+    }
+  ]
+}
+
+**CRITICAL RULES:**
+1. Generate 2-3 learning actions per gap (specific to that gap, not generic)
+2. Generate 3 networking actions per gap (relevant to the gap and their transition)
+3. Generate 3 experience actions per gap (hands-on opportunities)
+4. Make milestones SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
+5. Consider their industry and role transition in every suggestion
+6. Use realistic timelines based on their timeframe (${sessionContext.timeframe})
+7. Make resources specific but not prescriptive (e.g., "Online course (e.g., Coursera)" not "Take Coursera course X")
+8. Tailor difficulty to their career stage (${sessionContext.careerStage})
+
+**DO NOT:**
+- Use generic templates like "Complete training on X"
+- Suggest the same actions for different gaps
+- Recommend specific course names or platforms
+- Make suggestions that don't fit their industry or role transition
+
+Return ONLY valid JSON with the gap_cards array. No other text.`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-3-7-sonnet-20250219",
+      max_tokens: 4000,
+      temperature: 0.7,
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ]
+    });
+
+    const content = response.content[0];
+    if (content === undefined || content.type !== "text") {
+      throw new Error("Invalid AI response format");
+    }
+
+    // Parse JSON response
+    const responseText = content.text.trim();
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch === null) {
+      throw new Error("No JSON found in AI response");
+    }
+
+    const roadmapData = JSON.parse(jsonMatch[0]) as {
+      gap_cards: Array<{
+        gap_id: string;
+        gap_name: string;
+        gap_index: number;
+        total_gaps: number;
+        learning_actions: Array<{ id: string; action: string; timeline: string; resource: string }>;
+        networking_actions: Array<{ id: string; action: string; timeline: string }>;
+        experience_actions: Array<{ id: string; action: string; timeline: string }>;
+        milestone: string;
+      }>;
+    };
+
+    return roadmapData;
+  } catch (error) {
+    console.error("Error generating AI roadmap:", error);
+    throw new Error("Failed to generate personalized roadmap");
+  }
 }
 
 // ============================================================================
