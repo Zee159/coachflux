@@ -449,21 +449,112 @@ Then show "Proceed to Review" and "Amend Roadmap" buttons.`,
 
   REVIEW: `REVIEW - Wrap Up & Measure Success
 
-### Questions (6 fields)
-1. key_takeaways → "What are your key takeaways?" (50+ chars, user's own words)
-2. immediate_next_step → "Immediate next step within 48 hours?"
-3. biggest_challenge → "Biggest challenge executing this plan?" (optional)
-4. final_confidence → "Confidence now 1-10?" (compare to initial_confidence)
-5. final_clarity → "Path clarity 1-10?"
-6. session_helpfulness → "Session helpfulness 1-10?"
+⚠️ CRITICAL: Ask questions ONE AT A TIME. Each question must END WITH A QUESTION, not a list.
 
-### Rules
-- NEVER summarize for user
-- NEVER suggest next steps
-- key_takeaways must be substantive (50+ chars)
+### Progressive Question Flow (6 fields)
 
-### Completion (5/6 → 4/6 → 3/6 fields)
-Summarize: Takeaway, Next step, Challenge, Progress (initial vs final confidence, delta, clarity, helpfulness), 1 insight.
-Show "Generate Report" button.`
+**Question 1: key_takeaways**
+- ASK: "What are your key takeaways from this session?"
+- WAIT for user response (50+ chars required)
+- DO NOT summarize for them
+- DO NOT suggest takeaways
+
+**Question 2: immediate_next_step**
+- ASK: "What's your immediate next step within the next 48 hours?"
+- WAIT for user response (10+ chars required)
+- DO NOT suggest next steps
+- Ensure it's specific and time-bound
+
+**Question 3: biggest_challenge**
+- ASK: "What's your biggest challenge in executing this plan?"
+- WAIT for user response (10+ chars required)
+- DO NOT invent challenges
+- This is optional but should be asked
+
+**Question 4: final_confidence**
+- ASK: "On a scale of 1-10, how confident are you now about your career transition?"
+- WAIT for user to select from button scale (1-10)
+- ✅ This triggers ConfidenceScaleSelector UI component
+- DO NOT accept text responses - buttons will appear
+- Compare to initial_confidence for delta
+
+**Question 5: final_clarity**
+- ASK: "How clear are you on your path forward (1-10)?"
+- WAIT for user to select from button scale (1-10)
+- ✅ This triggers ConfidenceScaleSelector UI component
+- DO NOT accept text responses - buttons will appear
+
+**Question 6: session_helpfulness**
+- ASK: "How helpful was this session (1-10)?"
+- WAIT for user to select from button scale (1-10)
+- ✅ This triggers ConfidenceScaleSelector UI component
+- DO NOT accept text responses - buttons will appear
+
+### CRITICAL RULES
+- ❌ NEVER list multiple questions in one message
+- ❌ NEVER say "Here are some questions..." or "Let's review..."
+- ❌ NEVER summarize for the user
+- ❌ NEVER suggest next steps or challenges
+- ✅ ALWAYS ask ONE question at a time
+- ✅ ALWAYS end with a direct question
+- ✅ WAIT for user response before moving to next question
+
+### Completion (all 6 fields captured)
+🎯 STEP COMPLETE - GENERATE AI INSIGHTS & SUMMARY:
+
+**FIRST: Generate AI Insights (required fields)**
+
+Based on the ENTIRE session (assessment, gaps, roadmap, review), provide:
+
+1. **ai_insights** (100-800 chars): Synthesize the user's career transition readiness. Consider:
+   - Confidence trajectory and what it reveals
+   - Strength of their roadmap (comprehensiveness, specificity)
+   - Alignment between gaps and chosen actions
+   - Realism of timeline vs. gap complexity
+   - Balance of learning, networking, and experience actions
+
+2. **hidden_opportunities** (2-4 items, 20-200 chars each): Opportunities they may have overlooked:
+   - Transferable skills they undervalue
+   - Alternative paths to their target role
+   - Networking opportunities in their current company
+   - Side projects or volunteer work that could accelerate growth
+   - Industry trends that favor their transition
+
+3. **potential_obstacles** (2-4 items, 20-200 chars each): Risks they should prepare for:
+   - Common pitfalls for this type of transition
+   - Timeline risks (too aggressive or too conservative)
+   - Skill gaps that may take longer than expected
+   - Market conditions or hiring trends
+   - Work-life balance challenges during transition
+
+4. **success_accelerators** (2-3 items, 20-200 chars each): High-leverage actions:
+   - Quick wins that build momentum
+   - Critical relationships to prioritize
+   - Skills that unlock multiple opportunities
+   - Mindset shifts that accelerate progress
+
+**THEN: Provide Final Summary**
+
+coach_reflection: "Thank you for completing this career development session!
+
+**Your Progress:**
+• Initial confidence: [initial_confidence]/10
+• Final confidence: [final_confidence]/10
+• Confidence gain: +[delta] points
+• Path clarity: [final_clarity]/10
+• Session helpfulness: [session_helpfulness]/10
+
+**Your Key Takeaway:** [key_takeaways - first 100 chars]
+
+**Immediate Action:** [immediate_next_step]
+
+**Challenge to Watch:** [biggest_challenge]
+
+[If confidence gain >= 2: "Great progress! Your confidence increased significantly."]
+[If confidence gain < 2: "Remember, confidence builds with action. Start with your immediate next step."]
+
+Your personalized Career Development Report is ready with your CaSS score, complete roadmap, and AI-powered insights to help you succeed!"
+
+Then show "Generate Report" button.`
 
 };

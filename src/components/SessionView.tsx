@@ -19,6 +19,7 @@ import { OptionsSelector } from "./OptionsSelector";
 import { GapSelector } from "./GapSelector";
 import { GapPrioritySelector } from "./GapPrioritySelector";
 import { GapRoadmapCard } from "./GapRoadmapCard";
+import { CompletedGapCard } from "./CompletedGapCard";
 import { ControlLevelSelector } from "./ControlLevelSelector";
 import { ActionValidator } from "./ActionValidator";
 import { ConfidenceScaleSelector } from "./ConfidenceScaleSelector";
@@ -575,6 +576,9 @@ export function SessionView() {
   const awaitingConfirmation = session?.awaiting_confirmation === true;
   const amendmentMode = session?.amendment_mode;
   const [showStepSelector, setShowStepSelector] = useState(false);
+  
+  // Gap editing state
+  const [editingGapIndex, setEditingGapIndex] = useState<number | null>(null);
 
   // Keep mutation references stable for effects to avoid dependency array size changes
   const closeSessionRef = useRef(closeSession);
@@ -702,15 +706,23 @@ export function SessionView() {
   
   // Framework-specific step sequences
   const GROW_STEPS = ["introduction", "goal", "reality", "options", "will", "review"];
-  const COMPASS_STEPS = ["introduction", "clarity", "ownership", "mapping", "practice", "review"]; // 4-stage COMPASS + review
-  const frameworkSteps = session.framework === "COMPASS" ? COMPASS_STEPS : GROW_STEPS;
+  const COMPASS_STEPS = ["introduction", "clarity", "ownership", "mapping", "practice", "review"];
+  const CAREER_STEPS = ["INTRODUCTION", "ASSESSMENT", "GAP_ANALYSIS", "ROADMAP", "REVIEW"];
+  
+  const frameworkSteps = 
+    session.framework === "COMPASS" ? COMPASS_STEPS :
+    session.framework === "CAREER" ? CAREER_STEPS :
+    GROW_STEPS;
+  
   const totalSteps = frameworkSteps.length;
   const currentStepIndex = Math.max(0, frameworkSteps.indexOf(currentStep)); // Fallback to 0 if step not found
   
   // Get skip count for current step
   const sessionState = session.state as { skips?: Record<string, number> } | undefined;
   const skipCount = sessionState?.skips?.[currentStep] ?? 0;
-  const canSkip = skipCount < 2 && currentStep !== "review" && currentStep !== "introduction"; // No skip on introduction or review step
+  const canSkip = skipCount < 2 && 
+    currentStep.toLowerCase() !== "review" && 
+    currentStep.toLowerCase() !== "introduction"; // No skip on introduction or review step
   
   // Check if session is complete (review step done OR session closed)
   // Find the LAST review reflection (in case there are multiple after analysis generation)
@@ -791,7 +803,8 @@ export function SessionView() {
         goal: 'Reality', 
         reality: 'Options', 
         options: 'Will', 
-        will: 'Review' 
+        will: 'Review',
+        review: 'Report'
       };
       return steps[currentStep] ?? 'Review';
     } else if (session?.framework === 'COMPASS') {
@@ -801,7 +814,8 @@ export function SessionView() {
         mapping: 'Practice', 
         practice: 'Anchoring',
         anchoring: 'Sustaining',
-        sustaining: 'Review'
+        sustaining: 'Review',
+        review: 'Report'
       };
       return steps[currentStep] ?? 'Review';
     } else if (session?.framework === 'CAREER') {
@@ -809,7 +823,8 @@ export function SessionView() {
         INTRODUCTION: 'Assessment',
         ASSESSMENT: 'Gap Analysis', 
         GAP_ANALYSIS: 'Roadmap', 
-        ROADMAP: 'Review'
+        ROADMAP: 'Review',
+        REVIEW: 'Report'
       };
       return steps[currentStep] ?? 'Review';
     } else {
@@ -1123,7 +1138,9 @@ export function SessionView() {
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
                 Step {currentStepIndex + 1} of {totalSteps}:{" "}
-                <span className="text-indigo-600 dark:text-indigo-400 capitalize">{currentStep}</span>
+                <span className="text-indigo-600 dark:text-indigo-400">
+                  {currentStep.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
+                </span>
               </h2>
               <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {Math.round(((currentStepIndex + 1) / totalSteps) * 100)}% complete
@@ -1699,8 +1716,183 @@ export function SessionView() {
                             );
                           })()}
 
+                          {/* Career Coach ROADMAP - Completed Gaps Display */}
+                          {session?.framework === 'CAREER' && reflection.step === 'ROADMAP' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const aiSuggestedRoadmap = payload['ai_suggested_roadmap'];
+                            
+                            if (aiSuggestedRoadmap === undefined || typeof aiSuggestedRoadmap !== 'object' || aiSuggestedRoadmap === null) {
+                              return null;
+                            }
+                            
+                            const roadmapData = aiSuggestedRoadmap as Record<string, unknown>;
+                            const gapCards = Array.isArray(roadmapData['gap_cards']) 
+                              ? roadmapData['gap_cards'] as Array<Record<string, unknown>>
+                              : [];
+                            const currentGapIndex = typeof roadmapData['current_gap_index'] === 'number' 
+                              ? roadmapData['current_gap_index'] 
+                              : 0;
+                            
+                            // Show completed gaps
+                            const completedGaps = gapCards.slice(0, currentGapIndex);
+                            
+                            if (completedGaps.length === 0) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4 space-y-4">
+                                {completedGaps.map((gapCard, index) => {
+                                  const selections = payload[`gap_${index}_selections`] as Record<string, unknown> | undefined;
+                                  
+                                  if (selections === undefined) {
+                                    return null;
+                                  }
+                                  
+                                  return (
+                                    <CompletedGapCard
+                                      key={String(gapCard['gap_id'] ?? index)}
+                                      gapCard={{
+                                        gap_id: String(gapCard['gap_id'] ?? ''),
+                                        gap_name: String(gapCard['gap_name'] ?? ''),
+                                        gap_index: typeof gapCard['gap_index'] === 'number' ? gapCard['gap_index'] : index,
+                                        total_gaps: typeof gapCard['total_gaps'] === 'number' ? gapCard['total_gaps'] : gapCards.length,
+                                        learning_actions: Array.isArray(gapCard['learning_actions'])
+                                          ? gapCard['learning_actions'] as Array<{
+                                              id: string;
+                                              action: string;
+                                              timeline: string;
+                                              resource: string;
+                                            }>
+                                          : [],
+                                        networking_actions: Array.isArray(gapCard['networking_actions'])
+                                          ? gapCard['networking_actions'] as Array<{
+                                              id: string;
+                                              action: string;
+                                              timeline: string;
+                                            }>
+                                          : [],
+                                        experience_actions: Array.isArray(gapCard['experience_actions'])
+                                          ? gapCard['experience_actions'] as Array<{
+                                              id: string;
+                                              action: string;
+                                              timeline: string;
+                                            }>
+                                          : [],
+                                        milestone: String(gapCard['milestone'] ?? '')
+                                      }}
+                                      selections={{
+                                        selected_learning_ids: Array.isArray(selections['selected_learning_ids']) 
+                                          ? selections['selected_learning_ids'] as string[]
+                                          : [],
+                                        selected_networking_ids: Array.isArray(selections['selected_networking_ids'])
+                                          ? selections['selected_networking_ids'] as string[]
+                                          : [],
+                                        selected_experience_ids: Array.isArray(selections['selected_experience_ids'])
+                                          ? selections['selected_experience_ids'] as string[]
+                                          : [],
+                                        milestone: String(selections['milestone'] ?? '')
+                                      }}
+                                      onEdit={() => {
+                                        setEditingGapIndex(index);
+                                      }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+
+                          {/* Career Coach ROADMAP - Editing Gap Card */}
+                          {session?.framework === 'CAREER' && reflection.step === 'ROADMAP' && isLastReflection && !isSessionComplete && editingGapIndex !== null && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const aiSuggestedRoadmap = payload['ai_suggested_roadmap'];
+                            
+                            if (aiSuggestedRoadmap === undefined || typeof aiSuggestedRoadmap !== 'object' || aiSuggestedRoadmap === null) {
+                              return null;
+                            }
+                            
+                            const roadmapData = aiSuggestedRoadmap as Record<string, unknown>;
+                            const gapCards = Array.isArray(roadmapData['gap_cards']) 
+                              ? roadmapData['gap_cards'] as Array<Record<string, unknown>>
+                              : [];
+                            
+                            const gapCard = gapCards[editingGapIndex];
+                            const selections = payload[`gap_${editingGapIndex}_selections`] as Record<string, unknown> | undefined;
+                            
+                            if (gapCard === undefined || selections === undefined) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <GapRoadmapCard
+                                  gapCard={{
+                                    gap_id: String(gapCard['gap_id'] ?? ''),
+                                    gap_name: String(gapCard['gap_name'] ?? ''),
+                                    gap_index: typeof gapCard['gap_index'] === 'number' ? gapCard['gap_index'] : editingGapIndex,
+                                    total_gaps: typeof gapCard['total_gaps'] === 'number' ? gapCard['total_gaps'] : gapCards.length,
+                                    learning_actions: Array.isArray(gapCard['learning_actions'])
+                                      ? gapCard['learning_actions'] as Array<{
+                                          id: string;
+                                          action: string;
+                                          timeline: string;
+                                          resource: string;
+                                        }>
+                                      : [],
+                                    networking_actions: Array.isArray(gapCard['networking_actions'])
+                                      ? gapCard['networking_actions'] as Array<{
+                                          id: string;
+                                          action: string;
+                                          timeline: string;
+                                        }>
+                                      : [],
+                                    experience_actions: Array.isArray(gapCard['experience_actions'])
+                                      ? gapCard['experience_actions'] as Array<{
+                                          id: string;
+                                          action: string;
+                                          timeline: string;
+                                        }>
+                                      : [],
+                                    milestone: String(gapCard['milestone'] ?? '')
+                                  }}
+                                  initialSelections={{
+                                    selected_learning_ids: Array.isArray(selections['selected_learning_ids']) 
+                                      ? selections['selected_learning_ids'] as string[]
+                                      : [],
+                                    selected_networking_ids: Array.isArray(selections['selected_networking_ids'])
+                                      ? selections['selected_networking_ids'] as string[]
+                                      : [],
+                                    selected_experience_ids: Array.isArray(selections['selected_experience_ids'])
+                                      ? selections['selected_experience_ids'] as string[]
+                                      : [],
+                                    milestone: String(selections['milestone'] ?? '')
+                                  }}
+                                  isEditing={true}
+                                  onComplete={(updatedSelections) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'ROADMAP',
+                                      userTurn: `I've updated gap ${editingGapIndex + 1}: ${String(gapCard['gap_name'])}`,
+                                      structuredInput: {
+                                        type: 'gap_modification',
+                                        data: {
+                                          gap_index: editingGapIndex,
+                                          ...updatedSelections
+                                        }
+                                      }
+                                    });
+                                    setEditingGapIndex(null);
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
                           {/* Career Coach ROADMAP - Gap Roadmap Card (Sequential) */}
-                          {session?.framework === 'CAREER' && reflection.step === 'ROADMAP' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                          {session?.framework === 'CAREER' && reflection.step === 'ROADMAP' && isLastReflection && !isSessionComplete && !awaitingConfirmation && editingGapIndex === null && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
                             const aiSuggestedRoadmap = payload['ai_suggested_roadmap'];
                             const roadmapCompleted = payload['roadmap_completed'] === true;
@@ -3178,7 +3370,7 @@ export function SessionView() {
                               : "text-gray-700 dark:text-gray-300"
                           }`}
                         >
-                          {step.charAt(0).toUpperCase() + step.slice(1)}
+                          {step.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
                         </span>
                       </div>
                     </div>

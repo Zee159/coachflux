@@ -756,6 +756,68 @@ async function handleStructuredInput(
       }
     }
 
+    case 'gap_modification': {
+      // User wants to modify a previously completed gap
+      const {
+        gap_index,
+        selected_learning_ids,
+        selected_networking_ids,
+        selected_experience_ids,
+        milestone
+      } = data as {
+        gap_index: number;
+        selected_learning_ids: string[];
+        selected_networking_ids: string[];
+        selected_experience_ids: string[];
+        milestone: string;
+      };
+      
+      const session = await ctx.runQuery(api.queries.getSession, { sessionId: args.sessionId });
+      if (session === null) {
+        return { ok: false, message: 'Session not found' };
+      }
+      
+      // Get current roadmap state
+      const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
+        sessionId: args.sessionId
+      });
+      
+      const roadmapReflections = sessionReflections.filter((r: { step: string }) => r.step === 'ROADMAP');
+      const lastRoadmapReflection = roadmapReflections[roadmapReflections.length - 1];
+      
+      if (lastRoadmapReflection === undefined) {
+        return { ok: false, message: 'Roadmap not found' };
+      }
+      
+      const payload = lastRoadmapReflection.payload as Record<string, unknown>;
+      
+      // Update the specific gap's selections
+      const updatedPayload = {
+        ...payload,
+        [`gap_${gap_index}_selections`]: {
+          selected_learning_ids,
+          selected_networking_ids,
+          selected_experience_ids,
+          milestone
+        }
+      };
+      
+      // Create new reflection with updated selections
+      await ctx.runMutation(api.mutations.createReflection, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        step: args.stepName,
+        userInput: args.userTurn,
+        payload: {
+          ...updatedPayload,
+          coach_reflection: `Great! I've updated your selections for gap ${gap_index + 1}.`
+        }
+      });
+      
+      return { ok: true, message: `Gap ${gap_index + 1} updated successfully` };
+    }
+
     case 'step_confirmation': {
       // User clicked Proceed or Amend on step confirmation buttons
       const { action } = data as { action: 'proceed' | 'amend' };

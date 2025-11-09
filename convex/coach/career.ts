@@ -260,7 +260,8 @@ export class CareerCoach implements FrameworkCoach {
     skipCount: number,
     loopDetected: boolean
   ): StepCompletionResult {
-    const fields = {
+    // User input fields (6 fields)
+    const userFields = {
       key_takeaways: typeof payload['key_takeaways'] === 'string' && payload['key_takeaways'].length >= 50,
       immediate_next_step: typeof payload['immediate_next_step'] === 'string' && payload['immediate_next_step'].length >= 10,
       biggest_challenge: typeof payload['biggest_challenge'] === 'string' && payload['biggest_challenge'].length >= 10,
@@ -269,35 +270,65 @@ export class CareerCoach implements FrameworkCoach {
       session_helpfulness: typeof payload['session_helpfulness'] === 'number'
     };
 
-    const capturedFields = Object.keys(fields).filter(k => fields[k as keyof typeof fields]);
-    const missingFields = Object.keys(fields).filter(k => !fields[k as keyof typeof fields]);
-    const capturedCount = capturedFields.length;
+    // AI-generated fields (4 fields)
+    const aiFields = {
+      ai_insights: typeof payload['ai_insights'] === 'string' && payload['ai_insights'].length >= 100,
+      hidden_opportunities: Array.isArray(payload['hidden_opportunities']) && payload['hidden_opportunities'].length >= 2,
+      potential_obstacles: Array.isArray(payload['potential_obstacles']) && payload['potential_obstacles'].length >= 2,
+      success_accelerators: Array.isArray(payload['success_accelerators']) && payload['success_accelerators'].length >= 2
+    };
 
-    // Progressive relaxation
-    let requiredCount = 6; // Strict: ALL 6 fields required
-    if (skipCount >= 1) { requiredCount = 5; } // Lenient: 5/6 fields
-    if (skipCount >= 2) { requiredCount = 4; } // Very lenient: 4/6 fields
-    if (loopDetected) { requiredCount = 4; } // Loop override: 4/6 fields
+    const userCapturedFields = Object.keys(userFields).filter(k => userFields[k as keyof typeof userFields]);
+    const aiCapturedFields = Object.keys(aiFields).filter(k => aiFields[k as keyof typeof aiFields]);
+    const userCapturedCount = userCapturedFields.length;
+    const aiCapturedCount = aiCapturedFields.length;
+    const missingUserFields = Object.keys(userFields).filter(k => !userFields[k as keyof typeof userFields]);
+    const missingAiFields = Object.keys(aiFields).filter(k => !aiFields[k as keyof typeof aiFields]);
 
-    // Minimum critical fields
-    const hasCriticalFields = fields.key_takeaways && fields.immediate_next_step && fields.final_confidence;
+    // Progressive relaxation for user fields
+    let requiredUserCount = 6; // Strict: ALL 6 fields required
+    if (skipCount >= 1) { requiredUserCount = 5; } // Lenient: 5/6 fields
+    if (skipCount >= 2) { requiredUserCount = 4; } // Very lenient: 4/6 fields
+    if (loopDetected) { requiredUserCount = 4; } // Loop override: 4/6 fields
 
-    if (capturedCount >= requiredCount && hasCriticalFields) {
+    // Minimum critical user fields
+    const hasCriticalUserFields = userFields.key_takeaways && userFields.immediate_next_step && userFields.final_confidence;
+
+    // Check if user fields are complete
+    const userFieldsComplete = userCapturedCount >= requiredUserCount && hasCriticalUserFields;
+
+    // Check if AI fields are complete (all 4 required for final completion)
+    const aiFieldsComplete = aiCapturedCount === 4;
+
+    // If both user and AI fields are complete, await confirmation
+    if (userFieldsComplete && aiFieldsComplete) {
       return {
         shouldAdvance: false,
         awaitingConfirmation: true,
-        reason: `Captured ${capturedCount}/6 fields (required: ${requiredCount})`,
-        capturedFields,
-        completionPercentage: Math.round((capturedCount / 6) * 100)
+        reason: `Captured ${userCapturedCount}/6 user fields + ${aiCapturedCount}/4 AI fields`,
+        capturedFields: [...userCapturedFields, ...aiCapturedFields],
+        completionPercentage: 100
       };
     }
 
+    // If user fields complete but AI fields missing, continue (AI will generate them)
+    if (userFieldsComplete && !aiFieldsComplete) {
+      return {
+        shouldAdvance: false,
+        reason: `User fields complete (${userCapturedCount}/6), waiting for AI insights (${aiCapturedCount}/4)`,
+        capturedFields: userCapturedFields,
+        missingFields: missingAiFields,
+        completionPercentage: Math.round(((userCapturedCount / 6) * 60 + (aiCapturedCount / 4) * 40))
+      };
+    }
+
+    // User fields incomplete
     return {
       shouldAdvance: false,
-      reason: `Need ${requiredCount} fields, have ${capturedCount}/6`,
-      capturedFields,
-      missingFields,
-      completionPercentage: Math.round((capturedCount / 6) * 100)
+      reason: `Need ${requiredUserCount} user fields, have ${userCapturedCount}/6`,
+      capturedFields: userCapturedFields,
+      missingFields: missingUserFields,
+      completionPercentage: Math.round((userCapturedCount / 6) * 60)
     };
   }
 

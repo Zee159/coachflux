@@ -40,16 +40,33 @@ interface GapRoadmapCardProps {
     selected_experience_ids: string[];
     milestone: string;
   }) => void;
+  initialSelections?: {
+    selected_learning_ids?: string[];
+    selected_networking_ids?: string[];
+    selected_experience_ids?: string[];
+    milestone?: string;
+  };
+  isEditing?: boolean;
 }
 
 export const GapRoadmapCard: React.FC<GapRoadmapCardProps> = ({
   gapCard,
-  onComplete
+  onComplete,
+  initialSelections,
+  isEditing = false
 }) => {
-  const [selectedLearning, setSelectedLearning] = useState<string[]>([]);
-  const [selectedNetworking, setSelectedNetworking] = useState<string[]>([]);
-  const [selectedExperience, setSelectedExperience] = useState<string[]>([]);
-  const [milestone, setMilestone] = useState(gapCard.milestone);
+  const [selectedLearning, setSelectedLearning] = useState<string[]>(
+    initialSelections?.selected_learning_ids ?? []
+  );
+  const [selectedNetworking, setSelectedNetworking] = useState<string[]>(
+    initialSelections?.selected_networking_ids ?? []
+  );
+  const [selectedExperience, setSelectedExperience] = useState<string[]>(
+    initialSelections?.selected_experience_ids ?? []
+  );
+  const [milestone, setMilestone] = useState(
+    initialSelections?.milestone ?? gapCard.milestone
+  );
 
   const toggleLearning = (id: string): void => {
     setSelectedLearning(prev =>
@@ -301,7 +318,11 @@ export const GapRoadmapCard: React.FC<GapRoadmapCardProps> = ({
             }
           `}
         >
-          {gapCard.gap_index < gapCard.total_gaps - 1 ? (
+          {isEditing ? (
+            <>
+              Update Gap <Check className="w-5 h-5" />
+            </>
+          ) : gapCard.gap_index < gapCard.total_gaps - 1 ? (
             <>
               Next Gap <ArrowRight className="w-5 h-5" />
             </>

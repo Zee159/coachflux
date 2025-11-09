@@ -173,6 +173,9 @@ export function generateCareerReport(
   // Session Insights Section
   report += generateInsightsSection(review);
 
+  // AI Insights Section
+  report += generateAIInsightsSection(review);
+
   // Recommended Next Steps
   report += generateNextStepsSection(assessment, review);
 
@@ -423,6 +426,62 @@ function generateRoadmapSection(roadmap: ReflectionPayload): string {
   section += '### Milestones\n\n';
   section += `- **3 Months:** ${getString(roadmap, 'milestone_3_months', 'Not set')}\n`;
   section += `- **6 Months:** ${getString(roadmap, 'milestone_6_months', 'Not set')}\n\n`;
+  
+  section += '---\n\n';
+  
+  return section;
+}
+
+/**
+ * Generate AI Insights Section
+ */
+function generateAIInsightsSection(review: ReflectionPayload): string {
+  const aiInsights = getString(review, 'ai_insights');
+  const hiddenOpportunities = getArray<string>(review, 'hidden_opportunities');
+  const potentialObstacles = getArray<string>(review, 'potential_obstacles');
+  const successAccelerators = getArray<string>(review, 'success_accelerators');
+  
+  // Only show section if AI insights were generated
+  if (aiInsights.length === 0 && hiddenOpportunities.length === 0 && potentialObstacles.length === 0 && successAccelerators.length === 0) {
+    return '';
+  }
+  
+  let section = '## 🤖 AI-Powered Career Insights\n\n';
+  
+  // Main insights
+  if (aiInsights.length > 0) {
+    section += `${aiInsights}\n\n`;
+  }
+  
+  // Hidden opportunities
+  if (hiddenOpportunities.length > 0) {
+    section += '### 💎 Hidden Opportunities\n\n';
+    section += '*Opportunities you may have overlooked:*\n\n';
+    hiddenOpportunities.forEach((opportunity) => {
+      section += `- ${opportunity}\n`;
+    });
+    section += '\n';
+  }
+  
+  // Potential obstacles
+  if (potentialObstacles.length > 0) {
+    section += '### ⚠️ Potential Obstacles\n\n';
+    section += '*Risks to prepare for:*\n\n';
+    potentialObstacles.forEach((obstacle) => {
+      section += `- ${obstacle}\n`;
+    });
+    section += '\n';
+  }
+  
+  // Success accelerators
+  if (successAccelerators.length > 0) {
+    section += '### 🚀 Success Accelerators\n\n';
+    section += '*High-leverage actions to prioritize:*\n\n';
+    successAccelerators.forEach((accelerator) => {
+      section += `- ${accelerator}\n`;
+    });
+    section += '\n';
+  }
   
   section += '---\n\n';
   

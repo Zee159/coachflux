@@ -460,6 +460,25 @@ RULES:
           final_confidence: { type: "number", minimum: 1, maximum: 10 },
           final_clarity: { type: "number", minimum: 1, maximum: 10 },
           session_helpfulness: { type: "number", minimum: 1, maximum: 10 },
+          ai_insights: { type: "string", minLength: 100, maxLength: 800 },
+          hidden_opportunities: { 
+            type: "array", 
+            items: { type: "string", minLength: 20, maxLength: 200 },
+            minItems: 2,
+            maxItems: 4
+          },
+          potential_obstacles: { 
+            type: "array", 
+            items: { type: "string", minLength: 20, maxLength: 200 },
+            minItems: 2,
+            maxItems: 4
+          },
+          success_accelerators: { 
+            type: "array", 
+            items: { type: "string", minLength: 20, maxLength: 200 },
+            minItems: 2,
+            maxItems: 3
+          },
           coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
         },
         required: ["coach_reflection"],
