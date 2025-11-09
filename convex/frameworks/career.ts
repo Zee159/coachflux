@@ -171,9 +171,11 @@ CRITICAL RULES:
                 type: { type: "string", enum: ["skill", "experience"] },
                 gap: { type: "string", minLength: 3, maxLength: 100 },
                 rationale: { type: "string", minLength: 10, maxLength: 200 },
-                priority: { type: "string", enum: ["high", "medium", "low"] }
+                priority: { type: "string", enum: ["high", "medium", "low"] },
+                difficulty: { type: "string", enum: ["beginner", "intermediate", "advanced"] },
+                typical_time_to_acquire: { type: "string", minLength: 5, maxLength: 50 }
               },
-              required: ["id", "type", "gap", "rationale", "priority"],
+              required: ["id", "type", "gap", "rationale", "priority", "difficulty", "typical_time_to_acquire"],
               additionalProperties: false
             },
             minItems: 0,
@@ -287,7 +289,7 @@ CRITICAL RULES:
                           id: { type: "string" },
                           action: { type: "string", minLength: 5, maxLength: 200 },
                           timeline: { type: "string", minLength: 3, maxLength: 50 },
-                          resource: { type: "string", minLength: 3, maxLength: 100 }
+                          resource: { type: "string", minLength: 10, maxLength: 150 }
                         },
                         required: ["id", "action", "timeline", "resource"],
                         additionalProperties: false
@@ -312,7 +314,7 @@ CRITICAL RULES:
                     gap_name: { type: "string", minLength: 3, maxLength: 100 },
                     action: { type: "string", minLength: 5, maxLength: 200 },
                     timeline: { type: "string", minLength: 3, maxLength: 50 },
-                    resource: { type: "string", minLength: 3, maxLength: 100 }
+                    resource: { type: "string", minLength: 10, maxLength: 150 }
                   },
                   required: ["id", "gap_id", "gap_name", "action", "timeline", "resource"],
                   additionalProperties: false
@@ -350,13 +352,25 @@ CRITICAL RULES:
                 minItems: 3,
                 maxItems: 5
               },
-            milestone_3_months: { type: "string", minLength: 10, maxLength: 200 },
-            milestone_6_months: { type: "string", minLength: 10, maxLength: 200 },
+            milestone_3_months: { type: "string", minLength: 20, maxLength: 200 },
+            milestone_6_months: { type: "string", minLength: 20, maxLength: 200 },
             current_gap_index: { type: "number", minimum: 0 },
             total_gaps: { type: "number", minimum: 1 }
           },
           required: [],
           additionalProperties: true
+          },
+          
+          // User feedback for refinement (optional)
+          roadmap_user_feedback: {
+            type: "object",
+            properties: {
+              actions_too_ambitious: { type: "boolean" },
+              actions_too_basic: { type: "boolean" },
+              missing_areas: { type: "array", items: { type: "string" } },
+              refinement_requested: { type: "boolean" }
+            },
+            additionalProperties: false
           },
           
           // Commitment score

@@ -99,6 +99,8 @@ GUARDRAILS:
 5. career_stage → "What level: Entry/Middle Manager/Senior Manager/Executive/Founder?"
 6. timeframe → "Timeframe for transition?"
 7. initial_confidence → "Confidence 1-10?"
+   - THEN CALIBRATE: "Let me help calibrate that score. Do you know 3+ people in your target role? Have you researched job descriptions? Do you understand daily responsibilities? Based on this, does [score]/10 still feel accurate?"
+   - If user adjusts, update initial_confidence
 8. assessment_score → "Clarity on requirements 1-10?" (REQUIRED - measures understanding)
 
 ### Extraction Rules
@@ -123,6 +125,8 @@ Then show confirmation buttons.`,
 
 1. skill_gaps → ASK: "What skills does your target role require that you don't currently have?"
 2. experience_gaps → ASK: "What types of experience are you missing?" (optional)
+   - ⚠️ If user says "none" or skips, PROBE ONCE: "Are you sure? Most [target_role] positions expect [specific experience type based on their transition]. Do you have experience in [relevant domain]?"
+   - Only probe if the transition clearly requires specific experience (e.g., Manager → CFO needs financial leadership experience)
 3. ai_wants_suggestions → ASK: "Would you like me to suggest additional gaps based on your career transition?"
 4. [IF YES] ai_suggested_gaps → Generate 3-5 specific gaps with rationale
 5. [IF YES] selected_gap_ids → User selects which suggested gaps resonate (via GapSelector UI)
@@ -148,6 +152,8 @@ Each gap MUST have:
 - gap: Specific gap description (10-100 chars)
 - rationale: Why this gap matters for THEIR transition (10-200 chars)
 - priority: "high", "medium", or "low"
+- difficulty: "beginner", "intermediate", or "advanced" (learning difficulty level)
+- typical_time_to_acquire: Realistic timeframe (e.g., "2-3 months", "6-12 months", "1-2 years")
 
 Example for "Business Analyst" → "Product Manager":
 ai_suggested_gaps: [
@@ -156,30 +162,50 @@ ai_suggested_gaps: [
     type: "skill",
     gap: "Product roadmap creation and prioritization",
     rationale: "PMs own the product roadmap; BAs typically analyze requirements defined by others",
-    priority: "high"
+    priority: "high",
+    difficulty: "intermediate",
+    typical_time_to_acquire: "3-6 months"
   },
   {
     id: "gap2",
     type: "experience",
     gap: "Leading cross-functional product teams",
     rationale: "PMs lead engineering, design, and marketing; BAs usually work within one function",
-    priority: "high"
+    priority: "high",
+    difficulty: "advanced",
+    typical_time_to_acquire: "6-12 months"
   },
   {
     id: "gap3",
     type: "skill",
     gap: "User research and customer discovery",
     rationale: "PMs validate product ideas with users; BAs focus on internal stakeholder requirements",
-    priority: "medium"
+    priority: "medium",
+    difficulty: "beginner",
+    typical_time_to_acquire: "2-3 months"
   }
 ]
 
 **CRITICAL RULES:**
 - Base gaps on THEIR specific role transition (use current_role and target_role from ASSESSMENT)
+- Consider their INDUSTRY context when suggesting gaps (e.g., tech vs finance vs healthcare have different requirements)
 - NEVER suggest generic gaps like "leadership", "communication", "time management"
 - Make rationale specific to why THIS gap matters for THIS transition
 - Mix skill and experience gaps
 - Prioritize based on criticality for the transition
+
+**INDUSTRY-SPECIFIC CONTEXT:**
+Use the industry from ASSESSMENT to provide targeted gap suggestions:
+
+- **Tech:** Focus on technical skills (system design, cloud architecture, API development), scaling experience, production ownership
+- **Finance:** Focus on financial modeling, risk analysis, regulatory compliance, M&A experience, board presentations
+- **Healthcare:** Focus on clinical knowledge, regulatory compliance, patient safety, healthcare operations
+- **Consulting:** Focus on frameworks, client management, presentation skills, industry expertise
+- **Product/Startup:** Focus on product strategy, user research, metrics, growth tactics, fundraising
+- **Marketing:** Focus on digital marketing, analytics, brand strategy, campaign management
+- **Operations:** Focus on process optimization, supply chain, quality management, lean/six sigma
+
+Tailor your gap suggestions to the specific demands of their industry and target role.
 
 **Step 3: Present gaps**
 coach_reflection: "Based on your transition from [current_role] to [target_role], I've identified [N] potential gaps. Review them and select any that resonate with you."
@@ -250,18 +276,20 @@ Your response will be REJECTED if it does not include this field with all sub-ar
 
 ### AI Generation Requirements
 
-**IMPORTANT:** Look at the GAP_ANALYSIS reflections to find development_priorities array. Use THOSE gaps to generate learning actions.
+**CRITICAL:** Look at the GAP_ANALYSIS reflections to find development_priorities array. Use ONLY THOSE gaps to generate learning actions. DO NOT generate learning actions for gaps that are NOT in development_priorities.
+
+For gaps not in development_priorities, add a note in coach_reflection: "Other gaps (e.g., [list]) can be addressed after mastering your priority gaps."
 
 Your FIRST response must include ai_suggested_roadmap with:
 
 **A. Learning Actions (2-3 per priority gap)**
-For EACH gap in development_priorities from GAP_ANALYSIS reflections:
+For EACH gap in development_priorities from GAP_ANALYSIS reflections (ONLY these, not all gaps):
 - id: "learn1", "learn2", etc.
 - gap_id: Use index like "gap_0", "gap_1", etc.
 - gap_name: The exact gap text from development_priorities
 - action: Specific learning action (e.g., "Complete online course on financial modeling")
 - timeline: Realistic timeframe (e.g., "2 months", "6 weeks")
-- resource: Specific resource type (e.g., "Online course", "Book", "Mentor")
+- resource: Specific resource type with example (10+ chars, e.g., "Online course (e.g., Coursera, Udemy)", "Industry certification (e.g., PMP, CFA)", "Book (e.g., business strategy titles)", "Mentor (senior professional in target role)")
 
 Example - If development_priorities = ["Financial modeling", "Strategic planning", "Board presentation skills"]:
 {
@@ -272,7 +300,7 @@ Example - If development_priorities = ["Financial modeling", "Strategic planning
       gap_name: "Financial modeling",
       action: "Complete comprehensive financial modeling course",
       timeline: "2 months",
-      resource: "Online learning platform"
+      resource: "Online course (e.g., Coursera, Udemy)"
     },
     {
       id: "learn2",
@@ -328,7 +356,16 @@ Example:
   timeline: "Next quarter"
 }
 
-**D. Milestones**
+**D. Milestones (MUST BE SMART)**
+Milestones must be Specific, Measurable, Achievable, Relevant, Time-bound (20+ chars minimum):
+
+**CRITICAL:** Each milestone should have 2-3 specific, measurable outcomes.
+
+❌ BAD: "Improve financial skills" (vague, not measurable)
+❌ BAD: "Make progress" (not specific)
+✅ GOOD: "Complete 2 financial modeling courses and create 3 practice budgets"
+✅ GOOD: "Lead quarterly budget cycle and apply to 5 CFO positions"
+
 - milestone_3_months: Measurable outcome (e.g., "Complete 2 courses and connect with 5 industry leaders")
 - milestone_6_months: Measurable outcome (e.g., "Lead first major budget cycle and apply for CFO roles")
 
@@ -349,14 +386,25 @@ Example:
 - Use vague timelines like "soon" or "when ready"
 - Make milestones too ambitious or vague
 
-### User Curation
+### User Curation & Refinement
 
 After AI generates roadmap:
 1. RoadmapBuilder UI appears with all suggestions
-2. User selects which actions to include
-3. User can edit milestone text
-4. User clicks "Finalize Roadmap"
-5. System captures: selected_learning_ids, selected_networking_ids, selected_experience_ids, milestone_3_months, milestone_6_months
+2. User reviews the roadmap
+3. **OPTIONAL REFINEMENT:** Before finalizing, user can request adjustments:
+   - "Actions too ambitious" → AI generates easier alternatives
+   - "Actions too basic" → AI generates more challenging alternatives
+   - "Missing areas" → User specifies what's missing, AI adds suggestions
+   - If refinement_requested = true, regenerate ai_suggested_roadmap with adjustments
+4. User selects which actions to include
+5. User can edit milestone text
+6. User clicks "Finalize Roadmap"
+7. System captures: selected_learning_ids, selected_networking_ids, selected_experience_ids, milestone_3_months, milestone_6_months
+
+**Refinement Flow:**
+- After presenting ai_suggested_roadmap, ask: "Does this roadmap feel right, or would you like me to adjust it?"
+- If user requests changes, extract roadmap_user_feedback and regenerate
+- If user says "looks good", proceed to curation
 
 ### Commitment Score
 

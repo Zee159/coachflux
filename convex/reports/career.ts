@@ -158,6 +158,9 @@ export function generateCareerReport(
   // CaSS Score Section
   report += generateCaSSSection(cass, assessment, gapAnalysis, roadmap, review);
 
+  // Success Indicators Section
+  report += generateSuccessIndicatorsSection(cass, roadmap, review);
+
   // Career Target Section
   report += generateCareerTargetSection(assessment);
 
@@ -177,6 +180,61 @@ export function generateCareerReport(
   report += `\n---\n\n*Generated: ${new Date().toLocaleString()}*\n`;
 
   return report;
+}
+
+/**
+ * Generate Success Indicators Section
+ */
+function generateSuccessIndicatorsSection(
+  cass: CaSSBreakdown,
+  roadmap: ReflectionPayload,
+  review: ReflectionPayload
+): string {
+  const learningActions = getArray<unknown>(roadmap, 'learning_actions');
+  const networkingActions = getArray<unknown>(roadmap, 'networking_actions');
+  const immediateNextStep = getString(review, 'immediate_next_step');
+  const confidenceDelta = cass.confidence_delta;
+
+  let section = '## 🎯 Success Indicators\n\n';
+  section += 'These indicators suggest your likelihood of success:\n\n';
+
+  // Plan comprehensiveness
+  if (learningActions.length >= 5) {
+    section += '✅ **Comprehensive learning plan** - You have multiple pathways to skill development\n';
+  } else if (learningActions.length >= 3) {
+    section += '⚠️ **Basic learning plan** - Consider adding more learning actions for backup options\n';
+  } else if (learningActions.length > 0) {
+    section += '⚠️ **Limited learning plan** - More learning actions would increase your chances\n';
+  }
+
+  // Network building
+  if (networkingActions.length >= 3) {
+    section += '✅ **Active networking strategy** - You\'re building connections proactively\n';
+  } else if (networkingActions.length > 0) {
+    section += '⚠️ **Limited networking** - Career transitions often require stronger networks\n';
+  } else {
+    section += '⚠️ **No networking plan** - Building connections is critical for career transitions\n';
+  }
+
+  // Immediate action
+  if (immediateNextStep.length > 10) {
+    section += '✅ **Clear next step** - You have immediate action within 48 hours\n';
+  } else {
+    section += '⚠️ **Vague next step** - Clarify your immediate action for momentum\n';
+  }
+
+  // Confidence trajectory
+  if (confidenceDelta > 0.3) {
+    section += '✅ **Strong confidence gain** - The session significantly boosted your readiness\n';
+  } else if (confidenceDelta >= 0) {
+    section += '👍 **Confidence maintained** - You have a realistic view of the transition\n';
+  } else {
+    section += '⚠️ **Confidence decreased** - This may indicate unrealistic expectations or gaps you hadn\'t considered\n';
+  }
+
+  section += '\n---\n\n';
+
+  return section;
 }
 
 /**

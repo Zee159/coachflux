@@ -714,18 +714,40 @@ export function SessionView() {
   
   // Check if session is complete (review step done OR session closed)
   // Find the LAST review reflection (in case there are multiple after analysis generation)
-  const reviewReflections = reflections?.filter((r) => r.step === "review") ?? [];
+  const reviewReflections = reflections?.filter((r) => r.step.toLowerCase() === "review") ?? [];
   const reviewReflection = reviewReflections[reviewReflections.length - 1];
   const reviewPayload = reviewReflection?.payload as Record<string, unknown> | undefined;
-  const isReviewComplete = Boolean(
-    reviewPayload !== null && reviewPayload !== undefined &&
-    typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 &&
-    typeof reviewPayload['ai_insights'] === 'string' && reviewPayload['ai_insights'].length > 0 &&
-    Array.isArray(reviewPayload['unexplored_options']) && reviewPayload['unexplored_options'].length > 0 &&
-    Array.isArray(reviewPayload['identified_risks']) && reviewPayload['identified_risks'].length > 0 &&
-    Array.isArray(reviewPayload['potential_pitfalls']) && reviewPayload['potential_pitfalls'].length > 0
-  );
-  const isSessionComplete = (currentStep === "review" && isReviewComplete) || 
+  
+  // Framework-specific review completion checks
+  let isReviewComplete = false;
+  if (session?.framework === 'GROW') {
+    // GROW: Check for AI-generated analysis fields
+    isReviewComplete = Boolean(
+      reviewPayload !== null && reviewPayload !== undefined &&
+      typeof reviewPayload['summary'] === 'string' && reviewPayload['summary'].length > 0 &&
+      typeof reviewPayload['ai_insights'] === 'string' && reviewPayload['ai_insights'].length > 0 &&
+      Array.isArray(reviewPayload['unexplored_options']) && reviewPayload['unexplored_options'].length > 0 &&
+      Array.isArray(reviewPayload['identified_risks']) && reviewPayload['identified_risks'].length > 0 &&
+      Array.isArray(reviewPayload['potential_pitfalls']) && reviewPayload['potential_pitfalls'].length > 0
+    );
+  } else if (session?.framework === 'CAREER') {
+    // CAREER: Check for user reflection fields
+    isReviewComplete = Boolean(
+      reviewPayload !== null && reviewPayload !== undefined &&
+      typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length >= 50 &&
+      typeof reviewPayload['immediate_next_step'] === 'string' && reviewPayload['immediate_next_step'].length >= 10 &&
+      typeof reviewPayload['final_confidence'] === 'number' &&
+      typeof reviewPayload['final_clarity'] === 'number'
+    );
+  } else if (session?.framework === 'COMPASS') {
+    // COMPASS: Check for review fields
+    isReviewComplete = Boolean(
+      reviewPayload !== null && reviewPayload !== undefined &&
+      typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length > 0
+    );
+  }
+  
+  const isSessionComplete = (currentStep.toLowerCase() === "review" && isReviewComplete) || 
     (session.closedAt !== null && session.closedAt !== undefined);
 
   // Helper: Extract fields for amendment modal
@@ -1681,7 +1703,13 @@ export function SessionView() {
                           {session?.framework === 'CAREER' && reflection.step === 'ROADMAP' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
                             const aiSuggestedRoadmap = payload['ai_suggested_roadmap'];
+                            const roadmapCompleted = payload['roadmap_completed'] === true;
                             const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Don't show card if roadmap is already completed
+                            if (roadmapCompleted) {
+                              return null;
+                            }
                             
                             // Only show if: AI has generated roadmap
                             if (aiSuggestedRoadmap === undefined || !isObject(aiSuggestedRoadmap)) {
@@ -1771,11 +1799,12 @@ export function SessionView() {
                           {/* Career Coach ROADMAP - Roadmap Commitment Score */}
                           {reflection.step === 'ROADMAP' && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
+                            const roadmapCompleted = payload['roadmap_completed'] === true;
                             const roadmapScore = payload['roadmap_score'];
                             const coachReflection = String(payload['coach_reflection'] ?? '');
                             
-                            // Only show if: roadmap_score not yet captured, AI is asking for it
-                            if (roadmapScore !== undefined) {
+                            // Only show if: roadmap is completed, score not yet captured, AI is asking for it
+                            if (!roadmapCompleted || roadmapScore !== undefined) {
                               return null;
                             }
                             

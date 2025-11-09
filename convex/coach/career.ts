@@ -18,7 +18,7 @@ export class CareerCoach implements FrameworkCoach {
     return {
       INTRODUCTION: ["user_consent", "coaching_focus", "coach_reflection"],
       ASSESSMENT: ["current_role", "years_experience", "industry", "target_role", "timeframe", "career_stage", "initial_confidence", "assessment_score"],
-      GAP_ANALYSIS: ["skill_gaps", "experience_gaps", "transferable_skills", "development_priorities", "gap_analysis_score"],
+      GAP_ANALYSIS: ["skill_gaps", "experience_gaps", "ai_wants_suggestions", "transferable_skills", "development_priorities", "gap_analysis_score"],
       ROADMAP: ["learning_actions", "networking_actions", "experience_actions", "milestone_3_months", "milestone_6_months", "roadmap_score"],
       REVIEW: ["key_takeaways", "immediate_next_step", "biggest_challenge", "final_confidence", "final_clarity", "session_helpfulness"]
     };
@@ -135,7 +135,7 @@ export class CareerCoach implements FrameworkCoach {
 
   /**
    * GAP_ANALYSIS step completion
-   * Progressive relaxation: 4/5 → 3/5 → 2/5 fields
+   * Progressive relaxation: 5/6 → 4/6 → 3/6 fields
    */
   private checkGapAnalysisCompletion(
     payload: ReflectionPayload,
@@ -145,6 +145,7 @@ export class CareerCoach implements FrameworkCoach {
     const fields = {
       skill_gaps: Array.isArray(payload['skill_gaps']) && payload['skill_gaps'].length >= 1,
       experience_gaps: Array.isArray(payload['experience_gaps']), // Optional, can be empty
+      ai_wants_suggestions: typeof payload['ai_wants_suggestions'] === 'boolean', // CRITICAL: Must ask this question
       transferable_skills: Array.isArray(payload['transferable_skills']) && payload['transferable_skills'].length >= 1,
       development_priorities: Array.isArray(payload['development_priorities']) && payload['development_priorities'].length >= 1,
       gap_analysis_score: typeof payload['gap_analysis_score'] === 'number'
@@ -155,30 +156,30 @@ export class CareerCoach implements FrameworkCoach {
     const capturedCount = capturedFields.length;
 
     // Progressive relaxation
-    let requiredCount = 5; // Strict: ALL 5 fields required
-    if (skipCount >= 1) { requiredCount = 4; } // Lenient: 4/5 fields
-    if (skipCount >= 2) { requiredCount = 3; } // Very lenient: 3/5 fields
-    if (loopDetected) { requiredCount = 3; } // Loop override: 3/5 fields
+    let requiredCount = 6; // Strict: ALL 6 fields required
+    if (skipCount >= 1) { requiredCount = 5; } // Lenient: 5/6 fields
+    if (skipCount >= 2) { requiredCount = 4; } // Very lenient: 4/6 fields
+    if (loopDetected) { requiredCount = 4; } // Loop override: 4/6 fields
 
-    // Minimum critical fields
-    const hasCriticalFields = fields.skill_gaps && fields.transferable_skills;
+    // Minimum critical fields (including ai_wants_suggestions)
+    const hasCriticalFields = fields.skill_gaps && fields.ai_wants_suggestions && fields.transferable_skills;
 
     if (capturedCount >= requiredCount && hasCriticalFields) {
       return {
         shouldAdvance: false,
         awaitingConfirmation: true,
-        reason: `Captured ${capturedCount}/5 fields (required: ${requiredCount})`,
+        reason: `Captured ${capturedCount}/6 fields (required: ${requiredCount})`,
         capturedFields,
-        completionPercentage: Math.round((capturedCount / 5) * 100)
+        completionPercentage: Math.round((capturedCount / 6) * 100)
       };
     }
 
     return {
       shouldAdvance: false,
-      reason: `Need ${requiredCount} fields, have ${capturedCount}/5`,
+      reason: `Need ${requiredCount} fields, have ${capturedCount}/6`,
       capturedFields,
       missingFields,
-      completionPercentage: Math.round((capturedCount / 5) * 100)
+      completionPercentage: Math.round((capturedCount / 6) * 100)
     };
   }
 
