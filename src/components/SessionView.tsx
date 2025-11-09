@@ -766,6 +766,8 @@ export function SessionView() {
     );
   } else if (session?.framework === 'CAREER') {
     // CAREER: Check for ALL 6 user reflection fields
+    // NOTE: For CAREER, review completion means awaiting confirmation, NOT session complete
+    // Session only completes after user clicks "Proceed to Report" and report is generated
     isReviewComplete = Boolean(
       reviewPayload !== null && reviewPayload !== undefined &&
       typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length >= 50 &&
@@ -783,8 +785,12 @@ export function SessionView() {
     );
   }
   
-  const isSessionComplete = (currentStep.toLowerCase() === "review" && isReviewComplete) || 
-    (session.closedAt !== null && session.closedAt !== undefined);
+  // For CAREER framework, session is only complete when actually closed (after report generation)
+  // Review completion triggers awaiting_confirmation, not session completion
+  const isSessionComplete = session?.framework === 'CAREER'
+    ? (session.closedAt !== null && session.closedAt !== undefined)
+    : ((currentStep.toLowerCase() === "review" && isReviewComplete) || 
+       (session.closedAt !== null && session.closedAt !== undefined));
 
   // Helper: Extract fields for amendment modal
   const extractFieldsForAmendment = (
