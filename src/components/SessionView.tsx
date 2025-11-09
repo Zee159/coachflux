@@ -588,7 +588,7 @@ export function SessionView() {
         awaitingConfirmation,
         session_awaiting_confirmation: session?.awaiting_confirmation,
         session_closedAt: session?.closedAt,
-        payload_fields: payload ? Object.keys(payload) : [],
+        payload_fields: payload !== null && payload !== undefined ? Object.keys(payload) : [],
         key_takeaways: payload?.['key_takeaways'],
         immediate_next_step: payload?.['immediate_next_step'],
         biggest_challenge: payload?.['biggest_challenge'],
