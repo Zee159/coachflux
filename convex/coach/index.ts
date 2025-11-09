@@ -844,11 +844,8 @@ async function handleStructuredInput(
             // This will be called from the frontend after this returns
             return { ok: true, message: 'Review confirmed, ready for report generation', triggerReportGeneration: true };
           } else if (framework === 'COMPASS') {
-            // COMPASS: Just close the session (no AI analysis needed)
-            await ctx.runMutation(api.mutations.closeSession, {
-              sessionId: args.sessionId
-            });
-            return { ok: true, message: 'COMPASS session complete!' };
+            // COMPASS: Trigger report generation (no AI analysis, but need to close properly)
+            return { ok: true, message: 'Review confirmed, ready for report generation', triggerReportGeneration: true };
           } else if (framework === 'CAREER') {
             // CAREER: Generate career transition report via the generateReviewAnalysis action
             // This will be called from the frontend after this returns
@@ -1048,10 +1045,7 @@ async function handleStructuredInput(
       
       // If from review, trigger report generation
       if (amendmentMode.from_review) {
-        // Close session
-        await ctx.runMutation(api.mutations.closeSession, {
-          sessionId: args.sessionId
-        });
+        // DO NOT close session here - let report generation handle it
         
         // Auto-trigger report generation (only for GROW framework)
         if (session.framework === 'GROW') {
@@ -1060,12 +1054,18 @@ async function handleStructuredInput(
             userId: args.userId,
             sessionId: args.sessionId
           });
+          return {
+            ok: true,
+            message: 'Report generated!',
+            sessionClosed: true
+          };
         }
         
+        // For CAREER, return to awaiting confirmation
         return {
           ok: true,
-          message: 'Generating report...',
-          sessionClosed: true
+          message: 'Review updated. Ready to proceed to report.',
+          awaitingConfirmation: true
         };
       }
       
@@ -2214,7 +2214,7 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
       }
 
       nextStepName = await advanceToNextStep(ctx, mutations, fw, step, frameworkCoach, args, sessionReflections);
-      sessionClosed = nextStepName === "review" && step.name === "review";
+      sessionClosed = nextStepName.toLowerCase() === "review" && step.name.toLowerCase() === "review";
     }
 
     return { ok: true, nextStep: nextStepName, payload, sessionClosed };

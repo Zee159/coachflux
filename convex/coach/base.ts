@@ -974,14 +974,12 @@ export async function advanceToNextStep(
 ): Promise<string> {
   const order = framework.steps.map((s) => s.name);
   const idx = order.indexOf(currentStep.name);
-  const isLastStep = currentStep.name === "review";
+  const isLastStep = currentStep.name.toLowerCase() === "review";
   
   if (isLastStep) {
-    // Review complete - close the session
-    await ctx.runMutation(mutations.closeSession, {
-      sessionId: args.sessionId
-    });
-    return "review"; // Stay on review
+    // Review step - do NOT auto-close session
+    // Session will be closed manually after report generation
+    return currentStep.name; // Stay on review (preserve case)
   }
   
   // Create transition message for current step

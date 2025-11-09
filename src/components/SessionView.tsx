@@ -3095,7 +3095,7 @@ export function SessionView() {
                                       }
                                     });
                                     
-                                    // Check if backend signaled to trigger report generation (GROW review step)
+                                    // Check if backend signaled to trigger report generation (GROW/CAREER review step)
                                     if (result !== null && result !== undefined && 'triggerReportGeneration' in result && result.triggerReportGeneration === true) {
                                       setGeneratingReport(true);
                                       try {

@@ -26,7 +26,7 @@ export class CareerCoach implements FrameworkCoach {
 
   /**
    * Check if a step is complete and ready to advance
-   * Implements progressive relaxation based on skip count
+   * Implements progressive relaxation based on skip count (except REVIEW which requires all fields)
    */
   checkStepCompletion(
     stepName: string,
@@ -253,7 +253,7 @@ export class CareerCoach implements FrameworkCoach {
 
   /**
    * REVIEW step completion
-   * Progressive relaxation: 5/6 → 4/6 → 3/6 fields
+   * NO PROGRESSIVE RELAXATION - All 6 questions are essential for complete review
    */
   private checkReviewCompletion(
     payload: ReflectionPayload,
@@ -279,26 +279,26 @@ export class CareerCoach implements FrameworkCoach {
       final_confidence: { exists: 'final_confidence' in payload, type: typeof payload['final_confidence'], value: payload['final_confidence'] },
       final_clarity: { exists: 'final_clarity' in payload, type: typeof payload['final_clarity'], value: payload['final_clarity'] },
       session_helpfulness: { exists: 'session_helpfulness' in payload, type: typeof payload['session_helpfulness'], value: payload['session_helpfulness'] },
-      userFields_validation: userFields
+      userFields_validation: userFields,
+      skipCount,
+      loopDetected
     });
 
     const userCapturedFields = Object.keys(userFields).filter(k => userFields[k as keyof typeof userFields]);
     const userCapturedCount = userCapturedFields.length;
     const missingUserFields = Object.keys(userFields).filter(k => !userFields[k as keyof typeof userFields]);
 
-    // Progressive relaxation for user fields
-    let requiredUserCount = 6; // Strict: ALL 6 fields required
-    if (skipCount >= 1) { requiredUserCount = 5; } // Lenient: 5/6 fields
-    if (skipCount >= 2) { requiredUserCount = 4; } // Very lenient: 4/6 fields
-    if (loopDetected) { requiredUserCount = 4; } // Loop override: 4/6 fields
+    // CRITICAL: REVIEW step requires ALL 6 fields - no progressive relaxation
+    // This ensures all review questions are asked before session completion
+    const requiredUserCount = 6;
 
     // Minimum critical user fields
     const hasCriticalUserFields = userFields.key_takeaways && userFields.immediate_next_step && userFields.final_confidence;
 
-    // Check if user fields are complete
-    const userFieldsComplete = userCapturedCount >= requiredUserCount && hasCriticalUserFields;
+    // Check if ALL user fields are complete
+    const userFieldsComplete = userCapturedCount === requiredUserCount && hasCriticalUserFields;
 
-    // If user fields complete, await confirmation
+    // If ALL user fields complete, await confirmation
     // AI insights will be generated during report generation (like GROW framework)
     if (userFieldsComplete) {
       console.warn('=== CAREER REVIEW COMPLETE ===', {
@@ -311,7 +311,7 @@ export class CareerCoach implements FrameworkCoach {
       return {
         shouldAdvance: false,
         awaitingConfirmation: true,
-        reason: `Captured ${userCapturedCount}/6 user fields`,
+        reason: `Captured all ${userCapturedCount}/6 user fields`,
         capturedFields: userCapturedFields,
         completionPercentage: 100
       };
@@ -327,7 +327,7 @@ export class CareerCoach implements FrameworkCoach {
     });
     return {
       shouldAdvance: false,
-      reason: `Need ${requiredUserCount} user fields, have ${userCapturedCount}/6`,
+      reason: `Need all ${requiredUserCount} user fields, have ${userCapturedCount}/6`,
       capturedFields: userCapturedFields,
       missingFields: missingUserFields,
       completionPercentage: Math.round((userCapturedCount / 6) * 100)

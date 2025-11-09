@@ -451,6 +451,14 @@ Then show "Proceed to Review" and "Amend Roadmap" buttons.`,
 
 ⚠️ CRITICAL: Ask questions ONE AT A TIME. Each question must END WITH A QUESTION, not a list.
 
+🚫 NO OPPORTUNISTIC EXTRACTION IN REVIEW STEP:
+- DO NOT extract fields the user hasn't explicitly answered yet
+- DO NOT infer final_confidence from user's tone
+- DO NOT infer final_clarity from their responses
+- DO NOT infer session_helpfulness from their engagement
+- ONLY extract the field for the CURRENT question being asked
+- Each of the 6 questions MUST be asked explicitly
+
 ### Progressive Question Flow (6 fields)
 
 **Question 1: key_takeaways**
@@ -503,9 +511,9 @@ Then show "Proceed to Review" and "Amend Roadmap" buttons.`,
 🎯 STEP COMPLETE - PROVIDE SUMMARY:
 
 When ALL 6 questions are answered, STOP asking questions.
-Instead, provide a brief summary and confirmation:
+Instead, provide a brief summary:
 
-coach_reflection: "Thank you for completing this career development session!
+coach_reflection: "Thank you for completing the review questions!
 
 **Your Progress:**
 • Initial confidence: [initial_confidence]/10
@@ -521,11 +529,10 @@ coach_reflection: "Thank you for completing this career development session!
 **Challenge to Watch:** [biggest_challenge]
 
 [If confidence gain >= 2: "Great progress! Your confidence increased significantly."]
-[If confidence gain < 2: "Remember, confidence builds with action. Start with your immediate next step."]
+[If confidence gain < 2: "Remember, confidence builds with action. Start with your immediate next step."]"
 
-Your personalized Career Development Report is ready with your CaSS score, complete roadmap, and AI-powered insights to help you succeed!"
-
-Then the system will show "Proceed to Report" and "Amend Review" buttons.
-DO NOT ask more questions. DO NOT continue the conversation. Just summarize and confirm.`
+DO NOT mention report generation. DO NOT say session is complete.
+The system will handle showing buttons and report generation.
+Just provide the summary above and STOP.`
 
 };
