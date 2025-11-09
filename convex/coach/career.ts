@@ -270,20 +270,9 @@ export class CareerCoach implements FrameworkCoach {
       session_helpfulness: typeof payload['session_helpfulness'] === 'number'
     };
 
-    // AI-generated fields (4 fields)
-    const aiFields = {
-      ai_insights: typeof payload['ai_insights'] === 'string' && payload['ai_insights'].length >= 100,
-      hidden_opportunities: Array.isArray(payload['hidden_opportunities']) && payload['hidden_opportunities'].length >= 2,
-      potential_obstacles: Array.isArray(payload['potential_obstacles']) && payload['potential_obstacles'].length >= 2,
-      success_accelerators: Array.isArray(payload['success_accelerators']) && payload['success_accelerators'].length >= 2
-    };
-
     const userCapturedFields = Object.keys(userFields).filter(k => userFields[k as keyof typeof userFields]);
-    const aiCapturedFields = Object.keys(aiFields).filter(k => aiFields[k as keyof typeof aiFields]);
     const userCapturedCount = userCapturedFields.length;
-    const aiCapturedCount = aiCapturedFields.length;
     const missingUserFields = Object.keys(userFields).filter(k => !userFields[k as keyof typeof userFields]);
-    const missingAiFields = Object.keys(aiFields).filter(k => !aiFields[k as keyof typeof aiFields]);
 
     // Progressive relaxation for user fields
     let requiredUserCount = 6; // Strict: ALL 6 fields required
@@ -297,28 +286,15 @@ export class CareerCoach implements FrameworkCoach {
     // Check if user fields are complete
     const userFieldsComplete = userCapturedCount >= requiredUserCount && hasCriticalUserFields;
 
-    // Check if AI fields are complete (all 4 required for final completion)
-    const aiFieldsComplete = aiCapturedCount === 4;
-
-    // If both user and AI fields are complete, await confirmation
-    if (userFieldsComplete && aiFieldsComplete) {
+    // If user fields complete, await confirmation
+    // AI insights will be generated during report generation (like GROW framework)
+    if (userFieldsComplete) {
       return {
         shouldAdvance: false,
         awaitingConfirmation: true,
-        reason: `Captured ${userCapturedCount}/6 user fields + ${aiCapturedCount}/4 AI fields`,
-        capturedFields: [...userCapturedFields, ...aiCapturedFields],
-        completionPercentage: 100
-      };
-    }
-
-    // If user fields complete but AI fields missing, continue (AI will generate them)
-    if (userFieldsComplete && !aiFieldsComplete) {
-      return {
-        shouldAdvance: false,
-        reason: `User fields complete (${userCapturedCount}/6), waiting for AI insights (${aiCapturedCount}/4)`,
+        reason: `Captured ${userCapturedCount}/6 user fields`,
         capturedFields: userCapturedFields,
-        missingFields: missingAiFields,
-        completionPercentage: Math.round(((userCapturedCount / 6) * 60 + (aiCapturedCount / 4) * 40))
+        completionPercentage: 100
       };
     }
 
@@ -328,7 +304,7 @@ export class CareerCoach implements FrameworkCoach {
       reason: `Need ${requiredUserCount} user fields, have ${userCapturedCount}/6`,
       capturedFields: userCapturedFields,
       missingFields: missingUserFields,
-      completionPercentage: Math.round((userCapturedCount / 6) * 60)
+      completionPercentage: Math.round((userCapturedCount / 6) * 100)
     };
   }
 

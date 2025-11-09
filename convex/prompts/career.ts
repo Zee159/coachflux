@@ -500,40 +500,10 @@ Then show "Proceed to Review" and "Amend Roadmap" buttons.`,
 - ✅ WAIT for user response before moving to next question
 
 ### Completion (all 6 fields captured)
-🎯 STEP COMPLETE - GENERATE AI INSIGHTS & SUMMARY:
+🎯 STEP COMPLETE - PROVIDE SUMMARY:
 
-**FIRST: Generate AI Insights (required fields)**
-
-Based on the ENTIRE session (assessment, gaps, roadmap, review), provide:
-
-1. **ai_insights** (100-800 chars): Synthesize the user's career transition readiness. Consider:
-   - Confidence trajectory and what it reveals
-   - Strength of their roadmap (comprehensiveness, specificity)
-   - Alignment between gaps and chosen actions
-   - Realism of timeline vs. gap complexity
-   - Balance of learning, networking, and experience actions
-
-2. **hidden_opportunities** (2-4 items, 20-200 chars each): Opportunities they may have overlooked:
-   - Transferable skills they undervalue
-   - Alternative paths to their target role
-   - Networking opportunities in their current company
-   - Side projects or volunteer work that could accelerate growth
-   - Industry trends that favor their transition
-
-3. **potential_obstacles** (2-4 items, 20-200 chars each): Risks they should prepare for:
-   - Common pitfalls for this type of transition
-   - Timeline risks (too aggressive or too conservative)
-   - Skill gaps that may take longer than expected
-   - Market conditions or hiring trends
-   - Work-life balance challenges during transition
-
-4. **success_accelerators** (2-3 items, 20-200 chars each): High-leverage actions:
-   - Quick wins that build momentum
-   - Critical relationships to prioritize
-   - Skills that unlock multiple opportunities
-   - Mindset shifts that accelerate progress
-
-**THEN: Provide Final Summary**
+When ALL 6 questions are answered, STOP asking questions.
+Instead, provide a brief summary and confirmation:
 
 coach_reflection: "Thank you for completing this career development session!
 
@@ -555,6 +525,7 @@ coach_reflection: "Thank you for completing this career development session!
 
 Your personalized Career Development Report is ready with your CaSS score, complete roadmap, and AI-powered insights to help you succeed!"
 
-Then show "Generate Report" button.`
+Then the system will show "Proceed to Report" and "Amend Review" buttons.
+DO NOT ask more questions. DO NOT continue the conversation. Just summarize and confirm.`
 
 };

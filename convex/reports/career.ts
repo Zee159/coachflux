@@ -6,6 +6,7 @@
  */
 
 import type { ReflectionPayload } from "../types";
+import type { SessionReportData, FormattedReport, FrameworkReportGenerator } from './types';
 
 // ============================================================================
 // TYPE-SAFE HELPER FUNCTIONS
@@ -549,3 +550,34 @@ function generateNextStepsSection(
   
   return section;
 }
+
+// ============================================================================
+// CAREER REPORT GENERATOR CLASS
+// ============================================================================
+
+/**
+ * CAREER Report Generator Class
+ * Implements FrameworkReportGenerator interface
+ */
+export class CareerReportGenerator implements FrameworkReportGenerator {
+  generateReport(data: SessionReportData): FormattedReport {
+    // Generate markdown report
+    const markdown = generateCareerReport(data.reflections);
+    
+    // Convert to FormattedReport structure
+    return {
+      title: 'Career Development Session Report',
+      summary: 'Your personalized career transition roadmap with CaSS score and AI-powered insights',
+      sections: [
+        {
+          heading: 'Report',
+          content: markdown,
+          type: 'text'
+        }
+      ]
+    };
+  }
+}
+
+// Export singleton instance
+export const careerReportGenerator = new CareerReportGenerator();

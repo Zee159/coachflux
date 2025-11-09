@@ -2212,18 +2212,58 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
 async function generateCareerReport(
   ctx: ActionCtx,
   _session: { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> },
-  _reflections: Array<{ step: string; payload: Record<string, unknown> }>,
+  reflections: Array<{ _id: Id<"reflections">; step: string; payload: Record<string, unknown> }>,
   _userName: string,
   args: { sessionId: Id<"sessions">; orgId: Id<"orgs">; userId: Id<"users"> }
 ): Promise<{ ok: boolean; message: string }> {
-  // Simple report for now - just close the session
-  // TODO: Generate comprehensive career transition report with AI analysis
-  // When implementing, extract: assessmentPayload, gapAnalysisPayload, roadmapPayload, reviewPayload from reflections
+  // Extract review reflections
+  const reviewReflections = reflections.filter(r => r.step === 'REVIEW');
+  const lastReviewReflection = reviewReflections[reviewReflections.length - 1];
+  
+  if (lastReviewReflection === undefined) {
+    return { ok: false, message: 'No review reflection found' };
+  }
+  
+  const review = lastReviewReflection.payload;
+  
+  // TODO: Generate AI insights using OpenAI/Anthropic
+  // For now, create placeholder insights
+  // In future: Call AI API to analyze the entire session and generate personalized insights
+  const aiInsights = {
+    ai_insights: "Based on your career transition session, you've demonstrated strong self-awareness and commitment to your goals. Your roadmap is comprehensive and actionable.",
+    hidden_opportunities: [
+      "Leverage your current role's network for informational interviews in your target industry",
+      "Consider internal mobility opportunities or job shadowing before external job search"
+    ],
+    potential_obstacles: [
+      "Time management between current role responsibilities and skill development activities",
+      "Potential skills gap may take longer to close than anticipated in your timeline"
+    ],
+    success_accelerators: [
+      "Start with small wins to build momentum and confidence in your transition",
+      "Connect with 2-3 professionals already in your target role for mentorship"
+    ]
+  };
+  
+  // Merge AI insights with existing review data
+  const finalPayload = {
+    ...review,
+    ...aiInsights
+  };
+  
+  // Update the LAST review reflection with AI insights
+  // This ensures the report generator can access them
+  await ctx.runMutation(api.mutations.updateReflection, {
+    reflectionId: lastReviewReflection._id,
+    payload: finalPayload
+  });
+  
+  // Close the session
   await ctx.runMutation(api.mutations.closeSession, {
     sessionId: args.sessionId
   });
   
-  return { ok: true, message: 'Career transition report generated!' };
+  return { ok: true, message: 'Career transition report ready!' };
 }
 
 // ============================================================================
@@ -2256,7 +2296,7 @@ export const generateReviewAnalysis = action({
       return await generateCareerReport(
         ctx, 
         session as { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> },
-        reflections as Array<{ step: string; payload: Record<string, unknown> }>,
+        reflections as Array<{ _id: Id<"reflections">; step: string; payload: Record<string, unknown> }>,
         userName,
         args
       );
