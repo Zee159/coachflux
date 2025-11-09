@@ -1717,7 +1717,7 @@ export function SessionView() {
                           })()}
 
                           {/* Career Coach ROADMAP - Completed Gaps Display */}
-                          {session?.framework === 'CAREER' && reflection.step === 'ROADMAP' && isLastReflection && !isSessionComplete && (() => {
+                          {session?.framework === 'CAREER' && reflection.step === 'ROADMAP' && isLastReflection && !isSessionComplete && editingGapIndex === null && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
                             const aiSuggestedRoadmap = payload['ai_suggested_roadmap'];
                             
