@@ -481,7 +481,13 @@ RULES:
           },
           coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
         },
-        required: ["coach_reflection"],
+        required: [
+          "coach_reflection",
+          "ai_insights",
+          "hidden_opportunities",
+          "potential_obstacles",
+          "success_accelerators"
+        ],
         additionalProperties: false
       },
       
