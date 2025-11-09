@@ -150,10 +150,16 @@ Each gap MUST have:
 - id: "gap1", "gap2", etc.
 - type: "skill" OR "experience"
 - gap: Specific gap description (10-100 chars)
-- rationale: Why this gap matters for THEIR transition (10-200 chars)
+- rationale: Why this gap matters for THEIR transition (20-150 chars, keep concise)
 - priority: "high", "medium", or "low"
 - difficulty: "beginner", "intermediate", or "advanced" (learning difficulty level)
 - typical_time_to_acquire: Realistic timeframe (e.g., "2-3 months", "6-12 months", "1-2 years")
+
+🚨 JSON SAFETY:
+- Keep rationales under 150 characters
+- Avoid quotes in rationale text (use "PMs" not "PM's")
+- Use semicolons instead of periods for multiple points
+- Ensure valid JSON structure
 
 Example for "Business Analyst" → "Product Manager":
 ai_suggested_gaps: [

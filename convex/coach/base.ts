@@ -599,19 +599,19 @@ export async function generateCoachResponse(
   // System prompt is cached across requests, saving ~2.5K tokens per message
   const primary = await client.messages.create({
     model: "claude-3-7-sonnet-20250219",
-    max_tokens: 800, // Increased from 600 to give more room for JSON generation
+    max_tokens: 1200, // Increased from 800 to handle complex JSON (e.g., ai_suggested_gaps arrays)
     temperature: 0.3, // Slightly increased from 0 to allow more flexibility
     system: [
       {
         type: "text",
-        text: system + safetyAlerts + aiContext + "\n\nYou MUST respond with valid JSON only. No other text.",
+        text: system + safetyAlerts + aiContext + "\n\n🚨 CRITICAL JSON RULES:\n- You MUST respond with valid JSON only. No other text.\n- Escape all quotes in strings with backslash (\\\")\n- Complete all JSON objects and arrays before hitting token limit\n- If approaching token limit, reduce verbosity but maintain valid JSON structure",
         cache_control: { type: "ephemeral" } // Cache this for 5 minutes
       }
     ],
     messages: [
       { 
         role: "user", 
-        content: `Schema:\n${JSON.stringify(strippedSchema, null, 2)}\n\n${user}\n\nRespond with ONLY valid JSON matching the schema.`
+        content: `Schema:\n${JSON.stringify(strippedSchema, null, 2)}\n\n${user}\n\nRespond with ONLY valid JSON matching the schema. Ensure all strings are properly escaped and all brackets/braces are closed.`
       }
     ]
   });
