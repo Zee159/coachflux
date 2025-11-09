@@ -270,6 +270,18 @@ export class CareerCoach implements FrameworkCoach {
       session_helpfulness: typeof payload['session_helpfulness'] === 'number'
     };
 
+    // Debug logging
+    console.warn('=== CAREER REVIEW COMPLETION CHECK ===', {
+      payload_keys: Object.keys(payload),
+      key_takeaways: { exists: 'key_takeaways' in payload, type: typeof payload['key_takeaways'], length: typeof payload['key_takeaways'] === 'string' ? payload['key_takeaways'].length : 0 },
+      immediate_next_step: { exists: 'immediate_next_step' in payload, type: typeof payload['immediate_next_step'], length: typeof payload['immediate_next_step'] === 'string' ? payload['immediate_next_step'].length : 0 },
+      biggest_challenge: { exists: 'biggest_challenge' in payload, type: typeof payload['biggest_challenge'], length: typeof payload['biggest_challenge'] === 'string' ? payload['biggest_challenge'].length : 0 },
+      final_confidence: { exists: 'final_confidence' in payload, type: typeof payload['final_confidence'], value: payload['final_confidence'] },
+      final_clarity: { exists: 'final_clarity' in payload, type: typeof payload['final_clarity'], value: payload['final_clarity'] },
+      session_helpfulness: { exists: 'session_helpfulness' in payload, type: typeof payload['session_helpfulness'], value: payload['session_helpfulness'] },
+      userFields_validation: userFields
+    });
+
     const userCapturedFields = Object.keys(userFields).filter(k => userFields[k as keyof typeof userFields]);
     const userCapturedCount = userCapturedFields.length;
     const missingUserFields = Object.keys(userFields).filter(k => !userFields[k as keyof typeof userFields]);
@@ -289,6 +301,13 @@ export class CareerCoach implements FrameworkCoach {
     // If user fields complete, await confirmation
     // AI insights will be generated during report generation (like GROW framework)
     if (userFieldsComplete) {
+      console.warn('=== CAREER REVIEW COMPLETE ===', {
+        userCapturedCount,
+        requiredUserCount,
+        hasCriticalUserFields,
+        capturedFields: userCapturedFields,
+        awaitingConfirmation: true
+      });
       return {
         shouldAdvance: false,
         awaitingConfirmation: true,
@@ -299,6 +318,13 @@ export class CareerCoach implements FrameworkCoach {
     }
 
     // User fields incomplete
+    console.warn('=== CAREER REVIEW INCOMPLETE ===', {
+      userCapturedCount,
+      requiredUserCount,
+      hasCriticalUserFields,
+      capturedFields: userCapturedFields,
+      missingFields: missingUserFields
+    });
     return {
       shouldAdvance: false,
       reason: `Need ${requiredUserCount} user fields, have ${userCapturedCount}/6`,

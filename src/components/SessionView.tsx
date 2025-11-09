@@ -577,6 +577,28 @@ export function SessionView() {
   const amendmentMode = session?.amendment_mode;
   const [showStepSelector, setShowStepSelector] = useState(false);
   
+  // Debug logging for CAREER REVIEW awaiting confirmation
+  useEffect(() => {
+    if (session?.framework === 'CAREER' && session?.step === 'REVIEW') {
+      const reviewReflections = reflections?.filter((r) => r.step === 'REVIEW') ?? [];
+      const lastReviewReflection = reviewReflections[reviewReflections.length - 1];
+      const payload = lastReviewReflection?.payload as Record<string, unknown> | undefined;
+      
+      console.warn('=== CAREER REVIEW UI STATE ===', {
+        awaitingConfirmation,
+        session_awaiting_confirmation: session?.awaiting_confirmation,
+        session_closedAt: session?.closedAt,
+        payload_fields: payload ? Object.keys(payload) : [],
+        key_takeaways: payload?.['key_takeaways'],
+        immediate_next_step: payload?.['immediate_next_step'],
+        biggest_challenge: payload?.['biggest_challenge'],
+        final_confidence: payload?.['final_confidence'],
+        final_clarity: payload?.['final_clarity'],
+        session_helpfulness: payload?.['session_helpfulness']
+      });
+    }
+  }, [session?.framework, session?.step, session?.awaiting_confirmation, session?.closedAt, awaitingConfirmation, reflections]);
+  
   // Gap editing state
   const [editingGapIndex, setEditingGapIndex] = useState<number | null>(null);
 
