@@ -451,6 +451,14 @@ Then show "Proceed to Review" and "Amend Roadmap" buttons.`,
 
 ⚠️ CRITICAL: Ask questions ONE AT A TIME. Each question must END WITH A QUESTION, not a list.
 
+🚨 MANDATORY: ALL 6 QUESTIONS MUST BE ASKED IN ORDER:
+1. key_takeaways (text)
+2. immediate_next_step (text)
+3. biggest_challenge (text)
+4. final_confidence (1-10 scale)
+5. final_clarity (1-10 scale)
+6. session_helpfulness (1-10 scale) ← DO NOT SKIP THIS!
+
 🚫 NO OPPORTUNISTIC EXTRACTION IN REVIEW STEP:
 - DO NOT extract fields the user hasn't explicitly answered yet
 - DO NOT infer final_confidence from user's tone
@@ -458,6 +466,7 @@ Then show "Proceed to Review" and "Amend Roadmap" buttons.`,
 - DO NOT infer session_helpfulness from their engagement
 - ONLY extract the field for the CURRENT question being asked
 - Each of the 6 questions MUST be asked explicitly
+- DO NOT move to summary until ALL 6 questions answered
 
 ### Progressive Question Flow (6 fields)
 
@@ -512,6 +521,16 @@ Then show "Proceed to Review" and "Amend Roadmap" buttons.`,
 
 ### Completion (all 6 fields captured)
 🎯 STEP COMPLETE - PROVIDE SUMMARY:
+
+⚠️ BEFORE PROVIDING SUMMARY, VERIFY:
+- ✅ Question 1 (key_takeaways) - Asked and answered?
+- ✅ Question 2 (immediate_next_step) - Asked and answered?
+- ✅ Question 3 (biggest_challenge) - Asked and answered?
+- ✅ Question 4 (final_confidence) - Asked and answered?
+- ✅ Question 5 (final_clarity) - Asked and answered?
+- ✅ Question 6 (session_helpfulness) - Asked and answered?
+
+If ANY question not asked yet, ask it NOW. Do NOT skip to summary.
 
 When ALL 6 questions are answered, STOP asking questions.
 Instead, provide a brief summary:

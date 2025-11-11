@@ -281,6 +281,8 @@ export class CareerCoach implements FrameworkCoach {
       final_clarity: { exists: 'final_clarity' in payload, type: typeof payload['final_clarity'], value: payload['final_clarity'] },
       session_helpfulness: { exists: 'session_helpfulness' in payload, type: typeof payload['session_helpfulness'], value: payload['session_helpfulness'] },
       userFields_validation: userFields,
+      userCapturedCount: Object.keys(userFields).filter(k => userFields[k as keyof typeof userFields]).length,
+      requiredUserCount: 6,
       skipCount,
       loopDetected
     });

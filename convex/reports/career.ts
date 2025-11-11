@@ -6,7 +6,7 @@
  */
 
 import type { ReflectionPayload } from "../types";
-import type { SessionReportData, FormattedReport, FrameworkReportGenerator } from './types';
+import type { SessionReportData, FormattedReport, FrameworkReportGenerator, ReportSection } from './types';
 
 // ============================================================================
 // TYPE-SAFE HELPER FUNCTIONS
@@ -561,22 +561,410 @@ function generateNextStepsSection(
  */
 export class CareerReportGenerator implements FrameworkReportGenerator {
   generateReport(data: SessionReportData): FormattedReport {
-    // Generate markdown report
-    const markdown = generateCareerReport(data.reflections);
+    // Extract reflections by step
+    const assessment = data.reflections.find(r => r.step === 'ASSESSMENT')?.payload;
+    const gapAnalysis = data.reflections.find(r => r.step === 'GAP_ANALYSIS')?.payload;
+    const roadmap = data.reflections.find(r => r.step === 'ROADMAP')?.payload;
+    const review = data.reflections.find(r => r.step === 'REVIEW')?.payload;
+
+    if (
+      assessment === null || assessment === undefined ||
+      gapAnalysis === null || gapAnalysis === undefined ||
+      roadmap === null || roadmap === undefined ||
+      review === null || review === undefined
+    ) {
+      return {
+        title: 'Career Development Session Report',
+        summary: '⚠️ Incomplete session - missing required steps',
+        sections: []
+      };
+    }
+
+    // Calculate CaSS
+    const cass = calculateCaSS(assessment, gapAnalysis, roadmap, review);
     
-    // Convert to FormattedReport structure
+    // Build structured sections array
+    const sections: ReportSection[] = [];
+    
+    // 1. CaSS Score Section
+    sections.push({
+      heading: '📊 Career Success Score (CaSS)',
+      content: generateCaSSContent(cass, assessment, gapAnalysis, roadmap, review),
+      type: 'scores' as const
+    });
+    
+    // 2. Success Indicators
+    sections.push({
+      heading: '🎯 Success Indicators',
+      content: generateSuccessIndicatorsContent(cass, roadmap, review),
+      type: 'insights' as const
+    });
+    
+    // 3. Career Target
+    sections.push({
+      heading: '🎯 Career Target',
+      content: generateCareerTargetContent(assessment),
+      type: 'text' as const
+    });
+    
+    // 4. Gap Analysis
+    sections.push({
+      heading: '📋 Gap Analysis',
+      content: generateGapAnalysisContent(gapAnalysis),
+      type: 'text' as const
+    });
+    
+    // 5. Roadmap
+    sections.push({
+      heading: '🗺️ Career Roadmap',
+      content: generateRoadmapContent(roadmap),
+      type: 'actions' as const
+    });
+    
+    // 6. Session Insights
+    sections.push({
+      heading: '💡 Session Insights',
+      content: generateInsightsContent(review),
+      type: 'text' as const
+    });
+    
+    // 7. AI Insights (if available)
+    const aiInsightsContent = generateAIInsightsContent(review);
+    if (aiInsightsContent.length > 0) {
+      sections.push({
+        heading: '🤖 AI-Powered Career Insights',
+        content: aiInsightsContent,
+        type: 'insights' as const
+      });
+    }
+    
+    // 8. Next Steps
+    sections.push({
+      heading: '📈 Recommended Next Steps',
+      content: generateNextStepsContent(assessment, review),
+      type: 'actions' as const
+    });
+    
+    const badges = {
+      EXCELLENT: '🌟',
+      GOOD: '✅',
+      FAIR: '👍',
+      MARGINAL: '⚠️',
+      INSUFFICIENT: '❌'
+    };
+    
     return {
       title: 'Career Development Session Report',
-      summary: 'Your personalized career transition roadmap with CaSS score and AI-powered insights',
-      sections: [
-        {
-          heading: 'Report',
-          content: markdown,
-          type: 'text'
-        }
-      ]
+      summary: `CaSS Score: ${cass.total_score}/100 ${badges[cass.success_level]} | ${getString(assessment, 'current_role')} → ${getString(assessment, 'target_role')}`,
+      sections
     };
   }
+}
+
+// Helper functions to generate section content (plain text, not markdown)
+function generateCaSSContent(
+  cass: CaSSBreakdown,
+  assessment: ReflectionPayload,
+  gapAnalysis: ReflectionPayload,
+  roadmap: ReflectionPayload,
+  review: ReflectionPayload
+): string {
+  const badges = {
+    EXCELLENT: '🌟',
+    GOOD: '✅',
+    FAIR: '👍',
+    MARGINAL: '⚠️',
+    INSUFFICIENT: '❌'
+  };
+
+  const messages = {
+    EXCELLENT: 'Outstanding readiness! You have a clear path and strong commitment.',
+    GOOD: 'Strong foundation. You\'re well-prepared to execute your plan.',
+    FAIR: 'Solid start. Some areas need refinement for optimal success.',
+    MARGINAL: 'Significant gaps remain. Consider additional planning or support.',
+    INSUFFICIENT: 'More exploration needed. Revisit your goals and approach.'
+  };
+
+  let content = `Score: ${cass.total_score}/100 ${badges[cass.success_level]} ${cass.success_level}\n\n`;
+  content += `${messages[cass.success_level]}\n\n`;
+  content += `Dimension Breakdown:\n`;
+  content += `• Confidence Growth: ${getNumber(assessment, 'initial_confidence', 0)}/10 → ${getNumber(review, 'final_confidence', 0)}/10 `;
+  content += `(${cass.confidence_delta >= 0 ? '+' : ''}${Math.round(cass.confidence_delta * 10)})\n`;
+  content += `• Path Clarity: ${getNumber(review, 'final_clarity', 0)}/10\n`;
+  content += `• Action Commitment: ${getNumber(roadmap, 'roadmap_score', 0)}/10\n`;
+  content += `• Gap Manageability: ${getNumber(gapAnalysis, 'gap_analysis_score', 0)}/10`;
+  
+  return content;
+}
+
+function generateSuccessIndicatorsContent(
+  cass: CaSSBreakdown,
+  roadmap: ReflectionPayload,
+  review: ReflectionPayload
+): string {
+  const learningActions = getArray<unknown>(roadmap, 'learning_actions');
+  const networkingActions = getArray<unknown>(roadmap, 'networking_actions');
+  const immediateNextStep = getString(review, 'immediate_next_step');
+  const confidenceDelta = cass.confidence_delta;
+
+  let content = 'These indicators suggest your likelihood of success:\n\n';
+
+  // Plan comprehensiveness
+  if (learningActions.length >= 5) {
+    content += '✅ Comprehensive learning plan - You have multiple pathways to skill development\n';
+  } else if (learningActions.length >= 3) {
+    content += '⚠️ Basic learning plan - Consider adding more learning actions for backup options\n';
+  } else if (learningActions.length > 0) {
+    content += '⚠️ Limited learning plan - More learning actions would increase your chances\n';
+  }
+
+  // Network building
+  if (networkingActions.length >= 3) {
+    content += '✅ Active networking strategy - You\'re building connections proactively\n';
+  } else if (networkingActions.length > 0) {
+    content += '⚠️ Limited networking - Career transitions often require stronger networks\n';
+  } else {
+    content += '⚠️ No networking plan - Building connections is critical for career transitions\n';
+  }
+
+  // Immediate action
+  if (immediateNextStep.length > 10) {
+    content += '✅ Clear next step - You have immediate action within 48 hours\n';
+  } else {
+    content += '⚠️ Vague next step - Clarify your immediate action for momentum\n';
+  }
+
+  // Confidence trajectory
+  if (confidenceDelta > 0.3) {
+    content += '✅ Strong confidence gain - The session significantly boosted your readiness';
+  } else if (confidenceDelta >= 0) {
+    content += '👍 Confidence maintained - You have a realistic view of the transition';
+  } else {
+    content += '⚠️ Confidence decreased - This may indicate unrealistic expectations or gaps you hadn\'t considered';
+  }
+
+  return content;
+}
+
+function generateCareerTargetContent(assessment: ReflectionPayload): string {
+  const careerLevel = getString(assessment, 'career_stage', 'Not specified');
+  const levelLabels: Record<string, string> = {
+    'entry_level': 'Entry Level',
+    'middle_manager': 'Middle Manager',
+    'senior_manager': 'Senior Manager',
+    'executive': 'Executive',
+    'founder': 'Founder/Entrepreneur'
+  };
+  const formattedLevel = careerLevel.length > 0 ? (levelLabels[careerLevel] ?? careerLevel) : 'Not specified';
+  
+  let content = 'Current Position:\n';
+  content += `• Role: ${getString(assessment, 'current_role', 'Not specified')}\n`;
+  content += `• Industry: ${getString(assessment, 'industry', 'Not specified')}\n`;
+  content += `• Experience: ${getNumber(assessment, 'years_experience', 0)} years\n`;
+  content += `• Current Level: ${formattedLevel}\n\n`;
+  
+  content += 'Target Position:\n';
+  content += `• Role: ${getString(assessment, 'target_role', 'Not specified')}\n`;
+  content += `• Timeframe: ${getString(assessment, 'timeframe', 'Not specified')}\n`;
+  content += `• Initial Confidence: ${getNumber(assessment, 'initial_confidence', 0)}/10`;
+  
+  return content;
+}
+
+function generateGapAnalysisContent(gapAnalysis: ReflectionPayload): string {
+  let content = '';
+  
+  // Skills to Develop
+  content += 'Skills to Develop:\n';
+  const skillGaps = getArray<string>(gapAnalysis, 'skill_gaps');
+  if (skillGaps.length > 0) {
+    skillGaps.forEach((skill) => {
+      content += `• ${skill}\n`;
+    });
+  } else {
+    content += 'No skill gaps identified\n';
+  }
+  content += '\n';
+  
+  // Experience Needed
+  content += 'Experience Needed:\n';
+  const experienceGaps = getArray<string>(gapAnalysis, 'experience_gaps');
+  if (experienceGaps.length > 0) {
+    experienceGaps.forEach((exp) => {
+      content += `• ${exp}\n`;
+    });
+  } else {
+    content += 'No experience gaps identified\n';
+  }
+  content += '\n';
+  
+  // Transferable Strengths
+  content += 'Transferable Strengths:\n';
+  const transferableSkills = getArray<string>(gapAnalysis, 'transferable_skills');
+  if (transferableSkills.length > 0) {
+    transferableSkills.forEach((skill) => {
+      content += `• ${skill}\n`;
+    });
+  } else {
+    content += 'No transferable skills identified\n';
+  }
+  content += '\n';
+  
+  // Top Development Priorities
+  content += 'Top Development Priorities:\n';
+  const priorities = getArray<string>(gapAnalysis, 'development_priorities');
+  if (priorities.length > 0) {
+    priorities.forEach((priority, index) => {
+      content += `${index + 1}. ${priority}\n`;
+    });
+  } else {
+    content += 'No priorities set';
+  }
+  
+  return content;
+}
+
+function generateRoadmapContent(roadmap: ReflectionPayload): string {
+  let content = '';
+  
+  // Learning Actions
+  content += 'Learning Actions:\n';
+  const learningActions = getArray<unknown>(roadmap, 'learning_actions');
+  if (learningActions.length > 0) {
+    learningActions.forEach((action) => {
+      content += `• ${getObjectString(action, 'action')} (${getObjectString(action, 'timeline')}) - ${getObjectString(action, 'resource')}\n`;
+    });
+  } else {
+    content += 'No learning actions planned\n';
+  }
+  content += '\n';
+  
+  // Networking Actions
+  content += 'Networking Actions:\n';
+  const networkingActions = getArray<unknown>(roadmap, 'networking_actions');
+  if (networkingActions.length > 0) {
+    networkingActions.forEach((action) => {
+      content += `• ${getObjectString(action, 'action')} (${getObjectString(action, 'timeline')})\n`;
+    });
+  } else {
+    content += 'No networking actions planned\n';
+  }
+  content += '\n';
+  
+  // Experience-Building Actions
+  content += 'Experience-Building Actions:\n';
+  const experienceActions = getArray<unknown>(roadmap, 'experience_actions');
+  if (experienceActions.length > 0) {
+    experienceActions.forEach((action) => {
+      content += `• ${getObjectString(action, 'action')} (${getObjectString(action, 'timeline')})\n`;
+    });
+  } else {
+    content += 'No experience actions planned\n';
+  }
+  content += '\n';
+  
+  // Milestones
+  content += 'Milestones:\n';
+  content += `• 3 Months: ${getString(roadmap, 'milestone_3_months', 'Not set')}\n`;
+  content += `• 6 Months: ${getString(roadmap, 'milestone_6_months', 'Not set')}`;
+  
+  return content;
+}
+
+function generateInsightsContent(review: ReflectionPayload): string {
+  let content = '';
+  
+  content += 'Key Takeaways:\n';
+  content += `${getString(review, 'key_takeaways', 'Not provided')}\n\n`;
+  
+  content += 'Immediate Next Step (48 hours):\n';
+  content += `${getString(review, 'immediate_next_step', 'Not specified')}\n\n`;
+  
+  const biggestChallenge = getString(review, 'biggest_challenge', '');
+  if (biggestChallenge.length > 0) {
+    content += 'Biggest Challenge:\n';
+    content += `${biggestChallenge}\n\n`;
+  }
+  
+  content += `Final Confidence: ${getNumber(review, 'final_confidence', 0)}/10\n`;
+  content += `Path Clarity: ${getNumber(review, 'final_clarity', 0)}/10\n`;
+  content += `Session Helpfulness: ${getNumber(review, 'session_helpfulness', 0)}/10`;
+  
+  return content;
+}
+
+function generateAIInsightsContent(review: ReflectionPayload): string {
+  const aiInsights = getString(review, 'ai_insights');
+  const hiddenOpportunities = getArray<string>(review, 'hidden_opportunities');
+  const potentialObstacles = getArray<string>(review, 'potential_obstacles');
+  const successAccelerators = getArray<string>(review, 'success_accelerators');
+  
+  // Only generate if AI insights were provided
+  if (aiInsights.length === 0 && hiddenOpportunities.length === 0 && potentialObstacles.length === 0 && successAccelerators.length === 0) {
+    return '';
+  }
+  
+  let content = '';
+  
+  // Main insights
+  if (aiInsights.length > 0) {
+    content += `${aiInsights}\n\n`;
+  }
+  
+  // Hidden opportunities
+  if (hiddenOpportunities.length > 0) {
+    content += '💎 Hidden Opportunities:\n';
+    hiddenOpportunities.forEach((opportunity) => {
+      content += `• ${opportunity}\n`;
+    });
+    content += '\n';
+  }
+  
+  // Potential obstacles
+  if (potentialObstacles.length > 0) {
+    content += '⚠️ Potential Obstacles:\n';
+    potentialObstacles.forEach((obstacle) => {
+      content += `• ${obstacle}\n`;
+    });
+    content += '\n';
+  }
+  
+  // Success accelerators
+  if (successAccelerators.length > 0) {
+    content += '🚀 Success Accelerators:\n';
+    successAccelerators.forEach((accelerator) => {
+      content += `• ${accelerator}\n`;
+    });
+  }
+  
+  return content.trim();
+}
+
+function generateNextStepsContent(
+  assessment: ReflectionPayload,
+  review: ReflectionPayload
+): string {
+  let content = '';
+  
+  content += `1. Execute your immediate next step within 48 hours: ${getString(review, 'immediate_next_step', 'Review your plan')}\n`;
+  content += '2. Schedule your first learning action from your roadmap\n';
+  content += '3. Reach out for your first networking action to build connections\n';
+  content += '4. Review progress at 3-month milestone to assess if you\'re on track\n';
+  
+  // Calculate follow-up timeframe
+  const timeframe = assessment['timeframe'] as string | undefined;
+  let followUpSuggestion = '6 months';
+  if (timeframe === '3-6 months') {
+    followUpSuggestion = '3 months';
+  } else if (timeframe === '6-12 months') {
+    followUpSuggestion = '6 months';
+  } else if (timeframe === '1-2 years') {
+    followUpSuggestion = '6 months';
+  }
+  
+  content += `5. Consider a follow-up Career Coach session in ${followUpSuggestion} to reassess and adjust`;
+  
+  return content;
 }
 
 // Export singleton instance

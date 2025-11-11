@@ -1362,23 +1362,15 @@ export function SessionView() {
                             );
                           })()}
 
-                          {/* Career Coach ASSESSMENT - Clarity Scale */}
+                          {/* Career Coach ASSESSMENT - Clarity Scale (Question 8) */}
                           {session?.framework === 'CAREER' && reflection.step === 'ASSESSMENT' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
                             const initialConfidence = payload['initial_confidence'];
                             const assessmentScore = payload['assessment_score'];
-                            const coachReflection = String(payload['coach_reflection'] ?? '');
                             
-                            // Only show if: initial_confidence captured, assessment_score not yet captured, AI is asking for it
+                            // Only show if: Question 7 answered, Question 8 not yet answered
+                            // Sequential logic: Show button when previous field exists and this field doesn't
                             if (typeof initialConfidence !== 'number' || assessmentScore !== undefined) {
-                              return null;
-                            }
-                            
-                            // Check if AI is asking for clarity
-                            const isAskingForClarity = coachReflection.toLowerCase().includes('how clear') ||
-                                                      coachReflection.toLowerCase().includes('what it takes');
-                            
-                            if (!isAskingForClarity) {
                               return null;
                             }
                             
@@ -2059,22 +2051,22 @@ export function SessionView() {
                             );
                           })()}
 
-                          {/* Career Coach REVIEW - Final Confidence */}
+                          {/* Career Coach REVIEW - Final Confidence (Question 4) */}
                           {reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
+                            const keyTakeaways = payload['key_takeaways'];
+                            const immediateNextStep = payload['immediate_next_step'];
+                            const biggestChallenge = payload['biggest_challenge'];
                             const finalConfidence = payload['final_confidence'];
-                            const coachReflection = String(payload['coach_reflection'] ?? '');
                             
-                            // Only show if: final_confidence not yet captured, AI is asking for it
-                            if (finalConfidence !== undefined) {
-                              return null;
-                            }
+                            // Only show if: Questions 1-3 answered, Question 4 not yet answered
+                            // Sequential logic: Show button when previous fields exist and this field doesn't
+                            const previousFieldsComplete = 
+                              typeof keyTakeaways === 'string' && keyTakeaways.length >= 50 &&
+                              typeof immediateNextStep === 'string' && immediateNextStep.length >= 10 &&
+                              typeof biggestChallenge === 'string' && biggestChallenge.length >= 10;
                             
-                            // Check if AI is asking for confidence
-                            const isAskingForConfidence = coachReflection.toLowerCase().includes('how confident are you now') ||
-                                                         coachReflection.toLowerCase().includes('confident are you now');
-                            
-                            if (!isAskingForConfidence) {
+                            if (!previousFieldsComplete || finalConfidence !== undefined) {
                               return null;
                             }
                             
@@ -2099,23 +2091,15 @@ export function SessionView() {
                             );
                           })()}
 
-                          {/* Career Coach REVIEW - Final Clarity */}
+                          {/* Career Coach REVIEW - Final Clarity (Question 5) */}
                           {reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
                             const finalConfidence = payload['final_confidence'];
                             const finalClarity = payload['final_clarity'];
-                            const coachReflection = String(payload['coach_reflection'] ?? '');
                             
-                            // Only show if: final_confidence captured, final_clarity not yet captured, AI is asking for it
+                            // Only show if: Question 4 answered, Question 5 not yet answered
+                            // Sequential logic: Show button when previous field exists and this field doesn't
                             if (typeof finalConfidence !== 'number' || finalClarity !== undefined) {
-                              return null;
-                            }
-                            
-                            // Check if AI is asking for clarity
-                            const isAskingForClarity = coachReflection.toLowerCase().includes('how clear are you') ||
-                                                      coachReflection.toLowerCase().includes('clear are you on your path');
-                            
-                            if (!isAskingForClarity) {
                               return null;
                             }
                             
@@ -2140,24 +2124,16 @@ export function SessionView() {
                             );
                           })()}
 
-                          {/* Career Coach REVIEW - Session Helpfulness */}
+                          {/* Career Coach REVIEW - Session Helpfulness (Question 6) */}
                           {reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
                             const finalConfidence = payload['final_confidence'];
                             const finalClarity = payload['final_clarity'];
                             const sessionHelpfulness = payload['session_helpfulness'];
-                            const coachReflection = String(payload['coach_reflection'] ?? '');
                             
-                            // Only show if: final_confidence and final_clarity captured, session_helpfulness not yet captured, AI is asking for it
+                            // Only show if: Questions 4-5 answered, Question 6 not yet answered
+                            // Sequential logic: Show button when previous fields exist and this field doesn't
                             if (typeof finalConfidence !== 'number' || typeof finalClarity !== 'number' || sessionHelpfulness !== undefined) {
-                              return null;
-                            }
-                            
-                            // Check if AI is asking for helpfulness
-                            const isAskingForHelpfulness = coachReflection.toLowerCase().includes('how helpful') ||
-                                                          coachReflection.toLowerCase().includes('helpful was this session');
-                            
-                            if (!isAskingForHelpfulness) {
                               return null;
                             }
                             

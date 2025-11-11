@@ -288,9 +288,9 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   
-  // Determine if we should use dynamic report (COMPASS with completed session)
+  // Determine if we should use dynamic report (COMPASS or CAREER with completed session)
   const useDynamicReport = dynamicReport !== null && dynamicReport !== undefined && 
-    session?.framework === 'COMPASS' && 
+    (session?.framework === 'COMPASS' || session?.framework === 'CAREER') && 
     session?.closedAt !== undefined;
 
   // Focus trap and ESC key handler
@@ -353,6 +353,12 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
     // ⚠️ DEPRECATED: Legacy 6-stage COMPASS only
     anchoring: { label: "Anchoring (Legacy)", icon: "⚓" },
     sustaining: { label: "Sustaining (Legacy)", icon: "🔄" },
+    // CAREER Framework
+    INTRODUCTION: { label: "Introduction", icon: "👋" },
+    ASSESSMENT: { label: "Assessment", icon: "📋" },
+    GAP_ANALYSIS: { label: "Gap Analysis", icon: "🔍" },
+    ROADMAP: { label: "Roadmap", icon: "🗺️" },
+    REVIEW: { label: "Review", icon: "✓" },
     // Common
     review: { label: "Review", icon: "✓" }
   };
