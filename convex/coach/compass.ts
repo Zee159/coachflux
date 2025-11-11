@@ -44,8 +44,8 @@ export class COMPASSCoach implements FrameworkCoach {
     stepName: string,
     payload: ReflectionPayload,
     reflections: Array<{ step: string; payload: ReflectionPayload }>,
-    _skipCount: number,
-    _loopDetected: boolean
+    skipCount: number,
+    loopDetected: boolean
   ): StepCompletionResult {
     if (stepName === "introduction") {
       // Just requires consent
@@ -80,14 +80,27 @@ export class COMPASSCoach implements FrameworkCoach {
         hasSphereOfControl && isMeaningfulControl
       ].filter(Boolean).length;
 
-      // Check if Q7 (optional final question) has been asked
-      // Q7 is marked by either having additional_context OR having q7_asked flag
-      const hasAdditionalContext = typeof payload["additional_context"] === "string" && payload["additional_context"].length > 0;
-      const q7Asked = payload["q7_asked"] === true;
-      const q7Handled = hasAdditionalContext || q7Asked;
+      // CRITICAL FIELDS that should never be skipped
+      const hasCriticalFields = hasChangeDescription && hasInitialConfidence && (hasSphereOfControl && isMeaningfulControl);
 
-      // Require all 7 mandatory fields AND Q7 must have been asked (even if skipped)
-      const isComplete = completedFields === 7 && q7Handled;
+      // Check if Q7 (optional final question) has been asked
+      // Auto-detect Q7 by checking if additional_context exists (even if empty string)
+      const hasAdditionalContext = typeof payload["additional_context"] === "string";
+
+      // PROGRESSIVE RELAXATION based on skip count
+      let requiredFields: number;
+      if (skipCount === 0) {
+        requiredFields = 7; // Strict: all 7 fields
+      } else if (skipCount === 1) {
+        requiredFields = 6; // Lenient: 6 out of 7
+      } else if (skipCount >= 2 || loopDetected) {
+        requiredFields = 5; // Very lenient: 5 out of 7
+      } else {
+        requiredFields = 7;
+      }
+
+      // Require critical fields + progressive threshold + Q7 asked
+      const isComplete = hasCriticalFields && completedFields >= requiredFields && hasAdditionalContext;
       
       if (isComplete) {
         return { shouldAdvance: false, awaitingConfirmation: true };
@@ -121,17 +134,46 @@ export class COMPASSCoach implements FrameworkCoach {
         // High-confidence path: 3 questions (confidence_source, personal_benefit, past_success)
         // NO ownership_confidence needed - they're already at 8+
         const hasConfidenceSource = typeof payload["confidence_source"] === "string" && payload["confidence_source"].length > 0;
-        const hasMinConversationHigh = ownershipReflections.length >= 3;
-        const isComplete = hasConfidenceSource && hasPersonalBenefit && hasPastSuccess && hasMinConversationHigh;
+        const hasMinConversationHigh = ownershipReflections.length >= 5; // Increased from 3 to 5
+        
+        // PROGRESSIVE RELAXATION for high-confidence path
+        let isComplete: boolean;
+        if (skipCount === 0) {
+          // Strict: all 3 fields
+          isComplete = hasConfidenceSource && hasPersonalBenefit && hasPastSuccess && hasMinConversationHigh;
+        } else if (skipCount === 1) {
+          // Lenient: 2 out of 3 (must have personal_benefit + past_success)
+          isComplete = hasPersonalBenefit && hasPastSuccess && hasMinConversationHigh;
+        } else if (skipCount >= 2 || loopDetected) {
+          // Very lenient: just personal_benefit
+          isComplete = hasPersonalBenefit && hasMinConversationHigh;
+        } else {
+          isComplete = hasConfidenceSource && hasPersonalBenefit && hasPastSuccess && hasMinConversationHigh;
+        }
         
         if (isComplete) {
           return { shouldAdvance: false, awaitingConfirmation: true };
         }
         return { shouldAdvance: false };
       } else {
-        // Standard path: requires ownership_confidence, personal_benefit, past_success
-        const hasMinConversationStandard = ownershipReflections.length >= 5;
-        const isComplete = hasOwnershipConfidence && hasPersonalBenefit && hasPastSuccess && hasMinConversationStandard;
+        // Standard path: requires ownership_confidence, personal_benefit, past_success, primary_fears
+        const hasMinConversationStandard = ownershipReflections.length >= 8; // Increased from 5 to 8
+        const hasPrimaryFears = typeof payload["primary_fears"] === "string" && payload["primary_fears"].length > 0;
+        
+        // PROGRESSIVE RELAXATION for standard path
+        let isComplete: boolean;
+        if (skipCount === 0) {
+          // Strict: all 4 fields
+          isComplete = hasOwnershipConfidence && hasPersonalBenefit && hasPastSuccess && hasPrimaryFears && hasMinConversationStandard;
+        } else if (skipCount === 1) {
+          // Lenient: 3 out of 4 (must have ownership_confidence, personal_benefit, past_success)
+          isComplete = hasOwnershipConfidence && hasPersonalBenefit && hasPastSuccess && hasMinConversationStandard;
+        } else if (skipCount >= 2 || loopDetected) {
+          // Very lenient: 2 out of 4 (must have ownership_confidence, personal_benefit)
+          isComplete = hasOwnershipConfidence && hasPersonalBenefit && hasMinConversationStandard;
+        } else {
+          isComplete = hasOwnershipConfidence && hasPersonalBenefit && hasPastSuccess && hasMinConversationStandard;
+        }
         
         if (isComplete) {
           return { shouldAdvance: false, awaitingConfirmation: true };
@@ -139,15 +181,40 @@ export class COMPASSCoach implements FrameworkCoach {
         return { shouldAdvance: false };
       }
     } else if (stepName === "mapping") {
-      // Requires committed_action, action_day, action_time, and commitment_confidence >= 7
+      // Requires committed_action, action_day, action_time, and commitment_confidence >= 6
       const hasCommittedAction = typeof payload["committed_action"] === "string" && payload["committed_action"].length > 0;
       const hasActionDay = typeof payload["action_day"] === "string" && payload["action_day"].length > 0;
       const hasActionTime = typeof payload["action_time"] === "string" && payload["action_time"].length > 0;
       const commitmentConfidence = payload["commitment_confidence"] as number | undefined;
-      const hasHighCommitment = typeof commitmentConfidence === "number" && commitmentConfidence >= 7;
+      
+      // PROGRESSIVE RELAXATION for commitment confidence gate
+      let commitmentThreshold: number;
+      if (skipCount === 0) {
+        commitmentThreshold = 7; // Strict: 7+
+      } else if (skipCount === 1) {
+        commitmentThreshold = 6; // Lenient: 6+ (lowered from 7)
+      } else if (skipCount >= 2 || loopDetected) {
+        commitmentThreshold = 0; // Very lenient: no gate
+      } else {
+        commitmentThreshold = 7;
+      }
+      
+      const hasCommitment = typeof commitmentConfidence === "number" && commitmentConfidence >= commitmentThreshold;
 
-      // ✅ FIXED: Require ALL 3 action fields + commitment confidence 7+ for complete action plan
-      const isComplete = hasCommittedAction && hasActionDay && hasActionTime && hasHighCommitment;
+      // PROGRESSIVE RELAXATION for action fields
+      let isComplete: boolean;
+      if (skipCount === 0) {
+        // Strict: all 3 action fields + commitment 7+
+        isComplete = hasCommittedAction && hasActionDay && hasActionTime && hasCommitment;
+      } else if (skipCount === 1) {
+        // Lenient: all 3 action fields + commitment 6+
+        isComplete = hasCommittedAction && hasActionDay && hasActionTime && hasCommitment;
+      } else if (skipCount >= 2 || loopDetected) {
+        // Very lenient: just 3 action fields (no commitment gate)
+        isComplete = hasCommittedAction && hasActionDay && hasActionTime;
+      } else {
+        isComplete = hasCommittedAction && hasActionDay && hasActionTime && hasCommitment;
+      }
       
       // NEW: Instead of auto-advancing, set awaiting confirmation
       if (isComplete) {
@@ -156,7 +223,7 @@ export class COMPASSCoach implements FrameworkCoach {
       
       return { shouldAdvance: false };
     } else if (stepName === "practice") {
-      // Requires CSS final measurements (5 mandatory fields)
+      // Requires CSS final measurements (6 mandatory fields)
       const hasActionCommitmentConfidence = typeof payload["action_commitment_confidence"] === "number" && payload["action_commitment_confidence"] >= 1 && payload["action_commitment_confidence"] <= 10;
       const hasFinalConfidence = typeof payload["final_confidence"] === "number" && payload["final_confidence"] >= 1 && payload["final_confidence"] <= 10;
       const hasFinalActionClarity = typeof payload["final_action_clarity"] === "number" && payload["final_action_clarity"] >= 1 && payload["final_action_clarity"] <= 10;
@@ -164,6 +231,7 @@ export class COMPASSCoach implements FrameworkCoach {
       const hasUserSatisfaction = typeof payload["user_satisfaction"] === "number" && payload["user_satisfaction"] >= 1 && payload["user_satisfaction"] <= 10;
       const hasKeyTakeaway = typeof payload["key_takeaway"] === "string" && payload["key_takeaway"].length > 0;
 
+      // Count completed fields
       const completedFields = [
         hasActionCommitmentConfidence,
         hasFinalConfidence,
@@ -173,8 +241,23 @@ export class COMPASSCoach implements FrameworkCoach {
         hasKeyTakeaway
       ].filter(Boolean).length;
 
-      // Require at least 4 out of 6 CSS final fields (strict for session completion)
-      const isComplete = completedFields >= 4;
+      // CRITICAL: All 4 CSS dimensions must be present for valid CSS calculation
+      const hasAllCSSDimensions = hasFinalConfidence && hasFinalActionClarity && hasFinalMindsetState && hasUserSatisfaction;
+
+      // PROGRESSIVE RELAXATION based on skip count
+      let requiredFields: number;
+      if (skipCount === 0) {
+        requiredFields = 6; // Strict: all 6 fields
+      } else if (skipCount === 1) {
+        requiredFields = 5; // Lenient: 5 out of 6 (increased from 4)
+      } else if (skipCount >= 2 || loopDetected) {
+        requiredFields = 4; // Very lenient: 4 out of 6
+      } else {
+        requiredFields = 6;
+      }
+
+      // Require all 4 CSS dimensions + progressive threshold
+      const isComplete = hasAllCSSDimensions && completedFields >= requiredFields;
       
       // NEW: Instead of auto-advancing, set awaiting confirmation
       if (isComplete) {

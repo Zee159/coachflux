@@ -2,12 +2,12 @@
  * COMPASS Framework - Confidence-Optimized 4-Stage Model
  * For individuals navigating organizational change with confidence
  * 
- * Single 20-minute session format:
+ * Single 22-minute session format:
  * - Introduction (2 min): Welcome, consent, CSS baseline measurements
- * - Clarity (4 min): Understand change and sphere of control
+ * - Clarity (5 min): Understand change and sphere of control (increased from 4)
  * - Ownership (9 min): Build confidence through reframes and evidence (TRANSFORMATION STAGE)
  * - Mapping (5 min): Create ONE specific action with commitment confidence
- * - Practice (2 min): Lock in commitment, CSS final measurements, celebrate transformation
+ * - Practice (3 min): Lock in commitment, CSS final measurements, celebrate transformation (increased from 2)
  * 
  * North Star: "Will this increase the user's confidence?"
  * Target: +3 point confidence increase (e.g., 3/10 → 6/10)
@@ -23,7 +23,7 @@ export const compassFramework: FrameworkDefinition = {
   id: 'COMPASS',
   name: 'COMPASS Change Navigation',
   description: 'AI coaching framework for navigating organisational change with confidence',
-  duration_minutes: 20,
+  duration_minutes: 22,
   challenge_types: ['change_leadership', 'complex_situation'], // Simplified to match existing types
   
   steps: [
@@ -74,7 +74,7 @@ export const compassFramework: FrameworkDefinition = {
     {
       name: 'clarity',
       order: 1,
-      duration_minutes: 5,
+      duration_minutes: 5, // Increased from 4 to allow for 7 questions
       objective: 'Understand the change and identify sphere of control. User moves from confusion/overwhelm to clear understanding of what\'s changing and what they can influence.',
       
       system_prompt: `You are a COMPASS change coach helping someone navigate workplace change.
@@ -416,7 +416,7 @@ User has ONE specific action with full details and 8+/10 confidence they'll do i
     {
       name: 'practice',
       order: 4,
-      duration_minutes: 3,
+      duration_minutes: 3, // Increased from 2 to allow for reflection and celebration
       objective: 'Lock in action commitment with high confidence and recognize the transformation that occurred during coaching.',
       
       system_prompt: `You are a COMPASS change coach in the PRACTICE stage.
