@@ -21,6 +21,7 @@ import type * as coach_grow from "../coach/grow.js";
 import type * as coach_index from "../coach/index.js";
 import type * as coach_types from "../coach/types.js";
 import type * as coach from "../coach.js";
+import type * as debug from "../debug.js";
 import type * as embeddings from "../embeddings.js";
 import type * as embeddingsInternal from "../embeddingsInternal.js";
 import type * as frameworks_career from "../frameworks/career.js";
@@ -73,6 +74,7 @@ declare const fullApi: ApiFromModules<{
   "coach/index": typeof coach_index;
   "coach/types": typeof coach_types;
   coach: typeof coach;
+  debug: typeof debug;
   embeddings: typeof embeddings;
   embeddingsInternal: typeof embeddingsInternal;
   "frameworks/career": typeof frameworks_career;

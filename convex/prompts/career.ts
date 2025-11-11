@@ -533,28 +533,20 @@ Then show "Proceed to Review" and "Amend Roadmap" buttons.`,
 If ANY question not asked yet, ask it NOW. Do NOT skip to summary.
 
 When ALL 6 questions are answered, STOP asking questions.
-Instead, provide a brief summary:
+Instead, provide a brief, conversational summary:
 
-coach_reflection: "Thank you for completing the review questions!
+coach_reflection: "Thank you for completing the review questions! Your confidence has [increased/stayed steady/decreased] from [initial_confidence] to [final_confidence] out of 10, and your clarity on the path forward is [final_clarity] out of 10. Your key takeaway is: [key_takeaways - first 80 chars]. Your immediate next step is to [immediate_next_step]. The main challenge you identified is [biggest_challenge]. 
 
-**Your Progress:**
-• Initial confidence: [initial_confidence]/10
-• Final confidence: [final_confidence]/10
-• Confidence gain: +[delta] points
-• Path clarity: [final_clarity]/10
-• Session helpfulness: [session_helpfulness]/10
+Your comprehensive career transition report is now ready, including your personalized roadmap, skill development resources, networking strategy, and interview preparation guide. Click the button below to view your complete report with detailed action steps."
 
-**Your Key Takeaway:** [key_takeaways - first 100 chars]
+CRITICAL RULES:
+- Use plain text only - NO markdown formatting (no **, no •, no #)
+- Write naturally as if speaking to the user
+- Keep it concise (3-4 sentences max)
+- End with clear call-to-action about the report
+- DO NOT mention "session complete" or "report generation"
+- The system will handle showing the "Proceed to Report" button
 
-**Immediate Action:** [immediate_next_step]
-
-**Challenge to Watch:** [biggest_challenge]
-
-[If confidence gain >= 2: "Great progress! Your confidence increased significantly."]
-[If confidence gain < 2: "Remember, confidence builds with action. Start with your immediate next step."]"
-
-DO NOT mention report generation. DO NOT say session is complete.
-The system will handle showing buttons and report generation.
 Just provide the summary above and STOP.`
 
 };

@@ -561,11 +561,18 @@ function generateNextStepsSection(
  */
 export class CareerReportGenerator implements FrameworkReportGenerator {
   generateReport(data: SessionReportData): FormattedReport {
-    // Extract reflections by step
-    const assessment = data.reflections.find(r => r.step === 'ASSESSMENT')?.payload;
-    const gapAnalysis = data.reflections.find(r => r.step === 'GAP_ANALYSIS')?.payload;
-    const roadmap = data.reflections.find(r => r.step === 'ROADMAP')?.payload;
-    const review = data.reflections.find(r => r.step === 'REVIEW')?.payload;
+    // Extract reflections by step - use LAST reflection for each step as data accumulates
+    const assessmentReflections = data.reflections.filter(r => r.step === 'ASSESSMENT');
+    const assessment = assessmentReflections[assessmentReflections.length - 1]?.payload;
+    
+    const gapAnalysisReflections = data.reflections.filter(r => r.step === 'GAP_ANALYSIS');
+    const gapAnalysis = gapAnalysisReflections[gapAnalysisReflections.length - 1]?.payload;
+    
+    const roadmapReflections = data.reflections.filter(r => r.step === 'ROADMAP');
+    const roadmap = roadmapReflections[roadmapReflections.length - 1]?.payload;
+    
+    const reviewReflections = data.reflections.filter(r => r.step === 'REVIEW');
+    const review = reviewReflections[reviewReflections.length - 1]?.payload;
 
     if (
       assessment === null || assessment === undefined ||
@@ -638,7 +645,42 @@ export class CareerReportGenerator implements FrameworkReportGenerator {
       });
     }
     
-    // 8. Next Steps
+    // 8. Skill Development Resources (NEW)
+    sections.push({
+      heading: '📚 Skill Development Resources',
+      content: generateSkillResourcesContent(gapAnalysis, assessment),
+      type: 'text' as const
+    });
+    
+    // 9. Role Success Metrics (NEW)
+    sections.push({
+      heading: '🎯 Success Metrics for Your Target Role',
+      content: generateRoleSuccessMetricsContent(assessment, gapAnalysis),
+      type: 'text' as const
+    });
+    
+    // 10. Industry Insights (NEW)
+    sections.push({
+      heading: '🌐 Industry & Market Insights',
+      content: generateIndustryInsightsContent(assessment),
+      type: 'text' as const
+    });
+    
+    // 11. Networking Strategy (NEW)
+    sections.push({
+      heading: '🤝 Your Networking Strategy',
+      content: generateNetworkingStrategyContent(assessment, roadmap),
+      type: 'actions' as const
+    });
+    
+    // 12. Interview Preparation (NEW)
+    sections.push({
+      heading: '🎓 Interview Preparation Guide',
+      content: generateInterviewPrepContent(assessment, gapAnalysis, review),
+      type: 'text' as const
+    });
+    
+    // 13. Next Steps
     sections.push({
       heading: '📈 Recommended Next Steps',
       content: generateNextStepsContent(assessment, review),
@@ -963,6 +1005,254 @@ function generateNextStepsContent(
   }
   
   content += `5. Consider a follow-up Career Coach session in ${followUpSuggestion} to reassess and adjust`;
+  
+  return content;
+}
+
+// ============================================================================
+// NEW ENHANCED REPORT SECTIONS
+// ============================================================================
+
+/**
+ * 1. Skill Development Resources
+ * Provides actionable learning paths for each skill gap
+ */
+function generateSkillResourcesContent(
+  gapAnalysis: ReflectionPayload,
+  assessment: ReflectionPayload
+): string {
+  const skillGaps = getArray<string>(gapAnalysis, 'skill_gaps');
+  const targetRole = getString(assessment, 'target_role', 'your target role');
+  
+  if (skillGaps.length === 0) {
+    return `No specific skill gaps identified. Focus on deepening expertise in your current strengths and staying current with ${targetRole} best practices.`;
+  }
+  
+  let content = `For each skill gap, consider these development approaches:\n\n`;
+  
+  skillGaps.forEach((skill, index) => {
+    content += `${index + 1}. ${skill}\n`;
+    content += `   • Online Learning: Search for "${skill}" courses on Coursera, LinkedIn Learning, or Udemy\n`;
+    content += `   • Books/Articles: Look for top-rated books on Amazon or articles on Medium/Harvard Business Review\n`;
+    content += `   • Practice: Seek projects in your current role or volunteer opportunities to apply this skill\n`;
+    content += `   • Mentorship: Connect with someone who excels in ${skill} for guidance\n`;
+    content += `   • Time Investment: Typically 2-4 months to gain proficiency (5-10 hours/week)\n\n`;
+  });
+  
+  content += `💡 Pro Tip: Focus on your top 1-2 priority skills first. Mastering a few skills deeply is more valuable than surface-level knowledge of many.`;
+  
+  return content;
+}
+
+/**
+ * 2. Role Success Metrics
+ * Defines what success looks like in the target role
+ */
+function generateRoleSuccessMetricsContent(
+  assessment: ReflectionPayload,
+  gapAnalysis: ReflectionPayload
+): string {
+  const targetRole = getString(assessment, 'target_role', 'your target role');
+  const priorities = getArray<string>(gapAnalysis, 'development_priorities');
+  
+  let content = `Understanding how success is measured in ${targetRole} roles:\n\n`;
+  
+  // Generic success dimensions that apply to most roles
+  content += `Key Performance Areas:\n`;
+  content += `• Results Delivery: Meeting or exceeding role-specific targets and objectives\n`;
+  content += `• Strategic Impact: Contributing to organizational goals and long-term success\n`;
+  content += `• Team Leadership: Building, developing, and inspiring high-performing teams\n`;
+  content += `• Stakeholder Management: Building trust and credibility with key stakeholders\n`;
+  content += `• Innovation & Improvement: Driving process improvements and innovative solutions\n\n`;
+  
+  content += `Your First 90 Days in ${targetRole}:\n`;
+  content += `Week 1-4: Learn & Listen\n`;
+  content += `• Understand team dynamics, key processes, and immediate priorities\n`;
+  content += `• Schedule 1-on-1s with direct reports, peers, and key stakeholders\n`;
+  content += `• Identify quick wins and potential challenges\n\n`;
+  
+  content += `Week 5-8: Build & Plan\n`;
+  content += `• Develop your 90-day action plan based on what you learned\n`;
+  content += `• Start implementing quick wins to build credibility\n`;
+  content += `• Establish your working style and communication norms\n\n`;
+  
+  content += `Week 9-12: Execute & Deliver\n`;
+  content += `• Deliver on your first major initiative or improvement\n`;
+  content += `• Build momentum with visible progress\n`;
+  content += `• Set foundation for long-term strategic initiatives\n\n`;
+  
+  if (priorities.length > 0) {
+    content += `Your Development Priorities Align With:\n`;
+    priorities.forEach((priority) => {
+      content += `• ${priority} - Critical for ${targetRole} success\n`;
+    });
+  }
+  
+  return content;
+}
+
+/**
+ * 3. Industry & Market Insights
+ * Provides context about the industry and market trends
+ */
+function generateIndustryInsightsContent(assessment: ReflectionPayload): string {
+  const industry = getString(assessment, 'industry', 'your industry');
+  const targetRole = getString(assessment, 'target_role', 'your target role');
+  const timeframe = getString(assessment, 'timeframe', '6-12 months');
+  
+  let content = `Market Context for ${targetRole} in ${industry}:\n\n`;
+  
+  content += `Industry Research Checklist:\n`;
+  content += `□ Industry Trends: Research current trends affecting ${industry} (use Google Trends, industry reports)\n`;
+  content += `□ Key Players: Identify top 10-20 companies in ${industry} hiring for ${targetRole}\n`;
+  content += `□ Salary Benchmarks: Use Glassdoor, Payscale, or LinkedIn Salary to research ${targetRole} compensation\n`;
+  content += `□ Required Certifications: Check job postings to see common certifications for ${targetRole}\n`;
+  content += `□ Emerging Skills: Identify skills becoming more important (AI, data analytics, etc.)\n\n`;
+  
+  content += `Professional Development:\n`;
+  content += `• Join industry associations related to ${industry} and ${targetRole}\n`;
+  content += `• Subscribe to industry newsletters and podcasts\n`;
+  content += `• Attend 2-3 industry conferences or webinars in the next ${timeframe}\n`;
+  content += `• Follow thought leaders in ${industry} on LinkedIn and Twitter\n\n`;
+  
+  content += `Competitive Positioning:\n`;
+  content += `• Identify your unique value proposition for ${targetRole} roles\n`;
+  content += `• Understand what differentiates you from other candidates\n`;
+  content += `• Build a personal brand that showcases your expertise\n`;
+  content += `• Create content (articles, posts) demonstrating your knowledge`;
+  
+  return content;
+}
+
+/**
+ * 4. Networking Strategy
+ * Actionable networking plan with templates
+ */
+function generateNetworkingStrategyContent(
+  assessment: ReflectionPayload,
+  roadmap: ReflectionPayload
+): string {
+  const targetRole = getString(assessment, 'target_role', 'your target role');
+  const industry = getString(assessment, 'industry', 'your industry');
+  const networkingActions = getArray<unknown>(roadmap, 'networking_actions');
+  
+  let content = `Strategic networking is critical for career transitions. Here's your action plan:\n\n`;
+  
+  content += `Target Connections (Next 30 Days):\n`;
+  content += `□ 3-5 people currently in ${targetRole} roles (informational interviews)\n`;
+  content += `□ 2-3 recruiters specializing in ${industry} or ${targetRole} placements\n`;
+  content += `□ 1-2 mentors who have made similar career transitions\n`;
+  content += `□ Join 2-3 professional groups/communities related to ${targetRole}\n\n`;
+  
+  content += `LinkedIn Outreach Template:\n`;
+  content += `"Hi [Name],\n\n`;
+  content += `I came across your profile and was impressed by your experience as ${targetRole} in ${industry}. `;
+  content += `I'm currently transitioning toward a ${targetRole} role and would love to learn from your journey.\n\n`;
+  content += `Would you be open to a brief 20-minute virtual coffee chat? I'm particularly interested in [specific topic related to their experience].\n\n`;
+  content += `Thank you for considering!\n`;
+  content += `Best regards,\n`;
+  content += `[Your Name]"\n\n`;
+  
+  content += `Coffee Chat Question Framework:\n`;
+  content += `1. "What does a typical day/week look like in your ${targetRole} role?"\n`;
+  content += `2. "What skills have been most critical to your success?"\n`;
+  content += `3. "What surprised you most when you transitioned to this role?"\n`;
+  content += `4. "What advice would you give someone making this transition?"\n`;
+  content += `5. "Are there any resources (books, courses, people) you'd recommend?"\n\n`;
+  
+  if (networkingActions.length > 0) {
+    content += `Your Planned Networking Actions:\n`;
+    networkingActions.forEach((action) => {
+      const actionStr = getObjectString(action, 'action');
+      const timeline = getObjectString(action, 'timeline');
+      content += `• ${actionStr}${timeline.length > 0 ? ` (${timeline})` : ''}\n`;
+    });
+    content += `\n`;
+  }
+  
+  content += `Networking Best Practices:\n`;
+  content += `• Always follow up within 24 hours with a thank you message\n`;
+  content += `• Offer value before asking for favors (share articles, make introductions)\n`;
+  content += `• Keep conversations focused on learning, not job hunting\n`;
+  content += `• Build genuine relationships, not transactional connections`;
+  
+  return content;
+}
+
+/**
+ * 6. Interview Preparation Guide
+ * Role-specific interview preparation framework
+ */
+function generateInterviewPrepContent(
+  assessment: ReflectionPayload,
+  gapAnalysis: ReflectionPayload,
+  review: ReflectionPayload
+): string {
+  const targetRole = getString(assessment, 'target_role', 'your target role');
+  const currentRole = getString(assessment, 'current_role', 'your current role');
+  const transferableSkills = getArray<string>(gapAnalysis, 'transferable_skills');
+  const keyTakeaways = getString(review, 'key_takeaways', '');
+  
+  let content = `Prepare for ${targetRole} interviews with this comprehensive guide:\n\n`;
+  
+  content += `Core Interview Questions You'll Face:\n\n`;
+  
+  content += `1. "Tell me about yourself and why you're interested in this ${targetRole} role."\n`;
+  content += `   Your Answer Framework:\n`;
+  content += `   • Current role: "${currentRole}" with [X] years experience\n`;
+  content += `   • Key achievements: [2-3 specific accomplishments]\n`;
+  content += `   • Why this role: [Connect your experience to target role requirements]\n`;
+  content += `   • What you bring: [Unique value proposition]\n\n`;
+  
+  content += `2. "What makes you qualified for this ${targetRole} position?"\n`;
+  content += `   Highlight Your Transferable Strengths:\n`;
+  if (transferableSkills.length > 0) {
+    transferableSkills.slice(0, 3).forEach((skill) => {
+      content += `   • ${skill} - [Prepare specific example demonstrating this]\n`;
+    });
+  } else {
+    content += `   • [List your top 3 relevant skills with specific examples]\n`;
+  }
+  content += `\n`;
+  
+  content += `3. "What are your development areas or gaps for this role?"\n`;
+  content += `   Honest But Strategic Response:\n`;
+  content += `   • Acknowledge gaps: "I'm actively developing [specific skill]"\n`;
+  content += `   • Show initiative: "I've already started [course/project] to address this"\n`;
+  content += `   • Demonstrate learning agility: "In my career, I've successfully learned [example]"\n\n`;
+  
+  content += `4. "Where do you see yourself in 3-5 years?"\n`;
+  content += `   Show Ambition + Commitment:\n`;
+  content += `   • Short-term: Excel in ${targetRole}, deliver measurable impact\n`;
+  content += `   • Long-term: Grow within the organization, take on increasing responsibility\n`;
+  content += `   • Alignment: Connect your goals to company's growth trajectory\n\n`;
+  
+  content += `Questions to Ask Them:\n`;
+  content += `• "What does success look like for someone in this ${targetRole} role in the first 6-12 months?"\n`;
+  content += `• "What are the biggest challenges facing the team/department right now?"\n`;
+  content += `• "How does this role contribute to the organization's strategic goals?"\n`;
+  content += `• "What opportunities are there for professional development and growth?"\n`;
+  content += `• "What's the team culture like, and how does leadership support the team?"\n\n`;
+  
+  content += `STAR Method for Behavioral Questions:\n`;
+  content += `Situation: Set the context (where, when, what was happening)\n`;
+  content += `Task: Explain your responsibility or challenge\n`;
+  content += `Action: Describe specific steps you took\n`;
+  content += `Result: Share measurable outcomes and what you learned\n\n`;
+  
+  if (keyTakeaways.length > 0) {
+    content += `Your Career Narrative:\n`;
+    content += `"${keyTakeaways}"\n`;
+    content += `Use this as your core message throughout interviews.\n\n`;
+  }
+  
+  content += `Pre-Interview Checklist:\n`;
+  content += `□ Research company thoroughly (website, news, LinkedIn, Glassdoor)\n`;
+  content += `□ Prepare 5-7 STAR stories showcasing different competencies\n`;
+  content += `□ Practice answers out loud (record yourself if possible)\n`;
+  content += `□ Prepare 5-8 thoughtful questions to ask\n`;
+  content += `□ Review job description and match your experience to each requirement\n`;
+  content += `□ Plan your outfit and test technology (for virtual interviews)`;
   
   return content;
 }
