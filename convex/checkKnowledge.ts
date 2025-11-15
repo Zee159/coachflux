@@ -56,23 +56,18 @@ export const clearAll = mutation({
 export const clearManagementBible = mutation({
   args: {},
   handler: async (ctx) => {
-    const managementScenarios = await ctx.db
+    const legacyScenarios = await ctx.db
       .query("knowledgeEmbeddings")
-      .filter((q) => 
-        q.or(
-          q.eq(q.field("source"), "management_bible"),
-          q.eq(q.field("source"), "management_bible_enhanced")
-        )
-      )
+      .filter((q) => q.eq(q.field("source"), "management_bible"))
       .collect();
-    
-    for (const item of managementScenarios) {
+
+    for (const item of legacyScenarios) {
       await ctx.db.delete(item._id);
     }
-    
+
     return {
-      deleted: managementScenarios.length,
-      message: "Management Bible scenarios cleared. Ready to re-seed with enhanced versions.",
+      deleted: legacyScenarios.length,
+      message: "Legacy Management Bible scenarios cleared. Safe to re-seed enhanced versions.",
     };
   },
 });

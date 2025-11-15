@@ -115,3 +115,88 @@ export const debugCareerSessionFields = query({
     };
   }
 });
+
+/**
+ * Debug: Analyze knowledge base content depth
+ */
+export const analyzeKnowledgeDepth = query({
+  args: {},
+  handler: async (ctx) => {
+    const allKnowledge = await ctx.db.query("knowledgeEmbeddings").collect();
+    
+    const analysis = allKnowledge.map(item => {
+      const wordCount = item.content.split(/\s+/).length;
+      const hasScripts = item.content.includes('Script:') || item.content.includes('"') || item.content.includes("'");
+      const hasTemplates = item.content.includes('Template:') || item.content.includes('Checklist:') || item.content.includes('✅');
+      const hasTroubleshooting = item.content.toLowerCase().includes('mistake') || item.content.toLowerCase().includes('wrong') || item.content.toLowerCase().includes('avoid');
+      const hasExamples = item.content.toLowerCase().includes('example') || item.content.includes('Situation');
+      
+      return {
+        id: item._id,
+        title: item.title,
+        category: item.category,
+        source: item.source,
+        wordCount,
+        hasScripts,
+        hasTemplates,
+        hasTroubleshooting,
+        hasExamples,
+        qualityScore: (
+          (wordCount > 800 ? 2 : wordCount > 500 ? 1 : 0) +
+          (hasScripts ? 1 : 0) +
+          (hasTemplates ? 1 : 0) +
+          (hasTroubleshooting ? 1 : 0) +
+          (hasExamples ? 1 : 0)
+        )
+      };
+    });
+    
+    // Sort by quality score descending
+    analysis.sort((a, b) => b.qualityScore - a.qualityScore);
+    
+    // Calculate summary stats
+    const totalScenarios = analysis.length;
+    const avgWordCount = Math.round(analysis.reduce((sum, item) => sum + item.wordCount, 0) / totalScenarios);
+    const deepContent = analysis.filter(item => item.wordCount > 800).length;
+    const mediumContent = analysis.filter(item => item.wordCount >= 500 && item.wordCount <= 800).length;
+    const shallowContent = analysis.filter(item => item.wordCount < 500).length;
+    const withScripts = analysis.filter(item => item.hasScripts).length;
+    const withTemplates = analysis.filter(item => item.hasTemplates).length;
+    const avgQualityScore = (analysis.reduce((sum, item) => sum + item.qualityScore, 0) / totalScenarios).toFixed(1);
+    
+    // Group by category
+    const byCategory: Record<string, { count: number; avgWords: number }> = {};
+    for (const item of analysis) {
+      const existing = byCategory[item.category];
+      if (existing !== undefined) {
+        existing.count += 1;
+        existing.avgWords += item.wordCount;
+      } else {
+        byCategory[item.category] = { count: 1, avgWords: item.wordCount };
+      }
+    }
+    
+    for (const [, categoryStats] of Object.entries(byCategory)) {
+      if (categoryStats.count > 0) {
+        categoryStats.avgWords = Math.round(categoryStats.avgWords / categoryStats.count);
+      }
+    }
+    
+    return {
+      summary: {
+        totalScenarios,
+        avgWordCount,
+        deepContent: `${deepContent} (${Math.round(deepContent/totalScenarios*100)}%)`,
+        mediumContent: `${mediumContent} (${Math.round(mediumContent/totalScenarios*100)}%)`,
+        shallowContent: `${shallowContent} (${Math.round(shallowContent/totalScenarios*100)}%)`,
+        withScripts: `${withScripts} (${Math.round(withScripts/totalScenarios*100)}%)`,
+        withTemplates: `${withTemplates} (${Math.round(withTemplates/totalScenarios*100)}%)`,
+        avgQualityScore: `${avgQualityScore}/6`,
+        readyForChatbot: deepContent >= 30 && avgWordCount >= 700
+      },
+      byCategory,
+      topQuality: analysis.slice(0, 10),
+      needsEnhancement: analysis.filter(item => item.qualityScore < 3).slice(0, 10)
+    };
+  }
+});
