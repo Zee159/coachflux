@@ -961,6 +961,85 @@ export async function createActionsFromPayload(
       }
     }
   }
+
+  if (step.name.toUpperCase() === 'ROADMAP') {
+    const selectedLearningIds = Array.isArray(payload['selected_learning_ids'])
+      ? payload['selected_learning_ids'] as string[]
+      : [];
+    const selectedNetworkingIds = Array.isArray(payload['selected_networking_ids'])
+      ? payload['selected_networking_ids'] as string[]
+      : [];
+    const selectedExperienceIds = Array.isArray(payload['selected_experience_ids'])
+      ? payload['selected_experience_ids'] as string[]
+      : [];
+
+    const totalSelected = selectedLearningIds.length + selectedNetworkingIds.length + selectedExperienceIds.length;
+    if (totalSelected === 0) {
+      return;
+    }
+
+    const aiSuggestedRoadmap = payload['ai_suggested_roadmap'] as Record<string, unknown> | undefined;
+    if (aiSuggestedRoadmap === undefined) {
+      return;
+    }
+
+    type ActionDetail = { title: string; label: string };
+    const actionMap = new Map<string, ActionDetail>();
+    if (Array.isArray(aiSuggestedRoadmap['gap_cards'])) {
+      const gapCards = aiSuggestedRoadmap['gap_cards'] as Array<Record<string, unknown>>;
+      for (const gapCard of gapCards) {
+        const addActions = (items: unknown, label: string) => {
+          if (!Array.isArray(items)) {
+            return;
+          }
+          for (const action of items) {
+            if (typeof action === 'object' && action !== null) {
+              const record = action as Record<string, unknown>;
+              const id = typeof record['id'] === 'string' ? record['id'] : undefined;
+              const title = typeof record['action'] === 'string' ? record['action'] : undefined;
+              if (id !== undefined && title !== undefined) {
+                actionMap.set(id, { title: `${label}: ${title}`, label });
+              }
+            }
+          }
+        };
+
+        addActions(gapCard['learning_actions'], 'Learning');
+        addActions(gapCard['networking_actions'], 'Networking');
+        addActions(gapCard['experience_actions'], 'Experience');
+      }
+    }
+
+    const selectedEntries: Array<{ id: string; label: string }> = [];
+    selectedLearningIds.forEach(id => selectedEntries.push({ id, label: 'Learning' }));
+    selectedNetworkingIds.forEach(id => selectedEntries.push({ id, label: 'Networking' }));
+    selectedExperienceIds.forEach(id => selectedEntries.push({ id, label: 'Experience' }));
+
+    for (const entry of selectedEntries) {
+      const detail = actionMap.get(entry.id);
+      if (detail === undefined) {
+        continue;
+      }
+
+      const title = detail.title;
+      const isDuplicate = existingActions.some(
+        (existing: { title: string }) => existing.title === title
+      );
+      if (isDuplicate) {
+        continue;
+      }
+
+      const dueAt = Date.now() + 7 * 86400000; // default 7 days
+      await ctx.runMutation(mutations.createAction, {
+        orgId: args.orgId,
+        userId: args.userId,
+        sessionId: args.sessionId,
+        title,
+        dueAt,
+        status: 'open'
+      });
+    }
+  }
 }
 
 /**

@@ -35,13 +35,23 @@ function SessionCard({ sessionId, framework, step, startedAt, isCompleted, onCli
     : undefined;
   
   // Check if incomplete - session was closed but review step wasn't properly finished
+  const careerReviewComplete = reviewPayload !== undefined &&
+    typeof reviewPayload['key_takeaways'] === 'string' && reviewPayload['key_takeaways'].length >= 50 &&
+    typeof reviewPayload['immediate_next_step'] === 'string' && reviewPayload['immediate_next_step'].length >= 10 &&
+    typeof reviewPayload['biggest_challenge'] === 'string' && reviewPayload['biggest_challenge'].length >= 10 &&
+    typeof reviewPayload['final_confidence'] === 'number' &&
+    typeof reviewPayload['final_clarity'] === 'number' &&
+    typeof reviewPayload['session_helpfulness'] === 'number';
+
   const isIncomplete = isCompleted && (
     // Case 1: No review step reached at all
     reviewPayload === undefined ||
     // Case 2: Review started but didn't capture essential data (framework-specific)
-    (framework === 'GROW' 
+    (framework === 'GROW'
       ? (typeof reviewPayload['key_takeaways'] !== 'string' || typeof reviewPayload['immediate_step'] !== 'string')
-      : (typeof reviewPayload['key_insights'] !== 'string' && !Array.isArray(reviewPayload['next_actions'])))
+      : framework === 'CAREER'
+        ? !careerReviewComplete
+        : (typeof reviewPayload['key_insights'] !== 'string' && !Array.isArray(reviewPayload['next_actions'])))
   );
   
   return (
