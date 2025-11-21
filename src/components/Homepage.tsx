@@ -50,6 +50,74 @@ const frameworks: Framework[] = [
     comingSoon: false
   },
   {
+    id: "CAREER",
+    name: "CAREER",
+    emoji: "🚀",
+    tagline: "Career advancement planning",
+    description: "Strategic career development through gap analysis and roadmap creation.",
+    bestFor: [
+      "Career transitions",
+      "Skill gap analysis",
+      "Promotion planning",
+      "Professional development"
+    ],
+    estimatedTime: "25 minutes",
+    difficulty: "Intermediate",
+    isAvailable: true,
+    comingSoon: false
+  },
+  {
+    id: "PRODUCTIVITY",
+    name: "PRODUCTIVITY",
+    emoji: "⚡",
+    tagline: "Focus & time management",
+    description: "Build sustainable productivity systems through focus optimization and time management.",
+    bestFor: [
+      "Time management",
+      "Deep work optimization",
+      "Distraction management",
+      "Productivity systems"
+    ],
+    estimatedTime: "15 minutes",
+    difficulty: "Beginner",
+    isAvailable: true,
+    comingSoon: false
+  },
+  {
+    id: "LEADERSHIP",
+    name: "LEADERSHIP",
+    emoji: "👥",
+    tagline: "Leadership development",
+    description: "Develop leadership capabilities through self-awareness, team building, and strategic influence.",
+    bestFor: [
+      "Leadership skills",
+      "Team management",
+      "Stakeholder influence",
+      "Executive presence"
+    ],
+    estimatedTime: "15 minutes",
+    difficulty: "Intermediate",
+    isAvailable: true,
+    comingSoon: false
+  },
+  {
+    id: "COMMUNICATION",
+    name: "COMMUNICATION",
+    emoji: "💬",
+    tagline: "Difficult conversations",
+    description: "Navigate difficult conversations and deliver effective feedback with confidence.",
+    bestFor: [
+      "Difficult conversations",
+      "Feedback delivery",
+      "Conflict resolution",
+      "Crucial conversations"
+    ],
+    estimatedTime: "15 minutes",
+    difficulty: "Intermediate",
+    isAvailable: true,
+    comingSoon: false
+  },
+  {
     id: "CLEAR",
     name: "CLEAR",
     emoji: "✨",
