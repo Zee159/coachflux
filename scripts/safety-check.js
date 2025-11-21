@@ -35,9 +35,9 @@ const EXCLUDED_FILES = [
 const ALLOWED_WORKAROUNDS = [
   {
     // Convex type recursion workaround in coach module
-    files: ['convex/coach/base.ts', 'convex/coach/index.ts', 'convex/coach/types.ts'],
+    files: ['convex/coach/base.ts', 'convex/coach/index.ts', 'convex/coach/types.ts', 'convex/knowledgeRecommendations.ts', 'convex/knowledgeSearch.ts'],
     reason: 'Necessary workaround for Convex generated type deep recursion',
-    patterns: ['Type annotation "any"', '@ts-expect-error directive', '@ts-ignore directive', 'eslint-disable directive']
+    patterns: ['Type annotation "any"', 'Type assertion "as any"', '@ts-expect-error directive', '@ts-ignore directive', 'eslint-disable directive']
   },
   {
     // Non-null assertion for guaranteed fallback

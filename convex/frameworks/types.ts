@@ -13,7 +13,10 @@ export type FrameworkId =
   | 'GROW' 
   | 'CLEAR' 
   | 'COMPASS' 
-  | 'CAREER' 
+  | 'CAREER'
+  | 'PRODUCTIVITY'
+  | 'LEADERSHIP'
+  | 'COMMUNICATION'
   | 'POWER_INTEREST_GRID' 
   | 'PSYCHOLOGICAL_SAFETY' 
   | 'EXECUTIVE_PRESENCE';
@@ -191,6 +194,9 @@ export function isValidFrameworkId(id: string): id is FrameworkId {
     'CLEAR',
     'COMPASS',
     'CAREER',
+    'PRODUCTIVITY',
+    'LEADERSHIP',
+    'COMMUNICATION',
     'POWER_INTEREST_GRID',
     'PSYCHOLOGICAL_SAFETY',
     'EXECUTIVE_PRESENCE'

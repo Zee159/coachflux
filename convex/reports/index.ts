@@ -8,6 +8,9 @@ import type { SessionReportData, FormattedReport, FrameworkReportGenerator } fro
 import { compassReportGenerator } from './compass';
 import { growReportGenerator } from './grow';
 import { careerReportGenerator } from './career';
+import { productivityReportGenerator } from './productivity';
+import { leadershipReportGenerator } from './leadership';
+import { communicationReportGenerator } from './communication';
 
 // Re-export types for convenience
 export type {
@@ -27,6 +30,9 @@ export type {
 export { generateCompassReport, extractCompassScores, extractCompassTransformation, generateCompassInsights } from './compass';
 export { generateGrowReport } from './grow';
 export { generateCareerReport } from './career';
+export { generateProductivityReport } from './productivity';
+export { generateLeadershipReport } from './leadership';
+export { generateCommunicationReport } from './communication';
 
 // ============================================================================
 // FRAMEWORK REPORT GENERATOR REGISTRY
@@ -48,6 +54,17 @@ function getReportGenerator(frameworkId: string): FrameworkReportGenerator {
   
   if (id === 'CAREER') {
     return careerReportGenerator;
+  }
+  
+  if (id === 'PRODUCTIVITY') {
+    return productivityReportGenerator;
+  }
+  
+  if (id === 'LEADERSHIP') {
+    return leadershipReportGenerator;
+  }
+  if (id === 'COMMUNICATION') {
+    return communicationReportGenerator;
   }
   
   // Default to GROW for unknown frameworks

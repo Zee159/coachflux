@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { hasCoachReflection } from "../../convex/types";
 import { ConfidenceMeter } from "./ConfidenceMeter";
 import { NudgeUsageSummary } from "./NudgeDisplay";
+import { KnowledgeRecommendations } from "./KnowledgeRecommendations";
 
 interface ReportSection {
   heading: string;
@@ -668,6 +669,11 @@ export function SessionReport({ sessionId, onClose }: SessionReportProps) {
           )}
             </>
           )}
+          
+          {/* Knowledge Recommendations - Loads asynchronously */}
+          <div className="mt-6">
+            <KnowledgeRecommendations sessionId={sessionId} />
+          </div>
         </div>
 
         {/* Footer */}

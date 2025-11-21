@@ -27,6 +27,12 @@ export function getCoachingQuestions(frameworkId: string): Record<string, string
       return COMPASS_COACHING_QUESTIONS;
     case "CAREER":
       return CAREER_COACHING_QUESTIONS;
+    case "PRODUCTIVITY":
+      return {}; // Productivity uses inline questions in step guidance
+    case "LEADERSHIP":
+      return {}; // Leadership uses inline questions in step guidance
+    case "COMMUNICATION":
+      return {}; // Communication uses inline questions in step guidance
     default:
       return GROW_COACHING_QUESTIONS; // Fallback
   }
@@ -43,6 +49,20 @@ export function getStepGuidance(frameworkId: string): Record<string, string> {
       return COMPASS_STEP_GUIDANCE;
     case "CAREER":
       return CAREER_STEP_GUIDANCE;
+    case "PRODUCTIVITY": {
+      // Productivity prompts use a different structure
+      // Return empty object as productivity uses inline guidance
+      return {};
+    }
+    case "LEADERSHIP": {
+      // Leadership prompts use a different structure
+      // Return empty object as leadership uses inline guidance
+      return {};
+    }
+    case "COMMUNICATION": {
+      // Communication prompts use inline guidance
+      return {};
+    }
     default:
       return GROW_STEP_GUIDANCE; // Fallback
   }

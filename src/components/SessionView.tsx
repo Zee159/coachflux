@@ -33,7 +33,10 @@ import { ReviewConfidenceSelector } from "./ReviewConfidenceSelector";
 type GROWStepName = "introduction" | "goal" | "reality" | "options" | "will" | "review";
 type COMPASSStepName = "introduction" | "clarity" | "ownership" | "mapping" | "practice";
 type CAREERStepName = "INTRODUCTION" | "ASSESSMENT" | "GAP_ANALYSIS" | "ROADMAP" | "REVIEW";
-type StepName = GROWStepName | COMPASSStepName | CAREERStepName;
+type PRODUCTIVITYStepName = "ASSESSMENT" | "FOCUS_AUDIT" | "SYSTEM_DESIGN" | "IMPLEMENTATION" | "REVIEW";
+type LEADERSHIPStepName = "SELF_AWARENESS" | "TEAM_DYNAMICS" | "INFLUENCE_STRATEGY" | "DEVELOPMENT_PLAN" | "ACCOUNTABILITY" | "REVIEW";
+type COMMUNICATIONStepName = "SITUATION" | "OUTCOME" | "PERSPECTIVE" | "SCRIPT" | "COMMITMENT" | "REVIEW";
+type StepName = GROWStepName | COMPASSStepName | CAREERStepName | PRODUCTIVITYStepName | LEADERSHIPStepName | COMMUNICATIONStepName;
 
 // AI Suggested Gap interface
 interface AISuggestedGap {
@@ -253,7 +256,7 @@ function formatReflectionDisplay(step: string, payload: Record<string, unknown>)
   );
 }
 
-const STEP_DESCRIPTIONS: Record<StepName, string> = {
+const STEP_DESCRIPTIONS: Partial<Record<StepName, string>> = {
   introduction: "Welcome to the session. Learn about the framework and give your consent to begin.",
   goal: "Clarify your desired outcome and timeframe.",
   reality: "Assess your current situation, constraints, resources, and risks.",
@@ -271,7 +274,7 @@ const STEP_DESCRIPTIONS: Record<StepName, string> = {
   REVIEW: "Reflect on your career plan and measure confidence growth.",
 };
 
-const STEP_LABELS: Record<StepName, string> = {
+const STEP_LABELS: Partial<Record<StepName, string>> = {
   introduction: "👋 WELCOME",
   goal: "🎯 GOAL",
   reality: "📍 REALITY",
@@ -289,7 +292,7 @@ const STEP_LABELS: Record<StepName, string> = {
   REVIEW: "✨ REVIEW",
 };
 
-const STEP_TIPS: Record<StepName, string> = {
+const STEP_TIPS: Partial<Record<StepName, string>> = {
   introduction: "Take a moment to understand what this session will be like. This sets you up for success.",
   goal: "Be specific. Instead of 'do better,' say 'finish my certification by March.'",
   reality: "Describe what's true NOW, not what you wish were true.",
@@ -307,7 +310,142 @@ const STEP_TIPS: Record<StepName, string> = {
   REVIEW: "Your confidence gain shows real progress. Trust the process you've created.",
 };
 
-const COACHING_PROMPTS: Record<StepName, { title: string; questions: string[] }> = {
+// Dynamic lookup functions for framework-specific step data
+// Handles PRODUCTIVITY steps that conflict with CAREER's ASSESSMENT
+const getStepDescription = (framework: string, step: string): string => {
+  if (framework === 'PRODUCTIVITY') {
+    const descriptions: Record<string, string> = {
+      ASSESSMENT: "Assess your current productivity level, challenges, and goals.",
+      FOCUS_AUDIT: "Analyze how you spend your time and energy throughout the day.",
+      SYSTEM_DESIGN: "Design a personalized productivity system that fits your work style.",
+      IMPLEMENTATION: "Create a concrete action plan with accountability.",
+      REVIEW: "Reflect and measure your confidence growth."
+    };
+    return descriptions[step] ?? '';
+  }
+  if (framework === 'LEADERSHIP') {
+    const descriptions: Record<string, string> = {
+      SELF_AWARENESS: "Understand your leadership style, strengths, and development areas.",
+      TEAM_DYNAMICS: "Explore team health, dynamics, and relationship challenges.",
+      INFLUENCE_STRATEGY: "Develop strategies for influencing stakeholders and driving change.",
+      DEVELOPMENT_PLAN: "Create specific development actions for leadership growth.",
+      ACCOUNTABILITY: "Establish accountability structures and commitment.",
+      REVIEW: "Reflect on insights and measure confidence growth."
+    };
+    return descriptions[step] ?? '';
+  }
+  return STEP_DESCRIPTIONS[step as StepName] ?? '';
+};
+
+const getStepLabel = (framework: string, step: string): string => {
+  if (framework === 'PRODUCTIVITY') {
+    const labels: Record<string, string> = {
+      ASSESSMENT: "⚡ ASSESSMENT",
+      FOCUS_AUDIT: "⏰ FOCUS AUDIT",
+      SYSTEM_DESIGN: "🎯 SYSTEM DESIGN",
+      IMPLEMENTATION: "🚀 IMPLEMENTATION",
+      REVIEW: "✨ REVIEW"
+    };
+    return labels[step] ?? step;
+  }
+  if (framework === 'LEADERSHIP') {
+    const labels: Record<string, string> = {
+      SELF_AWARENESS: "👤 SELF AWARENESS",
+      TEAM_DYNAMICS: "👥 TEAM DYNAMICS",
+      INFLUENCE_STRATEGY: "🎯 INFLUENCE STRATEGY",
+      DEVELOPMENT_PLAN: "📈 DEVELOPMENT PLAN",
+      ACCOUNTABILITY: "✅ ACCOUNTABILITY",
+      REVIEW: "✨ REVIEW"
+    };
+    return labels[step] ?? step;
+  }
+  return STEP_LABELS[step as StepName] ?? step;
+};
+
+const getStepTip = (framework: string, step: string): string => {
+  if (framework === 'PRODUCTIVITY') {
+    const tips: Record<string, string> = {
+      ASSESSMENT: "Be honest about your current productivity. This clarity helps build the right system.",
+      FOCUS_AUDIT: "Track where your time actually goes, not where you think it goes.",
+      SYSTEM_DESIGN: "Choose a framework that fits YOUR work style, not what works for others.",
+      IMPLEMENTATION: "Start small. Better to succeed with less than fail with more.",
+      REVIEW: "Your confidence gain shows real progress. Trust the process you've created."
+    };
+    return tips[step] ?? '';
+  }
+  if (framework === 'LEADERSHIP') {
+    const tips: Record<string, string> = {
+      SELF_AWARENESS: "All leaders have development areas. This awareness is your starting point.",
+      TEAM_DYNAMICS: "Team challenges are complex. Focus on what you can influence.",
+      INFLUENCE_STRATEGY: "Influence is about win-win outcomes, not manipulation.",
+      DEVELOPMENT_PLAN: "Focus on ONE area at a time. Practice beats theory.",
+      ACCOUNTABILITY: "First action within 48 hours. Make it small and specific.",
+      REVIEW: "Your confidence growth shows real progress. Celebrate your commitment."
+    };
+    return tips[step] ?? '';
+  }
+  return STEP_TIPS[step as StepName] ?? '';
+};
+
+const getCoachingPrompt = (framework: string, step: string): { title: string; questions: string[] } | undefined => {
+  if (framework === 'PRODUCTIVITY') {
+    const prompts: Record<string, { title: string; questions: string[] }> = {
+      ASSESSMENT: {
+        title: "Productivity Assessment",
+        questions: [
+          "On a scale of 1-10, how would you rate your current productivity level?",
+          "What's your biggest productivity challenge right now?",
+          "What are your main distractions during the workday?",
+          "What specific productivity goal would you like to achieve?"
+        ]
+      },
+      FOCUS_AUDIT: {
+        title: "Focus & Time Audit",
+        questions: [
+          "What percentage of your workday is spent on deep, focused work?",
+          "When are your peak energy hours?",
+          "What triggers your distractions?",
+          "On a scale of 1-10, how well is your time currently allocated?"
+        ]
+      },
+      SYSTEM_DESIGN: {
+        title: "System Design",
+        questions: [
+          "Based on your situation, which productivity framework resonates with you?",
+          "When would be your ideal deep work block?",
+          "How will you protect this time from interruptions?",
+          "What tools or techniques will you use to block distractions?",
+          "On a scale of 1-10, how confident are you that this system will work?"
+        ]
+      },
+      IMPLEMENTATION: {
+        title: "Implementation Plan",
+        questions: [
+          "What's the first action you'll take tomorrow to start this system?",
+          "When will you start? (specific date)",
+          "What's your daily commitment?",
+          "How will you hold yourself accountable?",
+          "On a scale of 1-10, how confident are you that you'll follow through?"
+        ]
+      },
+      REVIEW: {
+        title: "Session Review",
+        questions: [
+          "What's your key insight from this session?",
+          "What's your immediate next step within 48 hours?",
+          "What's your biggest concern about implementing this system?",
+          "On a scale of 1-10, how confident are you now about your productivity?",
+          "How clear is your productivity system? (1-10)",
+          "How helpful was this session? (1-10)"
+        ]
+      }
+    };
+    return prompts[step];
+  }
+  return COACHING_PROMPTS[step as StepName];
+};
+
+const COACHING_PROMPTS: Partial<Record<StepName, { title: string; questions: string[] }>> = {
   introduction: {
     title: "Welcome",
     questions: [
@@ -730,10 +868,16 @@ export function SessionView() {
   const GROW_STEPS = ["introduction", "goal", "reality", "options", "will", "review"];
   const COMPASS_STEPS = ["introduction", "clarity", "ownership", "mapping", "practice", "review"];
   const CAREER_STEPS = ["INTRODUCTION", "ASSESSMENT", "GAP_ANALYSIS", "ROADMAP", "REVIEW"];
+  const PRODUCTIVITY_STEPS = ["ASSESSMENT", "FOCUS_AUDIT", "SYSTEM_DESIGN", "IMPLEMENTATION", "REVIEW"];
+  const LEADERSHIP_STEPS = ["SELF_AWARENESS", "TEAM_DYNAMICS", "INFLUENCE_STRATEGY", "DEVELOPMENT_PLAN", "ACCOUNTABILITY", "REVIEW"];
+  const COMMUNICATION_STEPS = ["SITUATION", "OUTCOME", "PERSPECTIVE", "SCRIPT", "COMMITMENT", "REVIEW"];
   
   const frameworkSteps = 
     session.framework === "COMPASS" ? COMPASS_STEPS :
     session.framework === "CAREER" ? CAREER_STEPS :
+    session.framework === "PRODUCTIVITY" ? PRODUCTIVITY_STEPS :
+    session.framework === "LEADERSHIP" ? LEADERSHIP_STEPS :
+    session.framework === "COMMUNICATION" ? COMMUNICATION_STEPS :
     GROW_STEPS;
   
   const totalSteps = frameworkSteps.length;
@@ -833,33 +977,52 @@ export function SessionView() {
         goal: 'Reality', 
         reality: 'Options', 
         options: 'Will', 
-        will: 'Review',
-        review: 'Report'
+        will: 'Review' 
       };
-      return steps[currentStep] ?? 'Review';
+      return steps[currentStep] ?? 'Next Step';
     } else if (session?.framework === 'COMPASS') {
       const steps: Record<string, string> = { 
         clarity: 'Ownership', 
         ownership: 'Mapping', 
         mapping: 'Practice', 
-        practice: 'Anchoring',
-        anchoring: 'Sustaining',
-        sustaining: 'Review',
-        review: 'Report'
+        practice: 'Review' 
       };
-      return steps[currentStep] ?? 'Review';
+      return steps[currentStep] ?? 'Next Step';
     } else if (session?.framework === 'CAREER') {
       const steps: Record<string, string> = { 
-        INTRODUCTION: 'Assessment',
         ASSESSMENT: 'Gap Analysis', 
         GAP_ANALYSIS: 'Roadmap', 
-        ROADMAP: 'Review',
-        REVIEW: 'Report'
+        ROADMAP: 'Review' 
       };
-      return steps[currentStep] ?? 'Review';
-    } else {
-      return 'Review';
+      return steps[currentStep] ?? 'Next Step';
+    } else if (session?.framework === 'PRODUCTIVITY') {
+      const steps: Record<string, string> = { 
+        ASSESSMENT: 'Focus Audit', 
+        FOCUS_AUDIT: 'System Design', 
+        SYSTEM_DESIGN: 'Implementation', 
+        IMPLEMENTATION: 'Review' 
+      };
+      return steps[currentStep] ?? 'Next Step';
+    } else if (session?.framework === 'LEADERSHIP') {
+      const steps: Record<string, string> = { 
+        SELF_AWARENESS: 'Team Dynamics', 
+        TEAM_DYNAMICS: 'Influence Strategy', 
+        INFLUENCE_STRATEGY: 'Development Plan', 
+        DEVELOPMENT_PLAN: 'Accountability', 
+        ACCOUNTABILITY: 'Review' 
+      };
+      return steps[currentStep] ?? 'Next Step';
+    } else if (session?.framework === 'COMMUNICATION') {
+      const steps: Record<string, string> = { 
+        SITUATION: 'Outcome', 
+        OUTCOME: 'Perspective', 
+        PERSPECTIVE: 'Script', 
+        SCRIPT: 'Commitment', 
+        COMMITMENT: 'Review' 
+      };
+      return steps[currentStep] ?? 'Next Step';
     }
+    return 'Next Step';
   };
 
   // Helper: Get steps for framework (for review step selector)
@@ -1201,7 +1364,7 @@ export function SessionView() {
                     {currentStep.charAt(0).toUpperCase() + currentStep.slice(1)}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {STEP_DESCRIPTIONS[currentStep]}
+                    {getStepDescription(session.framework, currentStep)}
                   </p>
                 </div>
               </div>
@@ -1213,8 +1376,8 @@ export function SessionView() {
                   {reflections.map((reflection, index) => {
                     // Check if this is the first reflection of a new step
                     const isFirstOfStep = index === 0 || reflections[index - 1]?.step !== reflection.step;
-                    const stepTip = isFirstOfStep ? (STEP_TIPS[reflection.step as StepName] ?? null) : null;
-                    const stepLabel = isFirstOfStep ? (STEP_LABELS[reflection.step as StepName] ?? null) : null;
+                    const stepTip = isFirstOfStep ? (getStepTip(session.framework, reflection.step) !== '' ? getStepTip(session.framework, reflection.step) : null) : null;
+                    const stepLabel = isFirstOfStep ? (getStepLabel(session.framework, reflection.step) !== '' ? getStepLabel(session.framework, reflection.step) : null) : null;
                     
                     // Check if this is the last reflection and session is complete
                     const isLastReflection = index === reflections.length - 1;
@@ -3198,7 +3361,7 @@ export function SessionView() {
                   </span>
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-white">
-                  {frameworkQuestions?.[currentStep]?.title ?? COACHING_PROMPTS[currentStep]?.title ?? "Coaching Questions"}
+                  {frameworkQuestions?.[currentStep]?.title ?? getCoachingPrompt(session.framework, currentStep)?.title ?? "Coaching Questions"}
                 </h3>
               </div>
               
@@ -3210,7 +3373,7 @@ export function SessionView() {
                       Coaching Questions
                     </p>
                     <ul className="space-y-2">
-                      {(frameworkQuestions?.[currentStep]?.questions ?? COACHING_PROMPTS[currentStep]?.questions ?? []).map((question, _idx) => (
+                      {(frameworkQuestions?.[currentStep]?.questions ?? getCoachingPrompt(session.framework, currentStep)?.questions ?? []).map((question, _idx) => (
                         <li key={_idx} className="flex gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                           <span className="text-indigo-600 dark:text-indigo-400 font-semibold">•</span>
                           <span>{question}</span>
@@ -3334,7 +3497,7 @@ export function SessionView() {
                         View All Questions
                       </summary>
                       <ul className="mt-3 space-y-2">
-                        {(frameworkQuestions?.[currentStep]?.questions ?? COACHING_PROMPTS[currentStep]?.questions ?? []).map((question, _idx) => (
+                        {(frameworkQuestions?.[currentStep]?.questions ?? getCoachingPrompt(session.framework, currentStep)?.questions ?? []).map((question, _idx) => (
                           <li key={_idx} className="flex gap-2 text-xs text-gray-600 dark:text-gray-400">
                             <span className="text-indigo-600 dark:text-indigo-400 font-semibold">•</span>
                             <span>{question}</span>

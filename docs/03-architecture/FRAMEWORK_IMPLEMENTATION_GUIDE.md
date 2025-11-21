@@ -996,6 +996,592 @@ const COACHING_TIPS: Record<StepName, string> = {
 
 ---
 
+## Report Generation Complete Guide
+
+### Report Architecture
+
+CoachFlux uses a modular report system with framework-specific generators.
+
+**File:** `convex/reports/[name].ts`
+
+```typescript
+import type {
+  SessionReportData,
+  FormattedReport,
+  FrameworkReportGenerator,
+  ReportSection,
+  ReflectionPayload
+} from './types';
+import { getString, getArray, getNumber, formatDate, formatDuration } from './base';
+
+// Type-safe helper functions
+function getString(payload: ReflectionPayload, key: string, fallback: string = ''): string {
+  const value = payload[key];
+  return typeof value === 'string' ? value : fallback;
+}
+
+function getNumber(payload: ReflectionPayload, key: string, fallback: number = 0): number {
+  const value = payload[key];
+  return typeof value === 'number' ? value : fallback;
+}
+
+function getArray<T>(payload: ReflectionPayload, key: string): T[] {
+  const value = payload[key];
+  return Array.isArray(value) ? value as T[] : [];
+}
+
+// Framework Report Generator Class
+export class FrameworkReportGenerator implements FrameworkReportGenerator {
+  generateReport(data: SessionReportData): FormattedReport {
+    const sections: ReportSection[] = [];
+    
+    // Extract reflections by step
+    const step1 = data.reflections.find(r => r.step === 'step1');
+    const review = data.reflections.find(r => r.step === 'review');
+    
+    // Build sections
+    sections.push({
+      heading: '🎯 Your Goal',
+      content: getString(step1?.payload, 'goal', 'Not captured'),
+      type: 'text'
+    });
+    
+    // Add more sections...
+    
+    return {
+      title: 'Framework Session Report',
+      summary: 'Session completed successfully',
+      sections
+    };
+  }
+}
+
+export const frameworkReportGenerator = new FrameworkReportGenerator();
+```
+
+### Report Section Types
+
+```typescript
+type ReportSection = {
+  heading: string;
+  content: string;
+  type: 'text' | 'scores' | 'actions' | 'insights' | 'transformation';
+  data?: Record<string, unknown>;
+};
+```
+
+**Section Types:**
+- `text` - General content (goals, takeaways, insights)
+- `scores` - Numerical scores (confidence, CaSS, CSS)
+- `actions` - Action items and roadmaps
+- `insights` - AI-generated insights and recommendations
+- `transformation` - Before/after comparisons
+
+### Registering Report Generator
+
+**File:** `convex/reports/index.ts`
+
+```typescript
+import { frameworkReportGenerator } from './framework';
+import { growReportGenerator } from './grow';
+import { careerReportGenerator } from './career';
+import { compassReportGenerator } from './compass';
+
+export function getReportGenerator(framework: string): FrameworkReportGenerator {
+  switch (framework.toUpperCase()) {
+    case 'GROW':
+      return growReportGenerator;
+    case 'CAREER':
+      return careerReportGenerator;
+    case 'COMPASS':
+      return compassReportGenerator;
+    case 'FRAMEWORK_NAME':
+      return frameworkReportGenerator;
+    default:
+      return growReportGenerator;
+  }
+}
+```
+
+---
+
+## Post-Session Knowledge Recommendations (RAG)
+
+### Overview
+
+After session completion, recommend relevant knowledge articles from the 1,200-word enhanced knowledge base using semantic search.
+
+### Implementation
+
+**Step 1: Add Search Function**
+
+**File:** `convex/embeddings.ts` (add new action)
+
+```typescript
+/**
+ * Search knowledge base for relevant articles
+ * Used for post-session recommendations
+ */
+export const searchKnowledge = action({
+  args: {
+    query: v.string(),
+    category: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 5;
+    
+    // Generate embedding for search query
+    const queryEmbedding = await generateEmbedding(args.query);
+    
+    // Vector search with optional category filter
+    const results = await ctx.vectorSearch(
+      "knowledgeEmbeddings",
+      "by_embedding",
+      {
+        vector: queryEmbedding,
+        limit,
+        filter: args.category
+          ? (q) => q.eq("category", args.category)
+          : undefined
+      }
+    );
+    
+    type KnowledgeResult = Doc<"knowledgeEmbeddings"> & { _score: number };
+    return (results as KnowledgeResult[]).map((r) => ({
+      id: r._id,
+      title: r.title,
+      category: r.category,
+      content: r.content.substring(0, 300) + '...', // Preview
+      relevance: r._score,
+      source: r.source
+    }));
+  },
+});
+```
+
+**Step 2: Generate Recommendations**
+
+**File:** `convex/reports/[name].ts` (add to report generator)
+
+```typescript
+// In generateReport function, add:
+
+// Generate knowledge recommendations
+const recommendations = await generateKnowledgeRecommendations(
+  ctx,
+  data.reflections,
+  data.framework
+);
+
+if (recommendations.length > 0) {
+  sections.push({
+    heading: '📚 Recommended Reading',
+    content: generateRecommendationsContent(recommendations),
+    type: 'insights',
+    data: { recommendations }
+  });
+}
+
+// Helper function
+async function generateKnowledgeRecommendations(
+  ctx: ActionCtx,
+  reflections: Array<{ step: string; payload: ReflectionPayload }>,
+  framework: string
+): Promise<KnowledgeRecommendation[]> {
+  // Extract key topics from session
+  const topics: string[] = [];
+  
+  // For GROW: extract goal and challenges
+  const goalReflection = reflections.find(r => r.step === 'goal');
+  if (goalReflection) {
+    const goal = getString(goalReflection.payload, 'goal');
+    if (goal) topics.push(goal);
+  }
+  
+  // For CAREER: extract target role and gaps
+  const assessmentReflection = reflections.find(r => r.step === 'ASSESSMENT');
+  if (assessmentReflection) {
+    const targetRole = getString(assessmentReflection.payload, 'target_role');
+    if (targetRole) topics.push(`career transition to ${targetRole}`);
+  }
+  
+  // Build search query
+  const searchQuery = topics.join(' ');
+  
+  // Search knowledge base
+  const results = await ctx.runAction(api.embeddings.searchKnowledge, {
+    query: searchQuery,
+    limit: 5
+  });
+  
+  return results;
+}
+
+function generateRecommendationsContent(recommendations: KnowledgeRecommendation[]): string {
+  let content = 'Based on your session, here are relevant resources:\n\n';
+  
+  recommendations.forEach((rec, idx) => {
+    content += `${idx + 1}. **${rec.title}**\n`;
+    content += `   ${rec.content}\n`;
+    content += `   Category: ${rec.category} | Relevance: ${Math.round(rec.relevance * 100)}%\n\n`;
+  });
+  
+  return content;
+}
+```
+
+**Step 3: Display in UI**
+
+**File:** `src/components/SessionReport.tsx`
+
+The recommendations will automatically appear in the report sections. Add special styling:
+
+```typescript
+// In renderSection function:
+if (section.type === 'insights' && section.data?.recommendations) {
+  return (
+    <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg">
+      <h3 className="text-xl font-semibold mb-4">{section.heading}</h3>
+      <div className="space-y-4">
+        {section.data.recommendations.map((rec: any, idx: number) => (
+          <div key={idx} className="border-l-4 border-blue-500 pl-4">
+            <h4 className="font-semibold">{rec.title}</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {rec.content}
+            </p>
+            <div className="text-xs text-gray-500 mt-2">
+              {rec.category} • {Math.round(rec.relevance * 100)}% relevant
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+## Dashboard Integration
+
+### Session History Display
+
+**File:** `src/components/Dashboard.tsx`
+
+```typescript
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+
+export function Dashboard() {
+  const user = useQuery(api.queries.getCurrentUser);
+  const sessions = useQuery(
+    api.queries.getUserSessions,
+    user ? { userId: user._id } : "skip"
+  );
+  
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Your Coaching Sessions</h1>
+      
+      {/* Session Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {sessions?.map((session) => (
+          <SessionCard key={session._id} session={session} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SessionCard({ session }: { session: any }) {
+  const frameworkIcons = {
+    GROW: '🎯',
+    CAREER: '📚',
+    COMPASS: '🧭',
+    PRODUCTIVITY: '⚡',
+    LEADERSHIP: '📋',
+    COMMUNICATION: '💬'
+  };
+  
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-3xl">{frameworkIcons[session.framework]}</span>
+        <span className="text-sm text-gray-500">
+          {new Date(session._creationTime).toLocaleDateString()}
+        </span>
+      </div>
+      
+      <h3 className="font-semibold mb-2">{session.framework} Session</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        {session.closedAt ? 'Completed' : 'In Progress'}
+      </p>
+      
+      <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+        View Report
+      </button>
+    </div>
+  );
+}
+```
+
+### Open Actions Tracker
+
+**File:** `src/components/ActionsTracker.tsx`
+
+```typescript
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+
+export function ActionsTracker() {
+  const user = useQuery(api.queries.getCurrentUser);
+  const actions = useQuery(
+    api.queries.getUserActions,
+    user ? { userId: user._id } : "skip"
+  );
+  
+  const toggleAction = useMutation(api.mutations.toggleActionStatus);
+  
+  const openActions = actions?.filter(a => a.status === 'open') || [];
+  const completedActions = actions?.filter(a => a.status === 'done') || [];
+  
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <h2 className="text-2xl font-bold mb-6">Your Action Items</h2>
+      
+      {/* Open Actions */}
+      <div className="mb-8">
+        <h3 className="text-xl font-semibold mb-4">Open ({openActions.length})</h3>
+        <div className="space-y-3">
+          {openActions.map((action) => (
+            <ActionItem
+              key={action._id}
+              action={action}
+              onToggle={() => toggleAction({ actionId: action._id })}
+            />
+          ))}
+        </div>
+      </div>
+      
+      {/* Completed Actions */}
+      <div>
+        <h3 className="text-xl font-semibold mb-4">Completed ({completedActions.length})</h3>
+        <div className="space-y-3">
+          {completedActions.map((action) => (
+            <ActionItem
+              key={action._id}
+              action={action}
+              onToggle={() => toggleAction({ actionId: action._id })}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActionItem({ action, onToggle }: { action: any; onToggle: () => void }) {
+  const isOverdue = action.dueAt && action.dueAt < Date.now();
+  
+  return (
+    <div className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <input
+        type="checkbox"
+        checked={action.status === 'done'}
+        onChange={onToggle}
+        className="w-5 h-5"
+      />
+      <div className="flex-1">
+        <p className={action.status === 'done' ? 'line-through text-gray-500' : ''}>
+          {action.title}
+        </p>
+        {action.dueAt && (
+          <p className={`text-sm ${isOverdue ? 'text-red-600' : 'text-gray-500'}`}>
+            Due: {new Date(action.dueAt).toLocaleDateString()}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+## Success Score Systems
+
+### CSS (Composite Success Score) for COMPASS
+
+**Calculation:** Already implemented in `convex/coach/compass.ts`
+
+**Display in Report:**
+
+```typescript
+// In generateCompassReport function:
+if (cssScore) {
+  sections.push({
+    heading: '📊 Composite Success Score (CSS)',
+    content: generateCSSContent(cssScore),
+    type: 'scores',
+    data: { css_score: cssScore }
+  });
+}
+
+function generateCSSContent(css: any): string {
+  const badges = {
+    EXCELLENT: '🌟',
+    GOOD: '✅',
+    FAIR: '👍',
+    MARGINAL: '⚠️',
+    INSUFFICIENT: '❌'
+  };
+  
+  let content = `Score: ${css.composite_success_score}/100 ${badges[css.success_level]} ${css.success_level}\n\n`;
+  content += `Dimension Breakdown:\n`;
+  content += `• Confidence: ${css.breakdown.confidence_score}/100\n`;
+  content += `• Action Clarity: ${css.breakdown.action_score}/100\n`;
+  content += `• Mindset: ${css.breakdown.mindset_score}/100\n`;
+  content += `• Satisfaction: ${css.breakdown.satisfaction_score}/100`;
+  
+  return content;
+}
+```
+
+### CaSS (Career Success Score) for CAREER
+
+**Calculation:** Already implemented in `convex/reports/career.ts`
+
+See `calculateCaSS()` function for formula:
+- Confidence Delta (30%)
+- Clarity Score (25%)
+- Action Commitment (25%)
+- Gap Manageability (20%)
+
+---
+
+## Public Page Integration
+
+### Anonymous Session Access
+
+**File:** `src/pages/PublicSession.tsx`
+
+```typescript
+import { useParams } from 'react-router-dom';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+
+export function PublicSession() {
+  const { sessionId } = useParams();
+  const session = useQuery(
+    api.queries.getPublicSession,
+    sessionId ? { sessionId } : 'skip'
+  );
+  
+  if (!session) {
+    return <div>Session not found or expired</div>;
+  }
+  
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Session Report</h1>
+      <SessionReport sessionId={session._id} onClose={() => {}} />
+      
+      {/* Email capture for report */}
+      <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+        <h3 className="text-xl font-semibold mb-4">Want to save this report?</h3>
+        <p className="mb-4">Enter your email to receive a copy and unlock premium features.</p>
+        <EmailCaptureForm sessionId={session._id} />
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+## Printable Copy
+
+### Print Styles
+
+**File:** `src/components/SessionReport.tsx`
+
+Add print button and styles:
+
+```typescript
+function SessionReport({ sessionId }: { sessionId: string }) {
+  const handlePrint = () => {
+    window.print();
+  };
+  
+  return (
+    <div>
+      {/* Print button */}
+      <button
+        onClick={handlePrint}
+        className="mb-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 print:hidden"
+      >
+        🖨️ Print Report
+      </button>
+      
+      {/* Report content */}
+      <div className="print:text-black print:bg-white">
+        {/* Report sections */}
+      </div>
+      
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          body { background: white; }
+          .print\:hidden { display: none; }
+          .print\:text-black { color: black; }
+          .print\:bg-white { background: white; }
+        }
+      `}</style>
+    </div>
+  );
+}
+```
+
+---
+
+## Complete Checklist for New Coach
+
+### Backend (Convex)
+- [ ] `convex/frameworks/[name].ts` - Schema and definition
+- [ ] `convex/coach/[name].ts` - Completion logic
+- [ ] `convex/prompts/[name].ts` - Step guidance
+- [ ] `convex/reports/[name].ts` - Report generator
+- [ ] `convex/reports/index.ts` - Register generator
+- [ ] `convex/coach/base.ts` - Add to router
+- [ ] `convex/prompts/index.ts` - Export prompts
+- [ ] `convex/queries.ts` - Add getFrameworkQuestions
+
+### Frontend (React)
+- [ ] `src/components/SessionView.tsx` - Add step array
+- [ ] `src/components/SessionView.tsx` - Add to frameworkSteps
+- [ ] `src/components/SessionView.tsx` - Add getNextStepName
+- [ ] `src/components/SessionView.tsx` - Add COACHING_TIPS
+- [ ] Custom UI components (if needed)
+
+### Testing
+- [ ] Start new session
+- [ ] Complete all steps
+- [ ] Verify field extraction
+- [ ] Test skip handling
+- [ ] Test amendment flow
+- [ ] Verify report generation
+- [ ] Test knowledge recommendations
+- [ ] Verify dashboard display
+
+### Documentation
+- [ ] Add to framework list in README
+- [ ] Document step sequence
+- [ ] Document field schema
+- [ ] Add example session
+
+---
+
 ## Conclusion
 
 Implementing a new framework follows this pattern:
@@ -1003,7 +1589,7 @@ Implementing a new framework follows this pattern:
 1. **Define schema** - Structure your data
 2. **Implement coach logic** - Validation and progression
 3. **Write prompts** - AI guidance and extraction rules
-4. **Create reports** - Data presentation
+4. **Create reports** - Data presentation with RAG recommendations
 5. **Integrate frontend** - UI and progress tracking
 6. **Test thoroughly** - Manual and edge cases
 
@@ -1015,5 +1601,7 @@ Implementing a new framework follows this pattern:
 - Progressive relaxation for flexibility
 - Comprehensive testing
 - Good documentation
+- Post-session knowledge recommendations
+- Dashboard and action tracking integration
 
-For questions or issues, reference existing framework implementations and troubleshooting memories.
+For questions or issues, reference existing framework implementations (GROW, CAREER, COMPASS) and troubleshooting memories.

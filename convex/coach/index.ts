@@ -16,6 +16,9 @@ import type { FrameworkCoach, CoachActionResult } from "./types";
 import { growCoach } from "./grow";
 import { compassCoach } from "./compass";
 import { CareerCoach } from "./career";
+import { productivityCoach } from "./productivity";
+import { leadershipCoach } from "./leadership";
+import { communicationCoach } from "./communication";
 import { getEmergencyResources } from "../safety";
 
 // Type for knowledge base search results
@@ -76,6 +79,17 @@ function getFrameworkCoach(frameworkId: string): FrameworkCoach {
   
   if (id === 'CAREER') {
     return careerCoach;
+  }
+  
+  if (id === 'PRODUCTIVITY') {
+    return productivityCoach;
+  }
+  
+  if (id === 'LEADERSHIP') {
+    return leadershipCoach;
+  }
+  if (id === 'COMMUNICATION') {
+    return communicationCoach;
   }
   
   // Default to GROW coach for unknown frameworks
