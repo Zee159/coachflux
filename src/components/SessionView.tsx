@@ -1485,6 +1485,120 @@ export function SessionView() {
                             );
                           })()}
 
+                          {/* Yes/No Buttons for PRODUCTIVITY First Step (ASSESSMENT) */}
+                          {session?.framework === 'PRODUCTIVITY' && reflection.step === 'ASSESSMENT' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const userConsentGiven = payload['user_consent_given'];
+                            const userConsent = payload['user_consent'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if this is the welcome message (contains "Ready to optimize")
+                            const isWelcomeMessage = coachReflection.includes('Ready to optimize your productivity?');
+                            
+                            // Hide buttons if user already gave consent or not welcome message
+                            if (!isWelcomeMessage || userConsentGiven === true || userConsent === true) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <YesNoSelector
+                                  question="Ready to optimize your productivity?"
+                                  yesLabel="Yes, let's begin"
+                                  noLabel="No, close session"
+                                  onYes={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: reflection.step,
+                                      userTurn: 'yes',
+                                    });
+                                  }}
+                                  onNo={() => {
+                                    navigate('/dashboard');
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Yes/No Buttons for LEADERSHIP First Step (SELF_AWARENESS) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'SELF_AWARENESS' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const userConsentGiven = payload['user_consent_given'];
+                            const userConsent = payload['user_consent'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if this is the welcome message (contains "Ready to develop")
+                            const isWelcomeMessage = coachReflection.includes('Ready to develop your leadership capabilities?');
+                            
+                            // Hide buttons if user already gave consent or not welcome message
+                            if (!isWelcomeMessage || userConsentGiven === true || userConsent === true) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <YesNoSelector
+                                  question="Ready to develop your leadership capabilities?"
+                                  yesLabel="Yes, let's begin"
+                                  noLabel="No, close session"
+                                  onYes={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: reflection.step,
+                                      userTurn: 'yes',
+                                    });
+                                  }}
+                                  onNo={() => {
+                                    navigate('/dashboard');
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Yes/No Buttons for COMMUNICATION First Step (SITUATION) */}
+                          {session?.framework === 'COMMUNICATION' && reflection.step === 'SITUATION' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const userConsentGiven = payload['user_consent_given'];
+                            const userConsent = payload['user_consent'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show if this is the welcome message (contains "Ready to prepare")
+                            const isWelcomeMessage = coachReflection.includes('Ready to prepare for your conversation?');
+                            
+                            // Hide buttons if user already gave consent or not welcome message
+                            if (!isWelcomeMessage || userConsentGiven === true || userConsent === true) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <YesNoSelector
+                                  question="Ready to prepare for your conversation?"
+                                  yesLabel="Yes, let's begin"
+                                  noLabel="No, close session"
+                                  onYes={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: reflection.step,
+                                      userTurn: 'yes',
+                                    });
+                                  }}
+                                  onNo={() => {
+                                    navigate('/dashboard');
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
                           {/* Career Coach ASSESSMENT - Initial Confidence Scale */}
                           {session?.framework === 'CAREER' && reflection.step === 'ASSESSMENT' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
