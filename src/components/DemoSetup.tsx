@@ -5,8 +5,11 @@ import { useNavigate, Link } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
 import { FeedbackWidget } from "./FeedbackWidget";
 
+// Framework type
+type FrameworkId = 'GROW' | 'COMPASS' | 'CAREER' | 'PRODUCTIVITY' | 'LEADERSHIP' | 'COMMUNICATION';
+
 export function DemoSetup() {
-  const [selectedFramework, setSelectedFramework] = useState<'GROW' | 'COMPASS' | 'CAREER'>('GROW');
+  const [selectedFramework, setSelectedFramework] = useState<FrameworkId>('GROW');
   
   const [orgName, setOrgName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -154,10 +157,10 @@ export function DemoSetup() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
-              <span>3 Frameworks Live</span>
+              <span>6 Frameworks Live</span>
               <span className="text-violet-400 dark:text-violet-500">•</span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-              <span>3 More Coming Soon</span>
+              <span>More Coming Soon</span>
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
@@ -330,6 +333,144 @@ export function DemoSetup() {
                     25 min
                   </div>
                   <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    Intermediate
+                  </span>
+                </div>
+              </button>
+
+              {/* PRODUCTIVITY Framework */}
+              <button
+                onClick={() => {
+                  setSelectedFramework('PRODUCTIVITY');
+                  setTimeout(() => {
+                    document.getElementById('get-started')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 300);
+                }}
+                className={`group relative text-left p-8 rounded-2xl border-2 transition-all duration-300 bg-white dark:bg-gray-800 hover:scale-105 hover:shadow-2xl cursor-pointer ${
+                  selectedFramework === 'PRODUCTIVITY' 
+                    ? 'border-violet-500 dark:border-violet-400 shadow-2xl shadow-violet-500/20' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-violet-300'
+                }`}
+              >
+                {selectedFramework === 'PRODUCTIVITY' && (
+                  <div className="absolute -top-3 -right-3 bg-violet-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    Selected
+                  </div>
+                )}
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="text-5xl">⚡</div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">PRODUCTIVITY</h3>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Focus & Time Management</p>
+                  </div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
+                  Build sustainable productivity systems through focus optimization and time management. Assess your current state, audit your time, design your system, and implement with accountability.
+                </p>
+                <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  <p className="font-semibold mb-1">Perfect if you're thinking:</p>
+                  <p>"I'm constantly distracted" • "I need better focus" • "Time management is hard" • "I want a productivity system"</p>
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    15 min
+                  </div>
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                    Beginner
+                  </span>
+                </div>
+              </button>
+
+              {/* LEADERSHIP Framework */}
+              <button
+                onClick={() => {
+                  setSelectedFramework('LEADERSHIP');
+                  setTimeout(() => {
+                    document.getElementById('get-started')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 300);
+                }}
+                className={`group relative text-left p-8 rounded-2xl border-2 transition-all duration-300 bg-white dark:bg-gray-800 hover:scale-105 hover:shadow-2xl cursor-pointer ${
+                  selectedFramework === 'LEADERSHIP' 
+                    ? 'border-violet-500 dark:border-violet-400 shadow-2xl shadow-violet-500/20' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-violet-300'
+                }`}
+              >
+                {selectedFramework === 'LEADERSHIP' && (
+                  <div className="absolute -top-3 -right-3 bg-violet-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    Selected
+                  </div>
+                )}
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="text-5xl">👥</div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">LEADERSHIP</h3>
+                    <p className="text-sm text-indigo-600 dark:text-indigo-400 font-semibold">Leadership Development</p>
+                  </div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
+                  Develop leadership capabilities through self-awareness, team building, and strategic influence. Build your leadership style, improve team dynamics, and create development plans.
+                </p>
+                <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  <p className="font-semibold mb-1">Perfect if you're thinking:</p>
+                  <p>"I'm a new manager" • "My team needs help" • "How do I influence stakeholders?" • "I want to grow as a leader"</p>
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    15 min
+                  </div>
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                    Intermediate
+                  </span>
+                </div>
+              </button>
+
+              {/* COMMUNICATION Framework */}
+              <button
+                onClick={() => {
+                  setSelectedFramework('COMMUNICATION');
+                  setTimeout(() => {
+                    document.getElementById('get-started')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 300);
+                }}
+                className={`group relative text-left p-8 rounded-2xl border-2 transition-all duration-300 bg-white dark:bg-gray-800 hover:scale-105 hover:shadow-2xl cursor-pointer ${
+                  selectedFramework === 'COMMUNICATION' 
+                    ? 'border-violet-500 dark:border-violet-400 shadow-2xl shadow-violet-500/20' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-violet-300'
+                }`}
+              >
+                {selectedFramework === 'COMMUNICATION' && (
+                  <div className="absolute -top-3 -right-3 bg-violet-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    Selected
+                  </div>
+                )}
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="text-5xl">💬</div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">COMMUNICATION</h3>
+                    <p className="text-sm text-rose-600 dark:text-rose-400 font-semibold">Difficult Conversations</p>
+                  </div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
+                  Navigate difficult conversations and deliver effective feedback with confidence. Prepare for challenging discussions, craft your script, and commit to action.
+                </p>
+                <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  <p className="font-semibold mb-1">Perfect if you're thinking:</p>
+                  <p>"I need to give tough feedback" • "How do I handle conflict?" • "I'm avoiding a conversation" • "I need to set boundaries"</p>
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    15 min
+                  </div>
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
                     Intermediate
                   </span>
                 </div>
