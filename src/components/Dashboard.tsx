@@ -7,6 +7,9 @@ import { ThemeToggle } from "./ThemeToggle";
 import { SessionReport } from "./SessionReport";
 import { FeedbackWidget } from "./FeedbackWidget";
 
+// Framework type
+type FrameworkId = 'GROW' | 'COMPASS' | 'CAREER' | 'PRODUCTIVITY' | 'LEADERSHIP' | 'COMMUNICATION';
+
 // SessionCard component with executive summary
 interface SessionCardProps {
   sessionId: Id<"sessions">;
@@ -117,7 +120,7 @@ export function Dashboard() {
   const [showContinueModal, setShowContinueModal] = useState(false);
   const [notification, setNotification] = useState<{ type: "info" | "success" | "error"; message: string } | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<Id<"sessions"> | null>(null);
-  const [selectedFramework, setSelectedFramework] = useState<'GROW' | 'COMPASS' | 'CAREER'>('GROW');
+  const [selectedFramework, setSelectedFramework] = useState<FrameworkId>('GROW');
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("coachflux_demo_user");
@@ -286,13 +289,16 @@ export function Dashboard() {
               {/* Framework Selector */}
               <select
                 value={selectedFramework}
-                onChange={(e) => setSelectedFramework(e.target.value as 'GROW' | 'COMPASS' | 'CAREER')}
+                onChange={(e) => setSelectedFramework(e.target.value as FrameworkId)}
                 className="px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 aria-label="Select coaching framework"
               >
                 <option value="GROW">GROW - Goal Achievement</option>
                 <option value="COMPASS">COMPASS - Change Leadership</option>
                 <option value="CAREER">CAREER - Career Development</option>
+                <option value="PRODUCTIVITY">PRODUCTIVITY - Focus & Time Management</option>
+                <option value="LEADERSHIP">LEADERSHIP - Leadership Development</option>
+                <option value="COMMUNICATION">COMMUNICATION - Difficult Conversations</option>
               </select>
               <div className="relative">
                 <button
