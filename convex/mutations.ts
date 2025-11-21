@@ -267,6 +267,66 @@ This works best for:
 
 Ready to begin your career planning session?`;
       skipSteps = { INTRODUCTION: 0, ASSESSMENT: 0, GAP_ANALYSIS: 0, ROADMAP: 0, REVIEW: 0 };
+    } else if (args.framework === "PRODUCTIVITY") {
+      firstStep = "ASSESSMENT";
+      greeting = `Welcome! I'm your Productivity Coach, here to help you build sustainable productivity systems through focus optimization and time management.
+
+In this 15-minute session, we'll work through 5 steps:
+• Assessment: Understand your current productivity state and challenges
+• Focus Audit: Analyze how you spend your time and energy
+• System Design: Design a personalized productivity system
+• Implementation: Create a concrete action plan with accountability
+• Review: Reflect and measure your confidence growth
+
+This works best for:
+• Time management challenges
+• Deep work optimization
+• Distraction management
+• Building productivity systems
+
+Ready to optimize your productivity?`;
+      skipSteps = { ASSESSMENT: 0, FOCUS_AUDIT: 0, SYSTEM_DESIGN: 0, IMPLEMENTATION: 0, REVIEW: 0 };
+    } else if (args.framework === "LEADERSHIP") {
+      firstStep = "SELF_AWARENESS";
+      greeting = `Welcome! I'm your Leadership Coach, here to help you develop leadership capabilities through self-awareness, team building, and strategic influence.
+
+In this 15-minute session, we'll work through 6 steps:
+• Self-Awareness: Understand your leadership style and development areas
+• Team Dynamics: Explore team health and relationship challenges
+• Influence Strategy: Develop strategies for influencing stakeholders
+• Development Plan: Create specific development actions
+• Accountability: Establish accountability structures
+• Review: Reflect on insights and measure confidence growth
+
+This works best for:
+• Leadership skill development
+• Team management challenges
+• Stakeholder influence
+• Executive presence building
+
+Ready to develop your leadership capabilities?`;
+      skipSteps = { SELF_AWARENESS: 0, TEAM_DYNAMICS: 0, INFLUENCE_STRATEGY: 0, DEVELOPMENT_PLAN: 0, ACCOUNTABILITY: 0, REVIEW: 0 };
+    } else if (args.framework === "COMMUNICATION") {
+      firstStep = "SITUATION";
+      greeting = `Welcome! I'm your Communication Coach, here to help you navigate difficult conversations and deliver effective feedback with confidence.
+
+In this 15-minute session, we'll work through 6 steps:
+• Situation: Understand the conversation context and stakes
+• Outcome: Define what success looks like
+• Perspective: Understand the other person's viewpoint
+• Script: Craft your opening and key phrases
+• Commitment: Commit to timing and self-care
+• Review: Reflect and measure confidence growth
+
+This works best for:
+• Difficult conversations
+• Feedback delivery
+• Conflict resolution
+• Setting boundaries
+• Crucial conversations
+
+Ready to prepare for your conversation?`;
+      skipSteps = { SITUATION: 0, OUTCOME: 0, PERSPECTIVE: 0, SCRIPT: 0, COMMITMENT: 0, REVIEW: 0 };
     }
 
     const sessionId = await ctx.db.insert("sessions", {
