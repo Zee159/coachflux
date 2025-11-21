@@ -29,6 +29,7 @@ import type * as deleteLegacyKnowledge from "../deleteLegacyKnowledge.js";
 import type * as embeddings from "../embeddings.js";
 import type * as embeddingsInternal from "../embeddingsInternal.js";
 import type * as frameworks_career from "../frameworks/career.js";
+import type * as frameworks_communication from "../frameworks/communication.js";
 import type * as frameworks_compass from "../frameworks/compass.js";
 import type * as frameworks_grow from "../frameworks/grow.js";
 import type * as frameworks_leadership from "../frameworks/leadership.js";
@@ -104,6 +105,7 @@ declare const fullApi: ApiFromModules<{
   embeddings: typeof embeddings;
   embeddingsInternal: typeof embeddingsInternal;
   "frameworks/career": typeof frameworks_career;
+  "frameworks/communication": typeof frameworks_communication;
   "frameworks/compass": typeof frameworks_compass;
   "frameworks/grow": typeof frameworks_grow;
   "frameworks/leadership": typeof frameworks_leadership;
