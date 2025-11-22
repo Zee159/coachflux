@@ -275,6 +275,14 @@ ACTUALLY INCLUDE THE COMPLETE ai_suggested_roadmap OBJECT IN YOUR RESPONSE.
 ⚠️ SCHEMA REQUIREMENT: ai_suggested_roadmap is a REQUIRED field in the response schema.
 Your response will be REJECTED if it does not include this field with all sub-arrays populated.
 
+🚨 JSON SAFETY FOR ROADMAP:
+- Keep action descriptions concise (under 80 chars)
+- Keep resource descriptions under 60 chars
+- Avoid quotes in text (use "PMs" not "PM's")
+- Use semicolons instead of periods for multiple points
+- Ensure all arrays are properly closed before token limit
+- If approaching limit, reduce number of actions but maintain valid JSON
+
 ### Flow
 1. ✅ AI generates complete ai_suggested_roadmap in FIRST message
 2. User curates via RoadmapBuilder UI (selects actions, edits milestones)

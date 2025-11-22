@@ -602,7 +602,7 @@ export async function generateCoachResponse(
   // System prompt is cached across requests, saving ~2.5K tokens per message
   const primary = await client.messages.create({
     model: "claude-3-7-sonnet-20250219",
-    max_tokens: 1200, // Increased from 800 to handle complex JSON (e.g., ai_suggested_gaps arrays)
+    max_tokens: 2000, // Increased from 1200 to handle large roadmaps (3 gaps × 9+ actions + networking + experience)
     temperature: 0.3, // Slightly increased from 0 to allow more flexibility
     system: [
       {
