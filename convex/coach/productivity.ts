@@ -14,10 +14,10 @@ export class ProductivityCoach implements FrameworkCoach {
   getRequiredFields(): Record<string, string[]> {
     return {
       ASSESSMENT: ["current_productivity_level", "biggest_productivity_challenge", "productivity_goal"],
-      FOCUS_AUDIT: ["deep_work_percentage", "peak_energy_hours", "distraction_triggers"],
-      SYSTEM_DESIGN: ["chosen_framework", "deep_work_blocks", "system_confidence"],
+      FOCUS_AUDIT: ["deep_work_percentage", "peak_energy_hours", "distraction_triggers", "time_audit_score"],
+      SYSTEM_DESIGN: ["ai_wants_framework_suggestions", "chosen_framework", "deep_work_blocks", "system_confidence"],
       IMPLEMENTATION: ["first_action", "daily_commitment", "implementation_confidence"],
-      REVIEW: ["key_insight", "immediate_next_step", "final_confidence"],
+      REVIEW: ["key_insight", "immediate_next_step", "final_confidence", "system_clarity", "session_helpfulness"],
     };
   }
 
@@ -29,13 +29,13 @@ export class ProductivityCoach implements FrameworkCoach {
     case "ASSESSMENT":
       return ["current_productivity_level", "biggest_productivity_challenge", "productivity_goal"];
     case "FOCUS_AUDIT":
-      return ["deep_work_percentage", "peak_energy_hours", "distraction_triggers"];
+      return ["deep_work_percentage", "peak_energy_hours", "distraction_triggers", "time_audit_score"];
     case "SYSTEM_DESIGN":
-      return ["chosen_framework", "deep_work_blocks", "system_confidence"];
+      return ["ai_wants_framework_suggestions", "chosen_framework", "deep_work_blocks", "system_confidence"];
     case "IMPLEMENTATION":
       return ["first_action", "daily_commitment", "implementation_confidence"];
     case "REVIEW":
-      return ["key_insight", "immediate_next_step", "final_confidence"];
+      return ["key_insight", "immediate_next_step", "final_confidence", "system_clarity", "session_helpfulness"];
     default:
       return [];
   }
@@ -52,6 +52,24 @@ export class ProductivityCoach implements FrameworkCoach {
     skipCount: number,
     loopDetected: boolean
   ): StepCompletionResult {
+    // Special handling for ASSESSMENT first turn (consent)
+    if (step === "ASSESSMENT") {
+      const userConsentGiven = payload["user_consent_given"];
+      
+      // If consent not yet given, only check for consent
+      if (typeof userConsentGiven !== "boolean" || userConsentGiven !== true) {
+        return {
+          shouldAdvance: false,
+          capturedFields: [],
+          missingFields: ["user_consent_given"],
+          completionPercentage: 0
+        };
+      }
+      
+      // If consent given, check for other required fields
+      // (consent is not in requiredFields list, so we check separately)
+    }
+    
     const requiredFields = this.getStepRequiredFields(step);
   
   // Count how many required fields are present

@@ -28,6 +28,7 @@ export const productivityFramework: FrameworkDefinition = {
       required_fields_schema: {
         type: "object",
         properties: {
+          user_consent_given: { type: "boolean" },
           current_productivity_level: { type: "number", minimum: 1, maximum: 10 },
           biggest_productivity_challenge: { type: "string", minLength: 10 },
           main_distractions: { type: "array", items: { type: "string" }, minItems: 1 },
@@ -139,6 +140,22 @@ Ask questions ONE AT A TIME. Help user estimate percentages if unsure.`,
       required_fields_schema: {
         type: "object",
         properties: {
+          ai_wants_framework_suggestions: { type: "boolean" },
+          ai_suggested_frameworks: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                name: { type: "string" },
+                description: { type: "string" },
+                best_for: { type: "string" },
+                time_commitment: { type: "string" }
+              }
+            },
+            maxItems: 3
+          },
+          selected_framework_id: { type: "string" },
           chosen_framework: { type: "string", minLength: 5 },
           deep_work_blocks: { 
             type: "array", 
@@ -163,17 +180,40 @@ Ask questions ONE AT A TIME. Help user estimate percentages if unsure.`,
       system_prompt: `You are designing a personalized productivity system.
 
 Your role in the SYSTEM_DESIGN step:
-1. Suggest productivity framework based on their situation:
-   - Time Blocking (for structured schedules)
-   - Pomodoro (for focus challenges)
-   - Deep Work Blocks (for creative/complex work)
-   - GTD (for overwhelm/many tasks)
-   - Hybrid (combination)
-2. Design 1-2 deep work blocks (time slot, focus area, protection strategy)
-3. Identify distraction blockers (tools, techniques, boundaries)
-4. Rate system confidence (1-10)
+1. ASK: "Would you like me to suggest productivity frameworks based on your situation?"
+   - Set ai_wants_framework_suggestions = true/false
+   - If true, generate 2-3 ai_suggested_frameworks as JSON array:
+     [
+       {
+         "id": "time_blocking",
+         "name": "Time Blocking",
+         "description": "Schedule specific blocks for different types of work",
+         "best_for": "Structured schedules, multiple projects",
+         "time_commitment": "15 min daily planning"
+       },
+       {
+         "id": "pomodoro",
+         "name": "Pomodoro Technique",
+         "description": "25-minute focused work sessions with 5-minute breaks",
+         "best_for": "Focus challenges, procrastination",
+         "time_commitment": "Minimal setup, immediate start"
+       }
+     ]
+   - Present via OptionsSelector UI component
+   - If false, ask user to describe their preferred framework
+2. After framework selected, extract chosen_framework (the framework name/description)
+3. Design 1-2 deep work blocks (time slot, focus area, protection strategy)
+4. Identify distraction blockers (tools, techniques, boundaries)
+5. Rate system confidence (1-10)
 
-Suggest options but let user choose. Be specific with time slots.`,
+Framework Options:
+- Time Blocking: For structured schedules, multiple projects
+- Pomodoro: For focus challenges, procrastination
+- Deep Work Blocks: For creative/complex work requiring long focus
+- GTD (Getting Things Done): For overwhelm, many tasks
+- Hybrid: Combination of above
+
+Be specific with time slots using their peak energy hours from FOCUS_AUDIT step.`,
       
       coaching_questions: [
         "Based on your situation, I'd suggest [framework]. Does this resonate with you?",

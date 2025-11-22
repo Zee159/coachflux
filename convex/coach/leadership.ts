@@ -15,7 +15,7 @@ export class LeadershipCoach implements FrameworkCoach {
     return {
       SELF_AWARENESS: ["current_leadership_role", "leadership_challenge", "leadership_strengths", "development_areas", "self_awareness_score"],
       TEAM_DYNAMICS: ["team_health_score", "team_strengths", "team_challenges", "trust_level", "psychological_safety"],
-      INFLUENCE_STRATEGY: ["key_stakeholders", "influence_goal", "influence_barriers", "influence_confidence"],
+      INFLUENCE_STRATEGY: ["key_stakeholders", "influence_goal", "influence_barriers", "ai_wants_tactic_suggestions", "influence_confidence"],
       DEVELOPMENT_PLAN: ["priority_development_area", "development_actions", "practice_opportunities", "feedback_sources", "development_confidence"],
       ACCOUNTABILITY: ["first_action", "action_date", "accountability_partner", "commitment_level"],
       REVIEW: ["key_insight", "immediate_next_step", "final_confidence", "leadership_clarity", "session_helpfulness"],
@@ -32,7 +32,7 @@ export class LeadershipCoach implements FrameworkCoach {
       case "TEAM_DYNAMICS":
         return ["team_health_score", "team_strengths", "team_challenges", "trust_level", "psychological_safety"];
       case "INFLUENCE_STRATEGY":
-        return ["key_stakeholders", "influence_goal", "influence_barriers", "influence_confidence"];
+        return ["key_stakeholders", "influence_goal", "influence_barriers", "ai_wants_tactic_suggestions", "influence_confidence"];
       case "DEVELOPMENT_PLAN":
         return ["priority_development_area", "development_actions", "practice_opportunities", "feedback_sources", "development_confidence"];
       case "ACCOUNTABILITY":
@@ -55,6 +55,24 @@ export class LeadershipCoach implements FrameworkCoach {
     skipCount: number,
     loopDetected: boolean
   ): StepCompletionResult {
+    // Special handling for SELF_AWARENESS first turn (consent)
+    if (step === "SELF_AWARENESS") {
+      const userConsentGiven = payload["user_consent_given"];
+      
+      // If consent not yet given, only check for consent
+      if (typeof userConsentGiven !== "boolean" || userConsentGiven !== true) {
+        return {
+          shouldAdvance: false,
+          capturedFields: [],
+          missingFields: ["user_consent_given"],
+          completionPercentage: 0
+        };
+      }
+      
+      // If consent given, check for other required fields
+      // (consent is not in requiredFields list, so we check separately)
+    }
+    
     const requiredFields = this.getStepRequiredFields(step);
 
     // Count how many required fields are present

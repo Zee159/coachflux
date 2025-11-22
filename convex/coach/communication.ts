@@ -15,7 +15,7 @@ export class CommunicationCoach implements FrameworkCoach {
       SITUATION: ["conversation_type", "person_relationship", "conversation_context", "stakes", "situation_clarity"],
       OUTCOME: ["ideal_outcome", "relationship_goal", "must_say", "outcome_clarity"],
       PERSPECTIVE: ["their_perspective", "likely_reactions", "empathy_level", "preparation_confidence"],
-      SCRIPT: ["opening_line", "key_phrases", "script_confidence"],
+      SCRIPT: ["ai_wants_script_suggestions", "opening_line", "key_phrases", "script_confidence"],
       COMMITMENT: ["when_conversation", "where_conversation", "commitment_level"],
       REVIEW: ["key_insight", "final_confidence", "session_helpfulness"],
     };
@@ -33,7 +33,7 @@ export class CommunicationCoach implements FrameworkCoach {
       case "PERSPECTIVE":
         return ["their_perspective", "likely_reactions", "empathy_level", "preparation_confidence"];
       case "SCRIPT":
-        return ["opening_line", "key_phrases", "script_confidence"];
+        return ["ai_wants_script_suggestions", "opening_line", "key_phrases", "script_confidence"];
       case "COMMITMENT":
         return ["when_conversation", "where_conversation", "commitment_level"];
       case "REVIEW":
@@ -44,7 +44,7 @@ export class CommunicationCoach implements FrameworkCoach {
   }
 
   /**
-   * Check if a LEADERSHIP step is complete
+   * Check if a COMMUNICATION step is complete
    * Uses progressive relaxation based on skip count
    */
   checkStepCompletion(
@@ -54,6 +54,24 @@ export class CommunicationCoach implements FrameworkCoach {
     skipCount: number,
     loopDetected: boolean
   ): StepCompletionResult {
+    // Special handling for SITUATION first turn (consent)
+    if (step === "SITUATION") {
+      const userConsentGiven = payload["user_consent_given"];
+      
+      // If consent not yet given, only check for consent
+      if (typeof userConsentGiven !== "boolean" || userConsentGiven !== true) {
+        return {
+          shouldAdvance: false,
+          capturedFields: [],
+          missingFields: ["user_consent_given"],
+          completionPercentage: 0
+        };
+      }
+      
+      // If consent given, check for other required fields
+      // (consent is not in requiredFields list, so we check separately)
+    }
+    
     const requiredFields = this.getStepRequiredFields(step);
 
     // Count how many required fields are present

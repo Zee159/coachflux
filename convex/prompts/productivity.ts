@@ -14,6 +14,13 @@ export const ASSESSMENT_GUIDANCE = `
 ## Your Role
 You are assessing the user's current productivity level, challenges, and goals.
 
+## CRITICAL: First Turn - User Consent
+**On the very first turn of this step:**
+- If user says "yes", "let's begin", "ready", or similar → EXTRACT: user_consent_given = true
+- If user says "no", "not now", "close" → EXTRACT: user_consent_given = false
+- This is MANDATORY before asking any other questions
+- Once consent is given, proceed to Question 1
+
 ## Progressive Question Flow
 
 **Question 1: Current Productivity Level**

@@ -254,9 +254,11 @@ Then the system will show "Proceed to Roadmap" and "Amend Gap Analysis" buttons.
 
   ROADMAP: `ROADMAP - AI-Generated Comprehensive Action Plan
 
-### 🚨 CRITICAL: FIRST MESSAGE MUST GENERATE ROADMAP
+### 🚨 CRITICAL: GENERATE ROADMAP ON FIRST TURN
 
-When user enters ROADMAP step, your VERY FIRST response MUST include BOTH fields:
+**IMPORTANT:** The ROADMAP step opener will NOT include ai_suggested_roadmap. You must generate it in your FIRST response.
+
+When you receive the ROADMAP step opener (which will be a simple message like "Let's continue with ROADMAP"), your VERY FIRST response MUST include BOTH fields:
 
 1. coach_reflection: "Let me create a comprehensive roadmap for your transition. I'll suggest learning actions for each gap, networking opportunities, hands-on experiences, and milestones."
 

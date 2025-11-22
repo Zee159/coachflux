@@ -1,0 +1,39 @@
+===========================================
+SCALE SELECTOR BUTTON UIs TO ADD
+Insert after line 1600 in SessionView.tsx
+===========================================
+
+PRODUCTIVITY FRAMEWORK (7 selectors):
+-------------------------------------------
+1. current_productivity_level (ASSESSMENT)
+2. time_audit_score (FOCUS_AUDIT)
+3. system_confidence (SYSTEM_DESIGN)
+4. implementation_confidence (IMPLEMENTATION)
+5. final_confidence (REVIEW)
+6. system_clarity (REVIEW)
+7. session_helpfulness (REVIEW)
+
+LEADERSHIP FRAMEWORK (9 selectors):
+-------------------------------------------
+1. self_awareness_score (SELF_AWARENESS)
+2. team_health_score (TEAM_DYNAMICS)
+3. psychological_safety (TEAM_DYNAMICS)
+4. influence_confidence (INFLUENCE_STRATEGY)
+5. development_confidence (DEVELOPMENT_PLAN)
+6. commitment_level (ACCOUNTABILITY)
+7. final_confidence (REVIEW)
+8. leadership_clarity (REVIEW)
+9. session_helpfulness (REVIEW)
+
+COMMUNICATION FRAMEWORK (8 selectors):
+-------------------------------------------
+1. situation_clarity (SITUATION)
+2. outcome_clarity (OUTCOME)
+3. empathy_level (PERSPECTIVE)
+4. preparation_confidence (PERSPECTIVE)
+5. script_confidence (SCRIPT)
+6. commitment_level (COMMITMENT)
+7. final_confidence (REVIEW)
+8. session_helpfulness (REVIEW)
+
+TOTAL: 24 scale selectors to implement

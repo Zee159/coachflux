@@ -15,6 +15,9 @@ import {
 import { growFramework, growFrameworkLegacy } from './grow';
 import { compassFramework } from './compass';
 import { careerFramework } from './career';
+import { productivityFramework } from './productivity';
+import { leadershipFramework } from './leadership';
+import { communicationFramework } from './communication';
 
 // ============================================================================
 // Legacy Registry (Phase 1 - Migration Mode)
@@ -31,6 +34,9 @@ const legacyFrameworkRegistry: Record<string, LegacyFramework> = {
   'GROW': growFrameworkLegacy,
   'COMPASS': compassFramework as unknown as LegacyFramework, // Use NEW COMPASS (4-stage)
   'CAREER': careerFramework as unknown as LegacyFramework, // Career Coach
+  'PRODUCTIVITY': productivityFramework as unknown as LegacyFramework, // Productivity Coach
+  'LEADERSHIP': leadershipFramework as unknown as LegacyFramework, // Leadership Coach
+  'COMMUNICATION': communicationFramework as unknown as LegacyFramework, // Communication Coach
 };
 
 /**
@@ -59,6 +65,9 @@ const frameworkRegistry: Partial<Record<FrameworkId, FrameworkDefinition>> = {
   GROW: growFramework,
   COMPASS: compassFramework,
   CAREER: careerFramework,
+  PRODUCTIVITY: productivityFramework,
+  LEADERSHIP: leadershipFramework,
+  COMMUNICATION: communicationFramework,
   // Phase 2: Add CLEAR framework
   // CLEAR: clearFramework,
   // Future: Additional frameworks

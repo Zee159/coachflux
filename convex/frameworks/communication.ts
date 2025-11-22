@@ -28,6 +28,7 @@ export const communicationFramework: FrameworkDefinition = {
       required_fields_schema: {
         type: "object",
         properties: {
+          user_consent_given: { type: "boolean" },
           conversation_type: { type: "string", minLength: 3 },
           person_relationship: { type: "string", minLength: 3 },
           conversation_context: { type: "string", minLength: 10 },
@@ -42,6 +43,13 @@ export const communicationFramework: FrameworkDefinition = {
       
       system_prompt: `You are a communication coach helping someone prepare for a difficult conversation.
 
+CRITICAL: First Turn - User Consent
+**On the very first turn of this step:**
+- If user says "yes", "let's begin", "ready", or similar → EXTRACT: user_consent_given = true
+- If user says "no", "not now", "close" → EXTRACT: user_consent_given = false
+- This is MANDATORY before asking any other questions
+- Once consent is given, proceed to the questions below
+
 Your role:
 - Understand the full context without judgment
 - Clarify the relationship dynamics
@@ -50,7 +58,10 @@ Your role:
 - Help them see the situation clearly
 
 CRITICAL: DO NOT give advice yet. Just understand and clarify.
-CRITICAL: DO NOT auto-fill fields. Only include fields when user EXPLICITLY provides information.`,
+CRITICAL: DO NOT auto-fill fields. Only include fields when user EXPLICITLY provides information.
+
+Field Extraction:
+- user_consent_given: true when user agrees to begin (FIRST TURN ONLY)`,
       
       coaching_questions: [
         "What type of conversation is this? (feedback, conflict, request, setting a boundary, delivering difficult news)",
@@ -192,6 +203,22 @@ CRITICAL: If empathy_level < 5, explore what's blocking it.`,
       required_fields_schema: {
         type: "object",
         properties: {
+          ai_wants_script_suggestions: { type: "boolean" },
+          ai_suggested_scripts: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                name: { type: "string" },
+                opening_line: { type: "string" },
+                tone: { type: "string" },
+                best_for: { type: "string" }
+              }
+            },
+            maxItems: 3
+          },
+          selected_script_id: { type: "string" },
           opening_line: { type: "string", minLength: 10 },
           key_phrases: { type: "array", items: { type: "string" }, minItems: 2 },
           if_defensive: { type: "string", minLength: 10 },
@@ -206,15 +233,43 @@ CRITICAL: If empathy_level < 5, explore what's blocking it.`,
       system_prompt: `You are a communication coach crafting conversation language.
 
 Your role:
-- Help them write a clear, non-threatening opening
-- Create 2-3 key phrases they can fall back on
-- Prepare responses for defensive or silent reactions
-- Use "I" statements, not "you" accusations
-- Keep language simple and direct
+1. ASK: "Would you like me to suggest conversation opening lines based on your situation?"
+   - Set ai_wants_script_suggestions = true/false
+   - If true, generate 2-3 ai_suggested_scripts as JSON array:
+     [
+       {
+         "id": "direct_honest",
+         "name": "Direct & Honest",
+         "opening_line": "I need to talk about something that's been on my mind. Can we find 10 minutes?",
+         "tone": "Straightforward, respectful",
+         "best_for": "When you need clarity and directness"
+       },
+       {
+         "id": "collaborative",
+         "name": "Collaborative Approach",
+         "opening_line": "I'd like to work through something together. Do you have time to talk?",
+         "tone": "Partnership-focused, inclusive",
+         "best_for": "When you want to solve a problem together"
+       },
+       {
+         "id": "empathetic",
+         "name": "Empathetic Opening",
+         "opening_line": "I know things have been tough. I'd like to understand your perspective on something.",
+         "tone": "Understanding, supportive",
+         "best_for": "When the other person is stressed or defensive"
+       }
+     ]
+   - Present via OptionsSelector UI component
+   - If false, ask user to write their own opening
+2. After opening selected/written, extract opening_line
+3. Create 2-3 key phrases they can fall back on
+4. Prepare responses for defensive or silent reactions
+5. Rate script confidence (1-10)
 
 CRITICAL: Opening should be < 2 sentences. Longer = rambling.
 CRITICAL: Avoid "you always/never" - use specific examples.
-CRITICAL: Key phrases should be memorizable, not essays.`,
+CRITICAL: Key phrases should be memorizable, not essays.
+CRITICAL: Use "I" statements, not "you" accusations.`,
       
       coaching_questions: [
         "How will you open the conversation? (Keep it to 1-2 sentences)",

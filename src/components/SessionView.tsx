@@ -1000,7 +1000,8 @@ export function SessionView() {
         ASSESSMENT: 'Focus Audit', 
         FOCUS_AUDIT: 'System Design', 
         SYSTEM_DESIGN: 'Implementation', 
-        IMPLEMENTATION: 'Review' 
+        IMPLEMENTATION: 'Review',
+        REVIEW: 'Report'
       };
       return steps[currentStep] ?? 'Next Step';
     } else if (session?.framework === 'LEADERSHIP') {
@@ -1009,7 +1010,8 @@ export function SessionView() {
         TEAM_DYNAMICS: 'Influence Strategy', 
         INFLUENCE_STRATEGY: 'Development Plan', 
         DEVELOPMENT_PLAN: 'Accountability', 
-        ACCOUNTABILITY: 'Review' 
+        ACCOUNTABILITY: 'Review',
+        REVIEW: 'Report'
       };
       return steps[currentStep] ?? 'Next Step';
     } else if (session?.framework === 'COMMUNICATION') {
@@ -1018,7 +1020,8 @@ export function SessionView() {
         OUTCOME: 'Perspective', 
         PERSPECTIVE: 'Script', 
         SCRIPT: 'Commitment', 
-        COMMITMENT: 'Review' 
+        COMMITMENT: 'Review',
+        REVIEW: 'Report'
       };
       return steps[currentStep] ?? 'Next Step';
     }
@@ -1593,6 +1596,381 @@ export function SessionView() {
                                   }}
                                   onNo={() => {
                                     navigate('/dashboard');
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* ============================================================================ */}
+                          {/* PRODUCTIVITY FRAMEWORK - Scale Selectors */}
+                          {/* ============================================================================ */}
+
+                          {/* PRODUCTIVITY - current_productivity_level (ASSESSMENT) */}
+                          {session?.framework === 'PRODUCTIVITY' && reflection.step === 'ASSESSMENT' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const currentProductivityLevel = payload['current_productivity_level'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (currentProductivityLevel !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForLevel = coachReflection.toLowerCase().includes('rate your') || 
+                                                     coachReflection.toLowerCase().includes('productivity level');
+                            
+                            if (!isAskingForLevel) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how would you rate your current productivity level?"
+                                  colorScheme="confidence"
+                                  minLabel="Very low"
+                                  maxLabel="Very high"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'ASSESSMENT',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* PRODUCTIVITY - time_audit_score (FOCUS_AUDIT) */}
+                          {session?.framework === 'PRODUCTIVITY' && reflection.step === 'FOCUS_AUDIT' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const timeAuditScore = payload['time_audit_score'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (timeAuditScore !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForScore = coachReflection.toLowerCase().includes('how well') || 
+                                                     (coachReflection.toLowerCase().includes('time') && coachReflection.toLowerCase().includes('allocated'));
+                            
+                            if (!isAskingForScore) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how well is your time currently allocated to important work?"
+                                  colorScheme="confidence"
+                                  minLabel="Poorly allocated"
+                                  maxLabel="Well allocated"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'FOCUS_AUDIT',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* PRODUCTIVITY - ai_wants_framework_suggestions (SYSTEM_DESIGN) */}
+                          {session?.framework === 'PRODUCTIVITY' && reflection.step === 'SYSTEM_DESIGN' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const aiWantsFrameworkSuggestions = payload['ai_wants_framework_suggestions'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (aiWantsFrameworkSuggestions !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForSuggestions = coachReflection.toLowerCase().includes('suggest') && 
+                                                            coachReflection.toLowerCase().includes('framework');
+                            
+                            if (!isAskingForSuggestions) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <YesNoSelector
+                                  question="Would you like me to suggest productivity frameworks based on your situation?"
+                                  yesLabel="Yes, suggest frameworks"
+                                  noLabel="No, I'll describe my own"
+                                  onYes={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'SYSTEM_DESIGN',
+                                      userTurn: 'yes',
+                                    });
+                                  }}
+                                  onNo={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'SYSTEM_DESIGN',
+                                      userTurn: 'no',
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* PRODUCTIVITY - ai_suggested_frameworks (SYSTEM_DESIGN) */}
+                          {session?.framework === 'PRODUCTIVITY' && reflection.step === 'SYSTEM_DESIGN' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const aiSuggestedFrameworks = payload['ai_suggested_frameworks'];
+                            const selectedFrameworkId = payload['selected_framework_id'];
+                            const aiWantsFrameworkSuggestions = payload['ai_wants_framework_suggestions'];
+                            
+                            // Only show if user wants suggestions, AI generated them, and user hasn't selected yet
+                            if (aiWantsFrameworkSuggestions !== true || aiSuggestedFrameworks === null || aiSuggestedFrameworks === undefined || selectedFrameworkId !== undefined) {
+                              return null;
+                            }
+                            
+                            interface Framework {
+                              id: string;
+                              name: string;
+                              description: string;
+                              best_for: string;
+                              time_commitment: string;
+                            }
+                            
+                            const frameworks = Array.isArray(aiSuggestedFrameworks) ? aiSuggestedFrameworks as Framework[] : [];
+                            
+                            if (frameworks.length === 0) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <OptionsSelector
+                                  options={frameworks.map(fw => ({
+                                    id: fw.id,
+                                    label: fw.name,
+                                    description: fw.description,
+                                    metadata: `Best for: ${fw.best_for} | Time: ${fw.time_commitment}`
+                                  }))}
+                                  onSubmit={(selectedIds) => {
+                                    const selectedFramework = frameworks.find(fw => fw.id === selectedIds[0]);
+                                    if (selectedFramework !== null && selectedFramework !== undefined) {
+                                      void nextStepAction({
+                                        orgId: session.orgId,
+                                        userId: session.userId,
+                                        sessionId: session._id,
+                                        stepName: 'SYSTEM_DESIGN',
+                                        userTurn: `I'll use ${selectedFramework.name}`,
+                                      });
+                                    }
+                                  }}
+                                  minSelections={1}
+                                  maxSelections={1}
+                                  coachMessage="Select the productivity framework that resonates most with you:"
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* PRODUCTIVITY - system_confidence (SYSTEM_DESIGN) */}
+                          {session?.framework === 'PRODUCTIVITY' && reflection.step === 'SYSTEM_DESIGN' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const systemConfidence = payload['system_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (systemConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('confident') && 
+                                                           (coachReflection.toLowerCase().includes('system') || coachReflection.toLowerCase().includes('plan'));
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident are you in this productivity system?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'SYSTEM_DESIGN',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* PRODUCTIVITY - implementation_confidence (IMPLEMENTATION) */}
+                          {session?.framework === 'PRODUCTIVITY' && reflection.step === 'IMPLEMENTATION' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const implementationConfidence = payload['implementation_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (implementationConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('confident') && 
+                                                           coachReflection.toLowerCase().includes('implement');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident are you about implementing this plan?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'IMPLEMENTATION',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* PRODUCTIVITY - final_confidence (REVIEW) */}
+                          {session?.framework === 'PRODUCTIVITY' && reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const finalConfidence = payload['final_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (finalConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('how confident') && 
+                                                           coachReflection.toLowerCase().includes('now');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident are you now about your productivity?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'REVIEW',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* PRODUCTIVITY - system_clarity (REVIEW) */}
+                          {session?.framework === 'PRODUCTIVITY' && reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const systemClarity = payload['system_clarity'];
+                            const finalConfidence = payload['final_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show after final_confidence is captured
+                            if (systemClarity !== undefined || finalConfidence === undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForClarity = coachReflection.toLowerCase().includes('clear') && 
+                                                        coachReflection.toLowerCase().includes('system');
+                            
+                            if (!isAskingForClarity) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="How clear is your productivity system? (1-10)"
+                                  colorScheme="confidence"
+                                  minLabel="Not clear"
+                                  maxLabel="Very clear"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'REVIEW',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* PRODUCTIVITY - session_helpfulness (REVIEW) */}
+                          {session?.framework === 'PRODUCTIVITY' && reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const sessionHelpfulness = payload['session_helpfulness'];
+                            const systemClarity = payload['system_clarity'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show after system_clarity is captured
+                            if (sessionHelpfulness !== undefined || systemClarity === undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForHelpfulness = coachReflection.toLowerCase().includes('helpful') || 
+                                                            coachReflection.toLowerCase().includes('session');
+                            
+                            if (!isAskingForHelpfulness) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="How helpful was this session? (1-10)"
+                                  colorScheme="confidence"
+                                  minLabel="Not helpful"
+                                  maxLabel="Very helpful"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'REVIEW',
+                                      userTurn: String(value),
+                                    });
                                   }}
                                 />
                               </div>
@@ -2329,7 +2707,7 @@ export function SessionView() {
                           })()}
 
                           {/* Career Coach REVIEW - Final Confidence (Question 4) */}
-                          {reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
+                          {session?.framework === 'CAREER' && reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
                             const keyTakeaways = payload['key_takeaways'];
                             const immediateNextStep = payload['immediate_next_step'];
@@ -2369,7 +2747,7 @@ export function SessionView() {
                           })()}
 
                           {/* Career Coach REVIEW - Final Clarity (Question 5) */}
-                          {reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
+                          {session?.framework === 'CAREER' && reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
                             const finalConfidence = payload['final_confidence'];
                             const finalClarity = payload['final_clarity'];
@@ -2402,7 +2780,7 @@ export function SessionView() {
                           })()}
 
                           {/* Career Coach REVIEW - Session Helpfulness (Question 6) */}
-                          {reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
+                          {session?.framework === 'CAREER' && reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && (() => {
                             const payload = reflection.payload as Record<string, unknown>;
                             const finalConfidence = payload['final_confidence'];
                             const finalClarity = payload['final_clarity'];
@@ -2418,6 +2796,894 @@ export function SessionView() {
                               <div className="mt-4">
                                 <ConfidenceScaleSelector
                                   question="How helpful was this session (1-10)?"
+                                  colorScheme="confidence"
+                                  minLabel="Not helpful"
+                                  maxLabel="Very helpful"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'REVIEW',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* ============================================================================ */}
+                          {/* LEADERSHIP FRAMEWORK - Scale Selectors */}
+                          {/* ============================================================================ */}
+
+                          {/* LEADERSHIP - self_awareness_score (SELF_AWARENESS) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'SELF_AWARENESS' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const selfAwarenessScore = payload['self_awareness_score'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (selfAwarenessScore !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForScore = coachReflection.toLowerCase().includes('self-aware') || 
+                                                      coachReflection.toLowerCase().includes('awareness');
+                            
+                            if (!isAskingForScore) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how self-aware are you about your leadership impact?"
+                                  colorScheme="confidence"
+                                  minLabel="Not self-aware"
+                                  maxLabel="Very self-aware"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'SELF_AWARENESS',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* LEADERSHIP - team_health_score (TEAM_DYNAMICS) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'TEAM_DYNAMICS' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const teamHealthScore = payload['team_health_score'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (teamHealthScore !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForScore = coachReflection.toLowerCase().includes('team health') || 
+                                                      (coachReflection.toLowerCase().includes('rate') && coachReflection.toLowerCase().includes('team'));
+                            
+                            if (!isAskingForScore) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how would you rate your team's overall health?"
+                                  colorScheme="confidence"
+                                  minLabel="Very unhealthy"
+                                  maxLabel="Very healthy"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'TEAM_DYNAMICS',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* LEADERSHIP - psychological_safety (TEAM_DYNAMICS) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'TEAM_DYNAMICS' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const psychologicalSafety = payload['psychological_safety'];
+                            const teamHealthScore = payload['team_health_score'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show after team_health_score is captured
+                            if (psychologicalSafety !== undefined || teamHealthScore === undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForSafety = coachReflection.toLowerCase().includes('psychological safety') || 
+                                                       coachReflection.toLowerCase().includes('safe to speak');
+                            
+                            if (!isAskingForSafety) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how psychologically safe is your team?"
+                                  colorScheme="confidence"
+                                  minLabel="Not safe"
+                                  maxLabel="Very safe"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'TEAM_DYNAMICS',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* LEADERSHIP - ai_wants_tactic_suggestions (INFLUENCE_STRATEGY) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'INFLUENCE_STRATEGY' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const aiWantsTacticSuggestions = payload['ai_wants_tactic_suggestions'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (aiWantsTacticSuggestions !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForTactics = coachReflection.toLowerCase().includes('suggest') && 
+                                                        coachReflection.toLowerCase().includes('tactic');
+                            
+                            if (!isAskingForTactics) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <YesNoSelector
+                                  question="Would you like me to suggest specific influence tactics for your key stakeholders?"
+                                  yesLabel="Yes, suggest tactics"
+                                  noLabel="No, I'll develop my own"
+                                  onYes={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'INFLUENCE_STRATEGY',
+                                      userTurn: 'yes',
+                                    });
+                                  }}
+                                  onNo={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'INFLUENCE_STRATEGY',
+                                      userTurn: 'no',
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* LEADERSHIP - ai_suggested_tactics (INFLUENCE_STRATEGY) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'INFLUENCE_STRATEGY' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const aiSuggestedTactics = payload['ai_suggested_tactics'];
+                            const selectedTactics = payload['selected_tactics'];
+                            const aiWantsTacticSuggestions = payload['ai_wants_tactic_suggestions'];
+                            
+                            // Only show if user wants suggestions and AI generated them
+                            if (aiWantsTacticSuggestions !== true || aiSuggestedTactics === null || aiSuggestedTactics === undefined) {
+                              return null;
+                            }
+                            
+                            interface Tactic {
+                              stakeholder: string;
+                              tactic: string;
+                              rationale: string;
+                              approach: string;
+                            }
+                            
+                            const tactics = aiSuggestedTactics as Tactic[];
+                            const selected = (selectedTactics as string[]) ?? [];
+                            const currentTacticIndex = selected.length;
+                            
+                            // All tactics reviewed
+                            if (currentTacticIndex >= tactics.length) {
+                              return null;
+                            }
+                            
+                            const currentTactic = tactics[currentTacticIndex];
+                            
+                            if (currentTactic === null || currentTactic === undefined) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ActionValidator
+                                  optionLabel={currentTactic.stakeholder}
+                                  suggestedAction={{
+                                    action: currentTactic.tactic,
+                                    due_days: 7,
+                                    owner: 'You',
+                                    accountability_mechanism: currentTactic.rationale,
+                                    support_needed: currentTactic.approach
+                                  }}
+                                  onAccept={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'INFLUENCE_STRATEGY',
+                                      userTurn: `I'll use this tactic for ${currentTactic.stakeholder}`,
+                                    });
+                                  }}
+                                  onModify={(modifiedAction) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'INFLUENCE_STRATEGY',
+                                      userTurn: `Modified tactic: ${modifiedAction.action}`,
+                                    });
+                                  }}
+                                  onSkip={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'INFLUENCE_STRATEGY',
+                                      userTurn: `Skip tactic for ${currentTactic.stakeholder}`,
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* LEADERSHIP - influence_confidence (INFLUENCE_STRATEGY) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'INFLUENCE_STRATEGY' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const influenceConfidence = payload['influence_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (influenceConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('confident') && 
+                                                           coachReflection.toLowerCase().includes('influence');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident are you in your influence strategy?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'INFLUENCE_STRATEGY',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* LEADERSHIP - development_confidence (DEVELOPMENT_PLAN) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'DEVELOPMENT_PLAN' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const developmentConfidence = payload['development_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (developmentConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('confident') && 
+                                                           coachReflection.toLowerCase().includes('development');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident are you in your development plan?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'DEVELOPMENT_PLAN',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* LEADERSHIP - commitment_level (ACCOUNTABILITY) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'ACCOUNTABILITY' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const commitmentLevel = payload['commitment_level'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (commitmentLevel !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForCommitment = coachReflection.toLowerCase().includes('committed') || 
+                                                           coachReflection.toLowerCase().includes('commitment');
+                            
+                            if (!isAskingForCommitment) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how committed are you to this accountability plan?"
+                                  colorScheme="confidence"
+                                  minLabel="Not committed"
+                                  maxLabel="Fully committed"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'ACCOUNTABILITY',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* LEADERSHIP - final_confidence (REVIEW) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const finalConfidence = payload['final_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (finalConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('how confident') && 
+                                                           coachReflection.toLowerCase().includes('now');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident are you now as a leader?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'REVIEW',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* LEADERSHIP - leadership_clarity (REVIEW) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const leadershipClarity = payload['leadership_clarity'];
+                            const finalConfidence = payload['final_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show after final_confidence is captured
+                            if (leadershipClarity !== undefined || finalConfidence === undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForClarity = coachReflection.toLowerCase().includes('clear') && 
+                                                        coachReflection.toLowerCase().includes('leadership');
+                            
+                            if (!isAskingForClarity) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="How clear are you on your leadership path? (1-10)"
+                                  colorScheme="confidence"
+                                  minLabel="Not clear"
+                                  maxLabel="Very clear"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'REVIEW',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* LEADERSHIP - session_helpfulness (REVIEW) */}
+                          {session?.framework === 'LEADERSHIP' && reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const sessionHelpfulness = payload['session_helpfulness'];
+                            const leadershipClarity = payload['leadership_clarity'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show after leadership_clarity is captured
+                            if (sessionHelpfulness !== undefined || leadershipClarity === undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForHelpfulness = coachReflection.toLowerCase().includes('helpful') || 
+                                                            coachReflection.toLowerCase().includes('session');
+                            
+                            if (!isAskingForHelpfulness) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="How helpful was this session? (1-10)"
+                                  colorScheme="confidence"
+                                  minLabel="Not helpful"
+                                  maxLabel="Very helpful"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'REVIEW',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* ============================================================================ */}
+                          {/* COMMUNICATION FRAMEWORK - Scale Selectors */}
+                          {/* ============================================================================ */}
+
+                          {/* COMMUNICATION - situation_clarity (SITUATION) */}
+                          {session?.framework === 'COMMUNICATION' && reflection.step === 'SITUATION' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const situationClarity = payload['situation_clarity'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (situationClarity !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForClarity = coachReflection.toLowerCase().includes('how clear') || 
+                                                        (coachReflection.toLowerCase().includes('clear') && coachReflection.toLowerCase().includes('situation'));
+                            
+                            if (!isAskingForClarity) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how clear are you on the situation?"
+                                  colorScheme="confidence"
+                                  minLabel="Not clear"
+                                  maxLabel="Very clear"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'SITUATION',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* COMMUNICATION - outcome_clarity (OUTCOME) */}
+                          {session?.framework === 'COMMUNICATION' && reflection.step === 'OUTCOME' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const outcomeClarity = payload['outcome_clarity'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (outcomeClarity !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForClarity = coachReflection.toLowerCase().includes('clear') && 
+                                                        coachReflection.toLowerCase().includes('outcome');
+                            
+                            if (!isAskingForClarity) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how clear are you on your desired outcome?"
+                                  colorScheme="confidence"
+                                  minLabel="Not clear"
+                                  maxLabel="Very clear"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'OUTCOME',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* COMMUNICATION - empathy_level (PERSPECTIVE) */}
+                          {session?.framework === 'COMMUNICATION' && reflection.step === 'PERSPECTIVE' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const empathyLevel = payload['empathy_level'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (empathyLevel !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForEmpathy = coachReflection.toLowerCase().includes('empathy') || 
+                                                        coachReflection.toLowerCase().includes('understand their perspective');
+                            
+                            if (!isAskingForEmpathy) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how well do you understand their perspective?"
+                                  colorScheme="confidence"
+                                  minLabel="Not at all"
+                                  maxLabel="Very well"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'PERSPECTIVE',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* COMMUNICATION - preparation_confidence (PERSPECTIVE) */}
+                          {session?.framework === 'COMMUNICATION' && reflection.step === 'PERSPECTIVE' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const preparationConfidence = payload['preparation_confidence'];
+                            const empathyLevel = payload['empathy_level'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show after empathy_level is captured
+                            if (preparationConfidence !== undefined || empathyLevel === undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('confident') && 
+                                                           coachReflection.toLowerCase().includes('prepared');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident do you feel about having this conversation?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'PERSPECTIVE',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* COMMUNICATION - ai_wants_script_suggestions (SCRIPT) */}
+                          {session?.framework === 'COMMUNICATION' && reflection.step === 'SCRIPT' && isLastReflection && !isSessionComplete && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const aiWantsScriptSuggestions = payload['ai_wants_script_suggestions'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (aiWantsScriptSuggestions !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForScripts = coachReflection.toLowerCase().includes('suggest') && 
+                                                        (coachReflection.toLowerCase().includes('opening') || coachReflection.toLowerCase().includes('script'));
+                            
+                            if (!isAskingForScripts) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <YesNoSelector
+                                  question="Would you like me to suggest conversation opening lines based on your situation?"
+                                  yesLabel="Yes, suggest openings"
+                                  noLabel="No, I'll write my own"
+                                  onYes={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'SCRIPT',
+                                      userTurn: 'yes',
+                                    });
+                                  }}
+                                  onNo={() => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'SCRIPT',
+                                      userTurn: 'no',
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* COMMUNICATION - ai_suggested_scripts (SCRIPT) */}
+                          {session?.framework === 'COMMUNICATION' && reflection.step === 'SCRIPT' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const aiSuggestedScripts = payload['ai_suggested_scripts'];
+                            const selectedScriptId = payload['selected_script_id'];
+                            const aiWantsScriptSuggestions = payload['ai_wants_script_suggestions'];
+                            
+                            // Only show if user wants suggestions, AI generated them, and user hasn't selected yet
+                            if (aiWantsScriptSuggestions !== true || aiSuggestedScripts === null || aiSuggestedScripts === undefined || selectedScriptId !== undefined) {
+                              return null;
+                            }
+                            
+                            interface Script {
+                              id: string;
+                              name: string;
+                              opening_line: string;
+                              tone: string;
+                              best_for: string;
+                            }
+                            
+                            const scripts = Array.isArray(aiSuggestedScripts) ? aiSuggestedScripts as Script[] : [];
+                            
+                            if (scripts.length === 0) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <OptionsSelector
+                                  options={scripts.map(script => ({
+                                    id: script.id,
+                                    label: script.name,
+                                    description: script.opening_line,
+                                    metadata: `Tone: ${script.tone} | ${script.best_for}`
+                                  }))}
+                                  onSubmit={(selectedIds) => {
+                                    const selectedScript = scripts.find(s => s.id === selectedIds[0]);
+                                    if (selectedScript !== null && selectedScript !== undefined) {
+                                      void nextStepAction({
+                                        orgId: session.orgId,
+                                        userId: session.userId,
+                                        sessionId: session._id,
+                                        stepName: 'SCRIPT',
+                                        userTurn: selectedScript.opening_line,
+                                      });
+                                    }
+                                  }}
+                                  minSelections={1}
+                                  maxSelections={1}
+                                  coachMessage="Select the conversation opening that feels most natural to you:"
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* COMMUNICATION - script_confidence (SCRIPT) */}
+                          {session?.framework === 'COMMUNICATION' && reflection.step === 'SCRIPT' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const scriptConfidence = payload['script_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (scriptConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('confident') && 
+                                                           coachReflection.toLowerCase().includes('script');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident are you in your conversation script?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'SCRIPT',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* COMMUNICATION - commitment_level (COMMITMENT) */}
+                          {session?.framework === 'COMMUNICATION' && reflection.step === 'COMMITMENT' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const commitmentLevel = payload['commitment_level'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (commitmentLevel !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForCommitment = coachReflection.toLowerCase().includes('committed') || 
+                                                           coachReflection.toLowerCase().includes('commitment');
+                            
+                            if (!isAskingForCommitment) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how committed are you to having this conversation?"
+                                  colorScheme="confidence"
+                                  minLabel="Not committed"
+                                  maxLabel="Fully committed"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'COMMITMENT',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* COMMUNICATION - final_confidence (REVIEW) */}
+                          {session?.framework === 'COMMUNICATION' && reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const finalConfidence = payload['final_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            if (finalConfidence !== undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForConfidence = coachReflection.toLowerCase().includes('how confident') && 
+                                                           coachReflection.toLowerCase().includes('now');
+                            
+                            if (!isAskingForConfidence) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="On a scale of 1-10, how confident are you now about this conversation?"
+                                  colorScheme="confidence"
+                                  minLabel="Not confident"
+                                  maxLabel="Very confident"
+                                  onSelect={(value) => {
+                                    void nextStepAction({
+                                      orgId: session.orgId,
+                                      userId: session.userId,
+                                      sessionId: session._id,
+                                      stepName: 'REVIEW',
+                                      userTurn: String(value),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* COMMUNICATION - session_helpfulness (REVIEW) */}
+                          {session?.framework === 'COMMUNICATION' && reflection.step === 'REVIEW' && isLastReflection && !isSessionComplete && !awaitingConfirmation && (() => {
+                            const payload = reflection.payload as Record<string, unknown>;
+                            const sessionHelpfulness = payload['session_helpfulness'];
+                            const finalConfidence = payload['final_confidence'];
+                            const coachReflection = String(payload['coach_reflection'] ?? '');
+                            
+                            // Only show after final_confidence is captured
+                            if (sessionHelpfulness !== undefined || finalConfidence === undefined) {
+                              return null;
+                            }
+                            
+                            const isAskingForHelpfulness = coachReflection.toLowerCase().includes('helpful') || 
+                                                            coachReflection.toLowerCase().includes('session');
+                            
+                            if (!isAskingForHelpfulness) {
+                              return null;
+                            }
+                            
+                            return (
+                              <div className="mt-4">
+                                <ConfidenceScaleSelector
+                                  question="How helpful was this session? (1-10)"
                                   colorScheme="confidence"
                                   minLabel="Not helpful"
                                   maxLabel="Very helpful"

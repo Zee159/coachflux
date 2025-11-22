@@ -28,6 +28,7 @@ export const leadershipFramework: FrameworkDefinition = {
       required_fields_schema: {
         type: "object",
         properties: {
+          user_consent_given: { type: "boolean" },
           current_leadership_role: { type: "string", minLength: 5 },
           team_size: { type: "number", minimum: 0 },
           leadership_challenge: { type: "string", minLength: 10 },
@@ -42,6 +43,13 @@ export const leadershipFramework: FrameworkDefinition = {
       },
       
       system_prompt: `You are a Leadership Coach helping leaders develop their capabilities and effectiveness.
+
+CRITICAL: First Turn - User Consent
+**On the very first turn of this step:**
+- If user says "yes", "let's begin", "ready", or similar → EXTRACT: user_consent_given = true
+- If user says "no", "not now", "close" → EXTRACT: user_consent_given = false
+- This is MANDATORY before asking any other questions
+- Once consent is given, proceed to the questions below
 
 Your role in the SELF_AWARENESS step:
 1. Understand their current leadership role and team context
@@ -60,6 +68,7 @@ CRITICAL RULES:
 - Acknowledge the difficulty of self-assessment
 
 Field Extraction:
+- user_consent_given: true when user agrees to begin (FIRST TURN ONLY)
 - current_leadership_role: Their role (e.g., "Engineering Manager", "Team Lead")
 - team_size: Number of direct reports
 - leadership_challenge: Their biggest current challenge
@@ -180,6 +189,21 @@ Field Extraction:
           stakeholder_motivations: { type: "array", items: { type: "object" }, minItems: 0 },
           influence_barriers: { type: "array", items: { type: "string" }, minItems: 1 },
           political_landscape: { type: "string", minLength: 10 },
+          ai_wants_tactic_suggestions: { type: "boolean" },
+          ai_suggested_tactics: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                stakeholder: { type: "string" },
+                tactic: { type: "string" },
+                rationale: { type: "string" },
+                approach: { type: "string" }
+              }
+            },
+            maxItems: 5
+          },
+          selected_tactics: { type: "array", items: { type: "string" }, minItems: 0 },
           influence_confidence: { type: "number", minimum: 1, maximum: 10 },
           coach_reflection: { type: "string", minLength: 20, maxLength: 500 }
         },
@@ -196,7 +220,26 @@ Your role in the INFLUENCE_STRATEGY step:
 4. Explore stakeholder motivations and interests
 5. Identify barriers to influence
 6. Understand the political landscape
-7. Rate their confidence in influencing (1-10)
+7. ASK: "Would you like me to suggest specific influence tactics for your key stakeholders?"
+   - Set ai_wants_tactic_suggestions = true/false
+   - If true, generate 1-3 ai_suggested_tactics as JSON array (one per stakeholder):
+     [
+       {
+         "stakeholder": "Sarah (VP of Engineering)",
+         "tactic": "Build alliance through shared technical vision",
+         "rationale": "She values technical excellence and innovation",
+         "approach": "Schedule 1-on-1 to align on technical roadmap, emphasize quality improvements"
+       },
+       {
+         "stakeholder": "Marketing Team",
+         "tactic": "Demonstrate customer impact with data",
+         "rationale": "They care about customer satisfaction metrics",
+         "approach": "Present case study showing how your initiative improved NPS by 15%"
+       }
+     ]
+   - Present tactics one at a time for Accept/Modify/Skip
+   - If false, continue to confidence rating
+8. Rate their confidence in influencing (1-10)
 
 CRITICAL RULES:
 - Influence is not manipulation
@@ -204,6 +247,7 @@ CRITICAL RULES:
 - Help them understand stakeholder perspectives
 - Acknowledge organizational politics exist
 - Be realistic about power dynamics
+- Tactics must be ethical and relationship-building
 
 Field Extraction:
 - key_stakeholders: People they need to influence
@@ -212,6 +256,9 @@ Field Extraction:
 - stakeholder_motivations: What stakeholders care about
 - influence_barriers: What's blocking influence
 - political_landscape: Organizational dynamics
+- ai_wants_tactic_suggestions: Whether user wants AI tactics
+- ai_suggested_tactics: AI-generated tactics per stakeholder
+- selected_tactics: Tactics user accepted
 - influence_confidence: Confidence level (1-10)`,
       
       coaching_questions: [

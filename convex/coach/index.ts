@@ -864,6 +864,15 @@ async function handleStructuredInput(
             // CAREER: Generate career transition report via the generateReviewAnalysis action
             // This will be called from the frontend after this returns
             return { ok: true, message: 'Review confirmed, ready for report generation', triggerReportGeneration: true };
+          } else if (framework === 'PRODUCTIVITY') {
+            // PRODUCTIVITY: Generate productivity system report via the generateReviewAnalysis action
+            return { ok: true, message: 'Review confirmed, ready for report generation', triggerReportGeneration: true };
+          } else if (framework === 'LEADERSHIP') {
+            // LEADERSHIP: Generate leadership development report via the generateReviewAnalysis action
+            return { ok: true, message: 'Review confirmed, ready for report generation', triggerReportGeneration: true };
+          } else if (framework === 'COMMUNICATION') {
+            // COMMUNICATION: Generate conversation preparation report via the generateReviewAnalysis action
+            return { ok: true, message: 'Review confirmed, ready for report generation', triggerReportGeneration: true };
           }
         }
         
@@ -875,124 +884,6 @@ async function handleStructuredInput(
           sessionId: args.sessionId,
           step: nextStep
         });
-        
-        // Special handling for CAREER ROADMAP - generate AI-powered personalized roadmap
-        if (framework === 'CAREER' && nextStep === 'ROADMAP') {
-          // Get all reflections to extract session context
-          const sessionReflections = await ctx.runQuery(api.queries.getSessionReflections, {
-            sessionId: args.sessionId
-          });
-          
-          // Extract ASSESSMENT data
-          const assessmentReflections = sessionReflections.filter((r: { step: string }) => r.step === 'ASSESSMENT');
-          let currentRole = '';
-          let targetRole = '';
-          let industry = '';
-          let careerStage = '';
-          let timeframe = '';
-          
-          for (const reflection of assessmentReflections) {
-            const payload = reflection.payload as Record<string, unknown>;
-            if (typeof payload['current_role'] === 'string') {
-              currentRole = payload['current_role'];
-            }
-            if (typeof payload['target_role'] === 'string') {
-              targetRole = payload['target_role'];
-            }
-            if (typeof payload['industry'] === 'string') {
-              industry = payload['industry'];
-            }
-            if (typeof payload['career_stage'] === 'string') {
-              careerStage = payload['career_stage'];
-            }
-            if (typeof payload['timeframe'] === 'string') {
-              timeframe = payload['timeframe'];
-            }
-          }
-          
-          // Extract development_priorities from GAP_ANALYSIS
-          const gapReflections = sessionReflections.filter((r: { step: string }) => r.step === 'GAP_ANALYSIS');
-          let developmentPriorities: string[] = [];
-          
-          for (const reflection of gapReflections) {
-            const payload = reflection.payload as Record<string, unknown>;
-            if (Array.isArray(payload['development_priorities'])) {
-              developmentPriorities = payload['development_priorities'] as string[];
-              break;
-            }
-          }
-          
-          // Generate AI-powered roadmap
-          let gapCards;
-          try {
-            const aiRoadmap = await generateAIRoadmap(ctx, {
-              currentRole,
-              targetRole,
-              industry,
-              careerStage,
-              timeframe,
-              developmentPriorities
-            });
-            gapCards = aiRoadmap.gap_cards;
-          } catch (error) {
-            console.error('AI roadmap generation failed, using fallback:', error);
-            // Fallback to simple template if AI fails
-            gapCards = developmentPriorities.map((gap, gapIndex) => ({
-              gap_id: `gap_${gapIndex}`,
-              gap_name: gap,
-              gap_index: gapIndex,
-              total_gaps: developmentPriorities.length,
-              learning_actions: [
-                {
-                  id: `learn_${gapIndex}_1`,
-                  action: `Complete comprehensive training on ${gap}`,
-                  timeline: "2 months",
-                  resource: "Online course"
-                },
-                {
-                  id: `learn_${gapIndex}_2`,
-                  action: `Practice ${gap} through hands-on projects`,
-                  timeline: "6 weeks",
-                  resource: "Practice exercises"
-                }
-              ],
-              networking_actions: [
-                {
-                  id: `network_${gapIndex}_1`,
-                  action: `Connect with professionals who excel in ${gap}`,
-                  timeline: "Next 2 weeks"
-                }
-              ],
-              experience_actions: [
-                {
-                  id: `exp_${gapIndex}_1`,
-                  action: `Take on project requiring ${gap}`,
-                  timeline: "Next quarter"
-                }
-              ],
-              milestone: `Develop proficiency in ${gap} through learning and practice`
-            }));
-          }
-          
-          // Create reflection with roadmap
-          await ctx.runMutation(api.mutations.createReflection, {
-            orgId: args.orgId,
-            userId: args.userId,
-            sessionId: args.sessionId,
-            step: nextStep,
-            userInput: '',
-            payload: {
-              coach_reflection: `Let's build your roadmap! I've identified ${developmentPriorities.length} gaps to address. We'll work on them one at a time, starting with: ${developmentPriorities[0] ?? 'your first gap'}.`,
-              ai_suggested_roadmap: {
-                gap_cards: gapCards,
-                current_gap_index: 0,
-                total_gaps: developmentPriorities.length
-              }
-            }
-          });
-          
-          return { ok: true, message: 'Roadmap generated!', nextStep };
-        }
         
         // Get step transitions for opener message
         const frameworkCoach = getFrameworkCoach(framework);
@@ -2236,6 +2127,220 @@ ${messageCount >= 10 ? '🚨 WARNING: This stage has ' + messageCount + ' messag
 });
 
 // ============================================================================
+// PRODUCTIVITY REPORT GENERATION HELPER
+// ============================================================================
+
+async function generateProductivityReport(
+  ctx: ActionCtx,
+  _session: { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> },
+  reflections: Array<{ _id: Id<"reflections">; step: string; payload: Record<string, unknown> }>,
+  _userName: string,
+  args: { sessionId: Id<"sessions">; orgId: Id<"orgs">; userId: Id<"users"> }
+): Promise<{ ok: boolean; message: string }> {
+  const reviewReflections = reflections.filter(r => r.step === 'REVIEW');
+  const lastReviewReflection = reviewReflections[reviewReflections.length - 1];
+  
+  if (lastReviewReflection === undefined) {
+    return { ok: false, message: 'No review reflection found' };
+  }
+  
+  const review = lastReviewReflection.payload;
+  
+  // Extract session data for AI insights
+  const assessmentReflection = reflections.find(r => r.step === 'ASSESSMENT');
+  const systemDesignReflection = reflections.find(r => r.step === 'SYSTEM_DESIGN');
+  
+  const currentProductivityLevel = String(assessmentReflection?.payload['current_productivity_level'] ?? 'baseline');
+  const productivityChallenge = String(assessmentReflection?.payload['biggest_productivity_challenge'] ?? 'Maintaining focus');
+  const chosenFramework = String(systemDesignReflection?.payload['chosen_framework'] ?? 'productivity');
+  const finalConfidence = String(review['final_confidence'] ?? 'higher');
+  
+  // Generate AI insights
+  const aiInsights = {
+    ai_insights: `You've designed a ${chosenFramework} system tailored to your specific challenges. Your confidence has grown from ${currentProductivityLevel}/10 to ${finalConfidence}/10, showing strong commitment to sustainable productivity.`,
+    key_strengths: [
+      "Clear understanding of your productivity challenges and peak energy hours",
+      "Chosen a framework that aligns with your work style and constraints",
+      "Designed specific deep work blocks with protection strategies"
+    ],
+    implementation_tips: [
+      "Start with ONE deep work block per day for the first week to build the habit",
+      "Use your peak energy hours for your most important work, not just urgent tasks",
+      "Review and adjust your system weekly - productivity systems evolve with your needs"
+    ],
+    potential_obstacles: [
+      `Challenge: ${productivityChallenge}`,
+      "Risk of reverting to old habits when under pressure or stress",
+      "Difficulty protecting deep work time from interruptions and meetings"
+    ],
+    success_metrics: [
+      "Track percentage of day spent on deep work (target: increase by 20%)",
+      "Monitor energy levels throughout the day to validate peak hours",
+      "Measure completion rate of important tasks vs urgent tasks"
+    ]
+  };
+  
+  const finalPayload = {
+    ...review,
+    ...aiInsights
+  };
+  
+  await ctx.runMutation(api.mutations.updateReflection, {
+    reflectionId: lastReviewReflection._id,
+    payload: finalPayload
+  });
+  
+  await ctx.runMutation(api.mutations.closeSession, {
+    sessionId: args.sessionId
+  });
+  
+  return { ok: true, message: 'Productivity system report ready!' };
+}
+
+// ============================================================================
+// LEADERSHIP REPORT GENERATION HELPER
+// ============================================================================
+
+async function generateLeadershipReport(
+  ctx: ActionCtx,
+  _session: { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> },
+  reflections: Array<{ _id: Id<"reflections">; step: string; payload: Record<string, unknown> }>,
+  _userName: string,
+  args: { sessionId: Id<"sessions">; orgId: Id<"orgs">; userId: Id<"users"> }
+): Promise<{ ok: boolean; message: string }> {
+  const reviewReflections = reflections.filter(r => r.step === 'REVIEW');
+  const lastReviewReflection = reviewReflections[reviewReflections.length - 1];
+  
+  if (lastReviewReflection === undefined) {
+    return { ok: false, message: 'No review reflection found' };
+  }
+  
+  const review = lastReviewReflection.payload;
+  
+  // Extract session data for AI insights
+  const selfAwarenessReflection = reflections.find(r => r.step === 'SELF_AWARENESS');
+  const teamDynamicsReflection = reflections.find(r => r.step === 'TEAM_DYNAMICS');
+  
+  const leadershipChallenge = String(selfAwarenessReflection?.payload['leadership_challenge'] ?? 'your key challenges');
+  const teamHealthScore = String(teamDynamicsReflection?.payload['team_health_score'] ?? 'N/A');
+  const psychologicalSafety = String(teamDynamicsReflection?.payload['psychological_safety'] ?? 'N/A');
+  
+  // Generate AI insights
+  const aiInsights = {
+    ai_insights: `You've developed a comprehensive leadership development plan addressing ${leadershipChallenge}. Your team health score of ${teamHealthScore}/10 and psychological safety of ${psychologicalSafety}/10 provide a clear baseline for measuring progress.`,
+    leadership_strengths: [
+      "Strong self-awareness about your leadership impact and development areas",
+      "Clear understanding of team dynamics and what's working well",
+      "Specific influence strategies tailored to key stakeholders"
+    ],
+    development_priorities: [
+      "Focus on building psychological safety - this is the foundation for high-performing teams",
+      "Practice your influence tactics consistently, starting with lower-stakes situations",
+      "Schedule regular 1-on-1s to strengthen key relationships and gather feedback"
+    ],
+    potential_pitfalls: [
+      "Trying to change everything at once - focus on 1-2 high-impact behaviors",
+      "Underestimating the time needed to shift team culture and dynamics",
+      "Not seeking feedback on your leadership changes from team members"
+    ],
+    recommended_frameworks: [
+      "Situational Leadership: Adapt your style based on team member readiness",
+      "Radical Candor: Balance care personally with challenge directly",
+      "Multipliers: Focus on amplifying your team's intelligence and capabilities"
+    ]
+  };
+  
+  const finalPayload = {
+    ...review,
+    ...aiInsights
+  };
+  
+  await ctx.runMutation(api.mutations.updateReflection, {
+    reflectionId: lastReviewReflection._id,
+    payload: finalPayload
+  });
+  
+  await ctx.runMutation(api.mutations.closeSession, {
+    sessionId: args.sessionId
+  });
+  
+  return { ok: true, message: 'Leadership development report ready!' };
+}
+
+// ============================================================================
+// COMMUNICATION REPORT GENERATION HELPER
+// ============================================================================
+
+async function generateCommunicationReport(
+  ctx: ActionCtx,
+  _session: { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> },
+  reflections: Array<{ _id: Id<"reflections">; step: string; payload: Record<string, unknown> }>,
+  _userName: string,
+  args: { sessionId: Id<"sessions">; orgId: Id<"orgs">; userId: Id<"users"> }
+): Promise<{ ok: boolean; message: string }> {
+  const reviewReflections = reflections.filter(r => r.step === 'REVIEW');
+  const lastReviewReflection = reviewReflections[reviewReflections.length - 1];
+  
+  if (lastReviewReflection === undefined) {
+    return { ok: false, message: 'No review reflection found' };
+  }
+  
+  const review = lastReviewReflection.payload;
+  
+  // Extract session data for AI insights
+  const situationReflection = reflections.find(r => r.step === 'SITUATION');
+  const outcomeReflection = reflections.find(r => r.step === 'OUTCOME');
+  const scriptReflection = reflections.find(r => r.step === 'SCRIPT');
+  
+  const conversationType = String(situationReflection?.payload['conversation_type'] ?? 'conversation');
+  const idealOutcome = String(outcomeReflection?.payload['ideal_outcome'] ?? 'positive resolution');
+  const openingLine = String(scriptReflection?.payload['opening_line'] ?? 'Your prepared opening');
+  const finalConfidence = String(review['final_confidence'] ?? 'N/A');
+  
+  // Generate AI insights
+  const aiInsights = {
+    ai_insights: `You've prepared thoroughly for your ${conversationType} with a clear outcome in mind: ${idealOutcome}. Your confidence of ${finalConfidence}/10 shows you're ready to have this conversation.`,
+    conversation_strengths: [
+      "Clear understanding of the situation and what's at stake",
+      "Specific, achievable outcome that balances your needs with the relationship",
+      "Empathy for the other person's perspective and likely reactions"
+    ],
+    pre_conversation_checklist: [
+      "Review your opening line and key phrases 10 minutes before the conversation",
+      "Take 3 deep breaths to center yourself and manage any anxiety",
+      "Remind yourself of your ideal outcome and why this conversation matters"
+    ],
+    during_conversation: [
+      `Start with: "${openingLine}"`,
+      "Listen more than you talk - aim for 60/40 listening/talking ratio",
+      "If they get defensive, pause and acknowledge their feelings before continuing",
+      "If they go silent, give them space - count to 10 before filling the silence"
+    ],
+    after_conversation: [
+      "Reflect on what went well and what you'd do differently next time",
+      "Follow up in writing if you made any commitments or agreements",
+      "Give yourself credit for having a difficult conversation - this takes courage"
+    ]
+  };
+  
+  const finalPayload = {
+    ...review,
+    ...aiInsights
+  };
+  
+  await ctx.runMutation(api.mutations.updateReflection, {
+    reflectionId: lastReviewReflection._id,
+    payload: finalPayload
+  });
+  
+  await ctx.runMutation(api.mutations.closeSession, {
+    sessionId: args.sessionId
+  });
+  
+  return { ok: true, message: 'Conversation preparation report ready!' };
+}
+
+// ============================================================================
 // CAREER REPORT GENERATION HELPER
 // ============================================================================
 
@@ -2297,188 +2402,6 @@ async function generateCareerReport(
 }
 
 // ============================================================================
-// AI-POWERED ROADMAP GENERATION HELPER
-// ============================================================================
-
-/**
- * Generate personalized roadmap suggestions using AI
- * Takes into account user's full context: role transition, industry, gaps, career stage
- */
-async function generateAIRoadmap(
-  _ctx: ActionCtx,
-  sessionContext: {
-    currentRole: string;
-    targetRole: string;
-    industry: string;
-    careerStage: string;
-    timeframe: string;
-    developmentPriorities: string[];
-  }
-): Promise<{
-  gap_cards: Array<{
-    gap_id: string;
-    gap_name: string;
-    gap_index: number;
-    total_gaps: number;
-    learning_actions: Array<{ id: string; action: string; timeline: string; resource: string }>;
-    networking_actions: Array<{ id: string; action: string; timeline: string }>;
-    experience_actions: Array<{ id: string; action: string; timeline: string }>;
-    milestone: string;
-  }>;
-}> {
-  const apiKey = process.env['ANTHROPIC_API_KEY'];
-  if (apiKey === undefined || apiKey === null || apiKey.length === 0) {
-    throw new Error("ANTHROPIC_API_KEY not configured");
-  }
-
-  const anthropic = new Anthropic({ apiKey });
-
-  const prompt = `You are a career development coach helping someone transition from ${sessionContext.currentRole} to ${sessionContext.targetRole} in the ${sessionContext.industry} industry.
-
-**Career Context:**
-- Current Role: ${sessionContext.currentRole}
-- Target Role: ${sessionContext.targetRole}
-- Industry: ${sessionContext.industry}
-- Career Stage: ${sessionContext.careerStage}
-- Timeframe: ${sessionContext.timeframe}
-
-**Priority Gaps to Address:**
-${sessionContext.developmentPriorities.map((gap, i) => `${i + 1}. ${gap}`).join('\n')}
-
-**Your Task:**
-Generate a personalized roadmap with specific, actionable suggestions for EACH gap. Consider their industry, role transition, and career stage.
-
-**Output Format (JSON):**
-{
-  "gap_cards": [
-    {
-      "gap_id": "gap_0",
-      "gap_name": "Financial modeling",
-      "gap_index": 0,
-      "total_gaps": 3,
-      "learning_actions": [
-        {
-          "id": "learn_0_1",
-          "action": "Complete comprehensive financial modeling course focusing on DCF and LBO models",
-          "timeline": "2 months",
-          "resource": "Online course (e.g., Coursera, Udemy)"
-        },
-        {
-          "id": "learn_0_2",
-          "action": "Practice building financial models using real company data",
-          "timeline": "6 weeks",
-          "resource": "Practice exercises with templates"
-        },
-        {
-          "id": "learn_0_3",
-          "action": "Study financial modeling best practices from industry leaders",
-          "timeline": "1 month",
-          "resource": "Books (e.g., 'Financial Modeling' by Simon Benninga)"
-        }
-      ],
-      "networking_actions": [
-        {
-          "id": "network_0_1",
-          "action": "Connect with 5 financial analysts or CFOs on LinkedIn who work in similar industries",
-          "timeline": "Next 2 weeks"
-        },
-        {
-          "id": "network_0_2",
-          "action": "Join finance professionals community or Slack group",
-          "timeline": "This month"
-        },
-        {
-          "id": "network_0_3",
-          "action": "Attend financial modeling workshop or webinar",
-          "timeline": "Next quarter"
-        }
-      ],
-      "experience_actions": [
-        {
-          "id": "exp_0_1",
-          "action": "Volunteer to build financial model for upcoming project or budget cycle",
-          "timeline": "Next quarter"
-        },
-        {
-          "id": "exp_0_2",
-          "action": "Shadow finance team during quarterly planning to see models in action",
-          "timeline": "Within 2 months"
-        },
-        {
-          "id": "exp_0_3",
-          "action": "Offer to create financial analysis for department or team initiative",
-          "timeline": "Next 3 months"
-        }
-      ],
-      "milestone": "Build 3 complete financial models and present analysis to leadership"
-    }
-  ]
-}
-
-**CRITICAL RULES:**
-1. Generate 2-3 learning actions per gap (specific to that gap, not generic)
-2. Generate 3 networking actions per gap (relevant to the gap and their transition)
-3. Generate 3 experience actions per gap (hands-on opportunities)
-4. Make milestones SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
-5. Consider their industry and role transition in every suggestion
-6. Use realistic timelines based on their timeframe (${sessionContext.timeframe})
-7. Make resources specific but not prescriptive (e.g., "Online course (e.g., Coursera)" not "Take Coursera course X")
-8. Tailor difficulty to their career stage (${sessionContext.careerStage})
-
-**DO NOT:**
-- Use generic templates like "Complete training on X"
-- Suggest the same actions for different gaps
-- Recommend specific course names or platforms
-- Make suggestions that don't fit their industry or role transition
-
-Return ONLY valid JSON with the gap_cards array. No other text.`;
-
-  try {
-    const response = await anthropic.messages.create({
-      model: "claude-3-7-sonnet-20250219",
-      max_tokens: 4000,
-      temperature: 0.7,
-      messages: [
-        {
-          role: "user",
-          content: prompt
-        }
-      ]
-    });
-
-    const content = response.content[0];
-    if (content === undefined || content.type !== "text") {
-      throw new Error("Invalid AI response format");
-    }
-
-    // Parse JSON response
-    const responseText = content.text.trim();
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (jsonMatch === null) {
-      throw new Error("No JSON found in AI response");
-    }
-
-    const roadmapData = JSON.parse(jsonMatch[0]) as {
-      gap_cards: Array<{
-        gap_id: string;
-        gap_name: string;
-        gap_index: number;
-        total_gaps: number;
-        learning_actions: Array<{ id: string; action: string; timeline: string; resource: string }>;
-        networking_actions: Array<{ id: string; action: string; timeline: string }>;
-        experience_actions: Array<{ id: string; action: string; timeline: string }>;
-        milestone: string;
-      }>;
-    };
-
-    return roadmapData;
-  } catch (error) {
-    console.error("Error generating AI roadmap:", error);
-    throw new Error("Failed to generate personalized roadmap");
-  }
-}
-
-// ============================================================================
 // REVIEW ANALYSIS ACTION
 // ============================================================================
 
@@ -2507,6 +2430,33 @@ export const generateReviewAnalysis = action({
       // CAREER framework report generation
       return await generateCareerReport(
         ctx, 
+        session as { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> },
+        reflections as Array<{ _id: Id<"reflections">; step: string; payload: Record<string, unknown> }>,
+        userName,
+        args
+      );
+    } else if (session.framework === 'PRODUCTIVITY') {
+      // PRODUCTIVITY framework report generation
+      return await generateProductivityReport(
+        ctx,
+        session as { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> },
+        reflections as Array<{ _id: Id<"reflections">; step: string; payload: Record<string, unknown> }>,
+        userName,
+        args
+      );
+    } else if (session.framework === 'LEADERSHIP') {
+      // LEADERSHIP framework report generation
+      return await generateLeadershipReport(
+        ctx,
+        session as { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> },
+        reflections as Array<{ _id: Id<"reflections">; step: string; payload: Record<string, unknown> }>,
+        userName,
+        args
+      );
+    } else if (session.framework === 'COMMUNICATION') {
+      // COMMUNICATION framework report generation
+      return await generateCommunicationReport(
+        ctx,
         session as { _id: Id<"sessions">; framework: string; orgId: Id<"orgs">; userId: Id<"users"> },
         reflections as Array<{ _id: Id<"reflections">; step: string; payload: Record<string, unknown> }>,
         userName,
